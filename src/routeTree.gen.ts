@@ -9,38 +9,241 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppUsuariosRouteImport } from './routes/_app.usuarios'
+import { Route as AppReportesRouteImport } from './routes/_app.reportes'
+import { Route as AppNotificacionesRouteImport } from './routes/_app.notificaciones'
+import { Route as AppMapaRouteImport } from './routes/_app.mapa'
+import { Route as AppFormulariosRouteImport } from './routes/_app.formularios'
+import { Route as AppContribuyentesRouteImport } from './routes/_app.contribuyentes'
+import { Route as AppNotificacionesNuevoRouteImport } from './routes/_app.notificaciones.nuevo'
+import { Route as AppNotificacionesIdRouteImport } from './routes/_app.notificaciones.$id'
+import { Route as AppFormulariosNuevoRouteImport } from './routes/_app.formularios.nuevo'
+import { Route as AppFormulariosIdRouteImport } from './routes/_app.formularios.$id'
+import { Route as AppContribuyentesNuevoRouteImport } from './routes/_app.contribuyentes.nuevo'
+import { Route as AppContribuyentesIdRouteImport } from './routes/_app.contribuyentes.$id'
 
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppUsuariosRoute = AppUsuariosRouteImport.update({
+  id: '/usuarios',
+  path: '/usuarios',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppReportesRoute = AppReportesRouteImport.update({
+  id: '/reportes',
+  path: '/reportes',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppNotificacionesRoute = AppNotificacionesRouteImport.update({
+  id: '/notificaciones',
+  path: '/notificaciones',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMapaRoute = AppMapaRouteImport.update({
+  id: '/mapa',
+  path: '/mapa',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFormulariosRoute = AppFormulariosRouteImport.update({
+  id: '/formularios',
+  path: '/formularios',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppContribuyentesRoute = AppContribuyentesRouteImport.update({
+  id: '/contribuyentes',
+  path: '/contribuyentes',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppNotificacionesNuevoRoute = AppNotificacionesNuevoRouteImport.update({
+  id: '/nuevo',
+  path: '/nuevo',
+  getParentRoute: () => AppNotificacionesRoute,
+} as any)
+const AppNotificacionesIdRoute = AppNotificacionesIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AppNotificacionesRoute,
+} as any)
+const AppFormulariosNuevoRoute = AppFormulariosNuevoRouteImport.update({
+  id: '/nuevo',
+  path: '/nuevo',
+  getParentRoute: () => AppFormulariosRoute,
+} as any)
+const AppFormulariosIdRoute = AppFormulariosIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AppFormulariosRoute,
+} as any)
+const AppContribuyentesNuevoRoute = AppContribuyentesNuevoRouteImport.update({
+  id: '/nuevo',
+  path: '/nuevo',
+  getParentRoute: () => AppContribuyentesRoute,
+} as any)
+const AppContribuyentesIdRoute = AppContribuyentesIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AppContribuyentesRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/contribuyentes': typeof AppContribuyentesRouteWithChildren
+  '/formularios': typeof AppFormulariosRouteWithChildren
+  '/mapa': typeof AppMapaRoute
+  '/notificaciones': typeof AppNotificacionesRouteWithChildren
+  '/reportes': typeof AppReportesRoute
+  '/usuarios': typeof AppUsuariosRoute
+  '/contribuyentes/$id': typeof AppContribuyentesIdRoute
+  '/contribuyentes/nuevo': typeof AppContribuyentesNuevoRoute
+  '/formularios/$id': typeof AppFormulariosIdRoute
+  '/formularios/nuevo': typeof AppFormulariosNuevoRoute
+  '/notificaciones/$id': typeof AppNotificacionesIdRoute
+  '/notificaciones/nuevo': typeof AppNotificacionesNuevoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/contribuyentes': typeof AppContribuyentesRouteWithChildren
+  '/formularios': typeof AppFormulariosRouteWithChildren
+  '/mapa': typeof AppMapaRoute
+  '/notificaciones': typeof AppNotificacionesRouteWithChildren
+  '/reportes': typeof AppReportesRoute
+  '/usuarios': typeof AppUsuariosRoute
+  '/contribuyentes/$id': typeof AppContribuyentesIdRoute
+  '/contribuyentes/nuevo': typeof AppContribuyentesNuevoRoute
+  '/formularios/$id': typeof AppFormulariosIdRoute
+  '/formularios/nuevo': typeof AppFormulariosNuevoRoute
+  '/notificaciones/$id': typeof AppNotificacionesIdRoute
+  '/notificaciones/nuevo': typeof AppNotificacionesNuevoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_app': typeof AppRouteWithChildren
+  '/login': typeof LoginRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/_app/contribuyentes': typeof AppContribuyentesRouteWithChildren
+  '/_app/formularios': typeof AppFormulariosRouteWithChildren
+  '/_app/mapa': typeof AppMapaRoute
+  '/_app/notificaciones': typeof AppNotificacionesRouteWithChildren
+  '/_app/reportes': typeof AppReportesRoute
+  '/_app/usuarios': typeof AppUsuariosRoute
+  '/_app/contribuyentes/$id': typeof AppContribuyentesIdRoute
+  '/_app/contribuyentes/nuevo': typeof AppContribuyentesNuevoRoute
+  '/_app/formularios/$id': typeof AppFormulariosIdRoute
+  '/_app/formularios/nuevo': typeof AppFormulariosNuevoRoute
+  '/_app/notificaciones/$id': typeof AppNotificacionesIdRoute
+  '/_app/notificaciones/nuevo': typeof AppNotificacionesNuevoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/sitemap.xml'
+    | '/contribuyentes'
+    | '/formularios'
+    | '/mapa'
+    | '/notificaciones'
+    | '/reportes'
+    | '/usuarios'
+    | '/contribuyentes/$id'
+    | '/contribuyentes/nuevo'
+    | '/formularios/$id'
+    | '/formularios/nuevo'
+    | '/notificaciones/$id'
+    | '/notificaciones/nuevo'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/login'
+    | '/sitemap.xml'
+    | '/contribuyentes'
+    | '/formularios'
+    | '/mapa'
+    | '/notificaciones'
+    | '/reportes'
+    | '/usuarios'
+    | '/contribuyentes/$id'
+    | '/contribuyentes/nuevo'
+    | '/formularios/$id'
+    | '/formularios/nuevo'
+    | '/notificaciones/$id'
+    | '/notificaciones/nuevo'
+  id:
+    | '__root__'
+    | '/'
+    | '/_app'
+    | '/login'
+    | '/sitemap.xml'
+    | '/_app/contribuyentes'
+    | '/_app/formularios'
+    | '/_app/mapa'
+    | '/_app/notificaciones'
+    | '/_app/reportes'
+    | '/_app/usuarios'
+    | '/_app/contribuyentes/$id'
+    | '/_app/contribuyentes/nuevo'
+    | '/_app/formularios/$id'
+    | '/_app/formularios/nuevo'
+    | '/_app/notificaciones/$id'
+    | '/_app/notificaciones/nuevo'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AppRoute: typeof AppRouteWithChildren
+  LoginRoute: typeof LoginRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,22 +251,159 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/usuarios': {
+      id: '/_app/usuarios'
+      path: '/usuarios'
+      fullPath: '/usuarios'
+      preLoaderRoute: typeof AppUsuariosRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/reportes': {
+      id: '/_app/reportes'
+      path: '/reportes'
+      fullPath: '/reportes'
+      preLoaderRoute: typeof AppReportesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/notificaciones': {
+      id: '/_app/notificaciones'
+      path: '/notificaciones'
+      fullPath: '/notificaciones'
+      preLoaderRoute: typeof AppNotificacionesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/mapa': {
+      id: '/_app/mapa'
+      path: '/mapa'
+      fullPath: '/mapa'
+      preLoaderRoute: typeof AppMapaRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/formularios': {
+      id: '/_app/formularios'
+      path: '/formularios'
+      fullPath: '/formularios'
+      preLoaderRoute: typeof AppFormulariosRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/contribuyentes': {
+      id: '/_app/contribuyentes'
+      path: '/contribuyentes'
+      fullPath: '/contribuyentes'
+      preLoaderRoute: typeof AppContribuyentesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/notificaciones/nuevo': {
+      id: '/_app/notificaciones/nuevo'
+      path: '/nuevo'
+      fullPath: '/notificaciones/nuevo'
+      preLoaderRoute: typeof AppNotificacionesNuevoRouteImport
+      parentRoute: typeof AppNotificacionesRoute
+    }
+    '/_app/notificaciones/$id': {
+      id: '/_app/notificaciones/$id'
+      path: '/$id'
+      fullPath: '/notificaciones/$id'
+      preLoaderRoute: typeof AppNotificacionesIdRouteImport
+      parentRoute: typeof AppNotificacionesRoute
+    }
+    '/_app/formularios/nuevo': {
+      id: '/_app/formularios/nuevo'
+      path: '/nuevo'
+      fullPath: '/formularios/nuevo'
+      preLoaderRoute: typeof AppFormulariosNuevoRouteImport
+      parentRoute: typeof AppFormulariosRoute
+    }
+    '/_app/formularios/$id': {
+      id: '/_app/formularios/$id'
+      path: '/$id'
+      fullPath: '/formularios/$id'
+      preLoaderRoute: typeof AppFormulariosIdRouteImport
+      parentRoute: typeof AppFormulariosRoute
+    }
+    '/_app/contribuyentes/nuevo': {
+      id: '/_app/contribuyentes/nuevo'
+      path: '/nuevo'
+      fullPath: '/contribuyentes/nuevo'
+      preLoaderRoute: typeof AppContribuyentesNuevoRouteImport
+      parentRoute: typeof AppContribuyentesRoute
+    }
+    '/_app/contribuyentes/$id': {
+      id: '/_app/contribuyentes/$id'
+      path: '/$id'
+      fullPath: '/contribuyentes/$id'
+      preLoaderRoute: typeof AppContribuyentesIdRouteImport
+      parentRoute: typeof AppContribuyentesRoute
+    }
   }
 }
 
+interface AppContribuyentesRouteChildren {
+  AppContribuyentesIdRoute: typeof AppContribuyentesIdRoute
+  AppContribuyentesNuevoRoute: typeof AppContribuyentesNuevoRoute
+}
+
+const AppContribuyentesRouteChildren: AppContribuyentesRouteChildren = {
+  AppContribuyentesIdRoute: AppContribuyentesIdRoute,
+  AppContribuyentesNuevoRoute: AppContribuyentesNuevoRoute,
+}
+
+const AppContribuyentesRouteWithChildren =
+  AppContribuyentesRoute._addFileChildren(AppContribuyentesRouteChildren)
+
+interface AppFormulariosRouteChildren {
+  AppFormulariosIdRoute: typeof AppFormulariosIdRoute
+  AppFormulariosNuevoRoute: typeof AppFormulariosNuevoRoute
+}
+
+const AppFormulariosRouteChildren: AppFormulariosRouteChildren = {
+  AppFormulariosIdRoute: AppFormulariosIdRoute,
+  AppFormulariosNuevoRoute: AppFormulariosNuevoRoute,
+}
+
+const AppFormulariosRouteWithChildren = AppFormulariosRoute._addFileChildren(
+  AppFormulariosRouteChildren,
+)
+
+interface AppNotificacionesRouteChildren {
+  AppNotificacionesIdRoute: typeof AppNotificacionesIdRoute
+  AppNotificacionesNuevoRoute: typeof AppNotificacionesNuevoRoute
+}
+
+const AppNotificacionesRouteChildren: AppNotificacionesRouteChildren = {
+  AppNotificacionesIdRoute: AppNotificacionesIdRoute,
+  AppNotificacionesNuevoRoute: AppNotificacionesNuevoRoute,
+}
+
+const AppNotificacionesRouteWithChildren =
+  AppNotificacionesRoute._addFileChildren(AppNotificacionesRouteChildren)
+
+interface AppRouteChildren {
+  AppContribuyentesRoute: typeof AppContribuyentesRouteWithChildren
+  AppFormulariosRoute: typeof AppFormulariosRouteWithChildren
+  AppMapaRoute: typeof AppMapaRoute
+  AppNotificacionesRoute: typeof AppNotificacionesRouteWithChildren
+  AppReportesRoute: typeof AppReportesRoute
+  AppUsuariosRoute: typeof AppUsuariosRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppContribuyentesRoute: AppContribuyentesRouteWithChildren,
+  AppFormulariosRoute: AppFormulariosRouteWithChildren,
+  AppMapaRoute: AppMapaRoute,
+  AppNotificacionesRoute: AppNotificacionesRouteWithChildren,
+  AppReportesRoute: AppReportesRoute,
+  AppUsuariosRoute: AppUsuariosRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AppRoute: AppRouteWithChildren,
+  LoginRoute: LoginRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
