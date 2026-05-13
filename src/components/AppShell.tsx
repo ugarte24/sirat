@@ -17,7 +17,8 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
-const NAV = [
+type Role = "admin" | "operador";
+const NAV: { to: string; label: string; icon: any; roles: Role[] }[] = [
   { to: "/", label: "Inicio", icon: LayoutDashboard, roles: ["admin", "operador"] },
   { to: "/contribuyentes", label: "Contribuyentes", icon: Users, roles: ["admin", "operador"] },
   { to: "/formularios", label: "Formularios", icon: ClipboardList, roles: ["admin", "operador"] },
@@ -25,7 +26,7 @@ const NAV = [
   { to: "/mapa", label: "Mapa", icon: MapIcon, roles: ["admin", "operador"] },
   { to: "/reportes", label: "Reportes", icon: FileBarChart, roles: ["admin"] },
   { to: "/usuarios", label: "Usuarios", icon: UserCog, roles: ["admin"] },
-] as const;
+];
 
 const MOBILE_NAV = [
   { to: "/", label: "Inicio", icon: LayoutDashboard },
