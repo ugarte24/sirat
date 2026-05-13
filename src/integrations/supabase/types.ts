@@ -14,16 +14,347 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      auditoria: {
+        Row: {
+          accion: string
+          created_at: string
+          detalle: Json | null
+          entidad: string
+          entidad_id: string | null
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          accion: string
+          created_at?: string
+          detalle?: Json | null
+          entidad: string
+          entidad_id?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          accion?: string
+          created_at?: string
+          detalle?: Json | null
+          entidad?: string
+          entidad_id?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      contribuyentes: {
+        Row: {
+          ci: string
+          created_at: string
+          created_by: string | null
+          id: string
+          nombre_completo: string
+          telefono: string | null
+          updated_at: string
+        }
+        Insert: {
+          ci: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          nombre_completo: string
+          telefono?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ci?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          nombre_completo?: string
+          telefono?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      formulario_fotos: {
+        Row: {
+          created_at: string
+          formulario_id: string
+          id: string
+          storage_path: string
+        }
+        Insert: {
+          created_at?: string
+          formulario_id: string
+          id?: string
+          storage_path: string
+        }
+        Update: {
+          created_at?: string
+          formulario_id?: string
+          id?: string
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "formulario_fotos_formulario_id_fkey"
+            columns: ["formulario_id"]
+            isOneToOne: false
+            referencedRelation: "formularios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      formularios: {
+        Row: {
+          celular: string
+          codigo_actividad: string
+          contribuyente_id: string
+          created_at: string
+          created_by: string | null
+          direccion: string
+          estado: Database["public"]["Enums"]["formulario_estado"]
+          fecha: string
+          id: string
+          latitud: number | null
+          longitud: number | null
+          nit: string | null
+          numero: number
+          observacion: string | null
+          padron_bebidas: boolean
+          procedente: boolean
+          razon_social: string
+          referencia: string
+          superficie: number
+          tipo_actividad_id: string
+          updated_at: string
+          zona: Database["public"]["Enums"]["zona_tipo"]
+        }
+        Insert: {
+          celular: string
+          codigo_actividad?: string
+          contribuyente_id: string
+          created_at?: string
+          created_by?: string | null
+          direccion: string
+          estado?: Database["public"]["Enums"]["formulario_estado"]
+          fecha?: string
+          id?: string
+          latitud?: number | null
+          longitud?: number | null
+          nit?: string | null
+          numero?: number
+          observacion?: string | null
+          padron_bebidas?: boolean
+          procedente?: boolean
+          razon_social: string
+          referencia: string
+          superficie: number
+          tipo_actividad_id: string
+          updated_at?: string
+          zona: Database["public"]["Enums"]["zona_tipo"]
+        }
+        Update: {
+          celular?: string
+          codigo_actividad?: string
+          contribuyente_id?: string
+          created_at?: string
+          created_by?: string | null
+          direccion?: string
+          estado?: Database["public"]["Enums"]["formulario_estado"]
+          fecha?: string
+          id?: string
+          latitud?: number | null
+          longitud?: number | null
+          nit?: string | null
+          numero?: number
+          observacion?: string | null
+          padron_bebidas?: boolean
+          procedente?: boolean
+          razon_social?: string
+          referencia?: string
+          superficie?: number
+          tipo_actividad_id?: string
+          updated_at?: string
+          zona?: Database["public"]["Enums"]["zona_tipo"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "formularios_contribuyente_id_fkey"
+            columns: ["contribuyente_id"]
+            isOneToOne: false
+            referencedRelation: "contribuyentes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "formularios_tipo_actividad_id_fkey"
+            columns: ["tipo_actividad_id"]
+            isOneToOne: false
+            referencedRelation: "tipos_actividad"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notificaciones: {
+        Row: {
+          bienes_inmuebles: boolean
+          codigo: number
+          contribuyente_id: string
+          created_at: string
+          created_by: string | null
+          direccion: string
+          estado: Database["public"]["Enums"]["notificacion_estado"]
+          fecha_limite: string
+          id: string
+          impuestos_patente: boolean
+          nombre_notificado: string
+          numero_correlativo: number
+          observacion_seguimiento: string | null
+          padron_municipal: boolean
+          tipo: Database["public"]["Enums"]["notificacion_tipo"]
+          updated_at: string
+          vehiculos: boolean
+        }
+        Insert: {
+          bienes_inmuebles?: boolean
+          codigo?: number
+          contribuyente_id: string
+          created_at?: string
+          created_by?: string | null
+          direccion: string
+          estado?: Database["public"]["Enums"]["notificacion_estado"]
+          fecha_limite: string
+          id?: string
+          impuestos_patente?: boolean
+          nombre_notificado: string
+          numero_correlativo: number
+          observacion_seguimiento?: string | null
+          padron_municipal?: boolean
+          tipo: Database["public"]["Enums"]["notificacion_tipo"]
+          updated_at?: string
+          vehiculos?: boolean
+        }
+        Update: {
+          bienes_inmuebles?: boolean
+          codigo?: number
+          contribuyente_id?: string
+          created_at?: string
+          created_by?: string | null
+          direccion?: string
+          estado?: Database["public"]["Enums"]["notificacion_estado"]
+          fecha_limite?: string
+          id?: string
+          impuestos_patente?: boolean
+          nombre_notificado?: string
+          numero_correlativo?: number
+          observacion_seguimiento?: string | null
+          padron_municipal?: boolean
+          tipo?: Database["public"]["Enums"]["notificacion_tipo"]
+          updated_at?: string
+          vehiculos?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notificaciones_contribuyente_id_fkey"
+            columns: ["contribuyente_id"]
+            isOneToOne: false
+            referencedRelation: "contribuyentes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          activo: boolean
+          bloqueado: boolean
+          ci: string | null
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          intentos_fallidos: number
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          bloqueado?: boolean
+          ci?: string | null
+          created_at?: string
+          email: string
+          full_name: string
+          id: string
+          intentos_fallidos?: number
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          bloqueado?: boolean
+          ci?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          intentos_fallidos?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      tipos_actividad: {
+        Row: {
+          created_at: string
+          id: string
+          nombre: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nombre: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nombre?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "operador"
+      formulario_estado: "activo" | "baja" | "anulado"
+      notificacion_estado: "pendiente" | "cumplido" | "anulado"
+      notificacion_tipo: "aviso" | "advertencia" | "multa"
+      zona_tipo: "A" | "B" | "C" | "D" | "E"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +481,12 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "operador"],
+      formulario_estado: ["activo", "baja", "anulado"],
+      notificacion_estado: ["pendiente", "cumplido", "anulado"],
+      notificacion_tipo: ["aviso", "advertencia", "multa"],
+      zona_tipo: ["A", "B", "C", "D", "E"],
+    },
   },
 } as const
