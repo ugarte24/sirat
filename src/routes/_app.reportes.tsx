@@ -24,7 +24,7 @@ function Reportes() {
   const [from, setFrom] = useState(""); const [to, setTo] = useState("");
 
   const fetchData = async () => {
-    let q: any = supabase.from(tipo).select("*").order("created_at", { ascending: false }).limit(1000);
+    let q: any = supabase.from(tipo as any).select("*").order("created_at", { ascending: false }).limit(1000);
     if (from) q = q.gte("created_at", from);
     if (to) q = q.lte("created_at", to + "T23:59:59");
     const { data, error } = await q;

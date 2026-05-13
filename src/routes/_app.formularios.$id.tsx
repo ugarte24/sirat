@@ -45,7 +45,7 @@ function Detalle() {
     observacion: f.observacion, estado: f.estado,
   });
 
-  const cambiarEstado = async (estado: string) => {
+  const cambiarEstado = async (estado: any) => {
     const { error } = await supabase.from("formularios").update({ estado }).eq("id", id);
     if (error) toast.error(error.message); else { toast.success(`Estado: ${estado}`); setF({ ...f, estado }); }
   };

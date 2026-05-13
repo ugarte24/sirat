@@ -35,7 +35,7 @@ function Detalle() {
     tipo: n.tipo, conceptos, estado: n.estado,
   });
 
-  const cambiarEstado = async (estado: string) => {
+  const cambiarEstado = async (estado: any) => {
     const { error } = await supabase.from("notificaciones").update({ estado }).eq("id", id);
     if (error) toast.error(error.message); else { setN({ ...n, estado }); toast.success(`Estado: ${estado}`); }
   };
