@@ -1,0 +1,19 @@
+{
+  "name": "SIRAT — Sistema Integrado de Registro y Administración Tributaria",
+  "short_name": "SIRAT",
+  "description": "Gestión tributaria municipal: contribuyentes, formularios, notificaciones y mapas.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#002d56",
+  "lang": "es",
+  "icons": [
+    {
+      "src": "/logo-sirat.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any"
+    }
+  ]
+}
