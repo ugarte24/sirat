@@ -14,7 +14,12 @@ function createSupabaseAdminClient() {
       ...(!SUPABASE_URL ? ['SUPABASE_URL'] : []),
       ...(!SUPABASE_SERVICE_ROLE_KEY ? ['SUPABASE_SERVICE_ROLE_KEY'] : []),
     ];
-    const message = `Faltan variables de entorno en el servidor: ${missing.join(', ')}. En local, créalas en .env (p. ej. SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY desde el panel de Supabase). En Lovable Cloud, conecta el proyecto y define las mismas variables allí.`;
+    const message =
+      `Faltan variables de entorno en el servidor: ${missing.join(", ")}. ` +
+      `En local, añádelas en .env (sin prefijo VITE_): SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY ` +
+      `(Project Settings → API en Supabase; la clave service_role es secreta). ` +
+      `En producción (Vercel, Netlify, Lovable Cloud, etc.), define las mismas variables en la configuración del proyecto y vuelve a desplegar. ` +
+      `No uses VITE_ para la service role: solo debe existir en el servidor.`;
     console.error(`[Supabase] ${message}`);
     throw new Error(message);
   }
