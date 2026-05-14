@@ -6,57 +6,114 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Trash2 } from "lucide-react";
-import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/_app/contribuyentes/$id")({ component: Detalle });
 
 function Detalle() {
   const { id } = Route.useParams();
   const nav = useNavigate();
-  const { role } = useAuth();
-  const [c, setC] = useState<any>(null);
-  const [forms, setForms] = useState<any[]>([]);
+  const [c, setC] = useState<{
+    ci: string;
+    nombre_completo: string;
+    telefono: string | null;
+  } | null>(null);
+  const [forms, setForms] = useState<{ id: string; numero: number; razon_social: string; estado: string }[]>([]);
+  const [notifCount, setNotifCount] = useState(0);
 
-  useEffect(() => { (async () => {
-    const { data } = await supabase.from("contribuyentes").select("*").eq("id", id).maybeSingle();
-    setC(data);
-    const { data: f } = await supabase.from("formularios").select("id,numero,razon_social,estado").eq("contribuyente_id", id);
-    setForms(f ?? []);
-  })(); }, [id]);
+  useEffect(() => {
+    void (async () => {
+      const { data } = await supabase.from("contribuyentes").select("ci,nombre_completo,telefono").eq("id", id).maybeSingle();
+      setC(data);
+      const [{ data: f }, { count }] = await Promise.all([
+        supabase.from("formularios").select("id,numero,razon_social,estado").eq("contribuyente_id", id),
+        supabase.from("notificaciones").select("id", { count: "exact", head: true }).eq("contribuyente_id", id),
+      ]);
+      setForms(f ?? []);
+      setNotifCount(count ?? 0);
+    })();
+  }, [id]);
+
+  const puedeDarDeBaja = forms.length === 0 && notifCount === 0;
 
   const save = async () => {
-    const { error } = await supabase.from("contribuyentes").update({
-      ci: c.ci, nombre_completo: c.nombre_completo, telefono: c.telefono,
-    }).eq("id", id);
-    if (error) toast.error(error.message); else toast.success("Actualizado");
+    if (!c) return;
+    const { error } = await supabase
+      .from("contribuyentes")
+      .update({
+        ci: c.ci,
+        nombre_completo: c.nombre_completo,
+        telefono: c.telefono || null,
+      })
+      .eq("id", id);
+    if (error) toast.error(error.message);
+    else toast.success("Actualizado");
   };
-  const del = async () => {
-    if (forms.length) return toast.error("No se puede eliminar: tiene formularios asociados");
-    if (!confirm("¿Eliminar contribuyente?")) return;
+
+  const darDeBaja = async () => {
+    if (!puedeDarDeBaja) {
+      return toast.error("No se puede dar de baja: tiene formularios o notificaciones asociadas.");
+    }
+    if (!confirm("¿Dar de baja este contribuyente? Esta acción no se puede deshacer.")) return;
     const { error } = await supabase.from("contribuyentes").delete().eq("id", id);
-    if (error) toast.error(error.message); else { toast.success("Eliminado"); nav({ to: "/contribuyentes" }); }
+    if (error) toast.error(error.message);
+    else {
+      toast.success("Contribuyente dado de baja");
+      nav({ to: "/contribuyentes" });
+    }
   };
 
   if (!c) return <p>Cargando…</p>;
+
   return (
     <div className="space-y-4 max-w-xl">
       <h1 className="font-display text-2xl font-bold">{c.nombre_completo}</h1>
       <Card className="p-5 space-y-4">
-        <div><Label>C.I.</Label><Input value={c.ci} onChange={(e) => setC({ ...c, ci: e.target.value })} /></div>
-        <div><Label>Nombre</Label><Input value={c.nombre_completo} onChange={(e) => setC({ ...c, nombre_completo: e.target.value })} /></div>
-        <div><Label>Teléfono</Label><Input value={c.telefono ?? ""} onChange={(e) => setC({ ...c, telefono: e.target.value })} /></div>
-        <div className="flex gap-2">
-          <Button onClick={save} className="flex-1 bg-gradient-primary">Guardar</Button>
-          {role === "admin" && <Button onClick={del} variant="destructive" disabled={forms.length > 0}><Trash2 className="h-4 w-4" /></Button>}
+        <div>
+          <Label>C.I.</Label>
+          <Input value={c.ci} onChange={(e) => setC({ ...c, ci: e.target.value })} />
+        </div>
+        <div>
+          <Label>Nombre</Label>
+          <Input value={c.nombre_completo} onChange={(e) => setC({ ...c, nombre_completo: e.target.value })} />
+        </div>
+        <div>
+          <Label>Teléfono</Label>
+          <Input value={c.telefono ?? ""} onChange={(e) => setC({ ...c, telefono: e.target.value })} />
+        </div>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Button type="button" onClick={() => void save()} className="flex-1 bg-gradient-primary">
+            Guardar cambios
+          </Button>
+          <Button
+            type="button"
+            variant="destructive"
+            className="sm:w-auto"
+            disabled={!puedeDarDeBaja}
+            title={
+              puedeDarDeBaja
+                ? undefined
+                : "Solo se puede dar de baja si no hay formularios de actividad ni notificaciones"
+            }
+            onClick={() => void darDeBaja()}
+          >
+            Dar de baja
+          </Button>
         </div>
       </Card>
-      <Card className="p-5">
-        <h2 className="font-semibold mb-3">Formularios asociados ({forms.length})</h2>
+      <Card className="p-5 space-y-3">
+        <h2 className="font-semibold">Formularios de actividad ({forms.length})</h2>
         {forms.length === 0 && <p className="text-sm text-muted-foreground">Ninguno</p>}
         <ul className="space-y-1">
-          {forms.map(f => <li key={f.id} className="text-sm">N° {f.numero} — {f.razon_social} <span className="text-muted-foreground">({f.estado})</span></li>)}
+          {forms.map((f) => (
+            <li key={f.id} className="text-sm">
+              N° {f.numero} — {f.razon_social}{" "}
+              <span className="text-muted-foreground">({f.estado})</span>
+            </li>
+          ))}
         </ul>
+        <p className="text-sm text-muted-foreground border-t pt-3">
+          Notificaciones vinculadas: <span className="font-medium text-foreground">{notifCount}</span>
+        </p>
       </Card>
     </div>
   );
