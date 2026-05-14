@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { ArrowLeft } from "lucide-react";
 import type { ContribuyenteCatalogRow, NotificacionNuevaState, NotificacionTipo } from "@/lib/sirat-forms";
 import { defaultNotificacionNueva, notificacionStateToInsert } from "@/lib/sirat-forms";
 
@@ -31,10 +30,16 @@ function Nuevo() {
   const nav = useNavigate();
   const [contribs, setContribs] = useState<ContribuyenteCatalogRow[]>([]);
   const [n, setN] = useState<NotificacionNuevaState>(defaultNotificacionNueva());
-  useEffect(() => { (async () => {
-    const { data } = await supabase.from("contribuyentes").select("id,ci,nombre_completo").order("nombre_completo");
-    setContribs(data ?? []);
-  })(); }, []);
+  useEffect(() => {
+    void (async () => {
+      const { data, error } = await supabase
+        .from("contribuyentes")
+        .select("id,ci,nombre_completo")
+        .order("nombre_completo");
+      if (error) toast.error(`Contribuyentes: ${error.message}`);
+      setContribs(data ?? []);
+    })();
+  }, []);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,17 +53,27 @@ function Nuevo() {
 
   return (
     <div className="space-y-4 max-w-xl">
-      <Button variant="ghost" size="sm" onClick={() => nav({ to: "/notificaciones" })}><ArrowLeft className="h-4 w-4 mr-1" />Volver</Button>
       <h1 className="font-display text-2xl font-bold">Nueva notificación</h1>
       <form onSubmit={submit} className="space-y-4">
         <Card className="p-5 space-y-4">
           <div><Label>Contribuyente *</Label>
-            <Select value={n.contribuyente_id} onValueChange={v => {
-              const c = contribs.find(c => c.id === v);
-              setN({ ...n, contribuyente_id: v, nombre_notificado: c?.nombre_completo ?? "" });
-            }}>
-              <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
-              <SelectContent>{contribs.map(c => <SelectItem key={c.id} value={c.id}>{c.nombre_completo}</SelectItem>)}</SelectContent>
+            <Select
+              value={n.contribuyente_id || undefined}
+              onValueChange={(v) => {
+                const c = contribs.find((x) => x.id === v);
+                setN({ ...n, contribuyente_id: v, nombre_notificado: c?.nombre_completo ?? "" });
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar" />
+              </SelectTrigger>
+              <SelectContent>
+                {contribs.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.nombre_completo}
+                  </SelectItem>
+                ))}
+              </SelectContent>
             </Select>
           </div>
           <div><Label>Nombre del notificado *</Label><Input value={n.nombre_notificado} onChange={e => setN({ ...n, nombre_notificado: e.target.value })} required /></div>

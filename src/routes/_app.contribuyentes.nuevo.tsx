@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { ArrowLeft } from "lucide-react";
 import type { ContribuyenteInsertPayload, ContribuyenteNuevoForm } from "@/lib/sirat-forms";
 
 export const Route = createFileRoute("/_app/contribuyentes/nuevo")({ component: Nuevo });
@@ -33,7 +32,6 @@ function Nuevo() {
   };
   return (
     <div className="space-y-4 max-w-xl">
-      <Button variant="ghost" size="sm" onClick={() => nav({ to: "/contribuyentes" })}><ArrowLeft className="h-4 w-4 mr-1" />Volver</Button>
       <h1 className="font-display text-2xl font-bold">Nuevo contribuyente</h1>
       <Card className="p-5">
         <form onSubmit={submit} className="space-y-4">

@@ -21,6 +21,8 @@ import { Route as AppMapaRouteImport } from './routes/_app.mapa'
 import { Route as AppFormulariosRouteImport } from './routes/_app.formularios'
 import { Route as AppContribuyentesRouteImport } from './routes/_app.contribuyentes'
 import { Route as AppAuditoriaRouteImport } from './routes/_app.auditoria'
+import { Route as AppNotificacionesIndexRouteImport } from './routes/_app.notificaciones.index'
+import { Route as AppFormulariosIndexRouteImport } from './routes/_app.formularios.index'
 import { Route as AppNotificacionesNuevoRouteImport } from './routes/_app.notificaciones.nuevo'
 import { Route as AppNotificacionesIdRouteImport } from './routes/_app.notificaciones.$id'
 import { Route as AppFormulariosNuevoRouteImport } from './routes/_app.formularios.nuevo'
@@ -87,6 +89,16 @@ const AppAuditoriaRoute = AppAuditoriaRouteImport.update({
   path: '/auditoria',
   getParentRoute: () => AppRoute,
 } as any)
+const AppNotificacionesIndexRoute = AppNotificacionesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppNotificacionesRoute,
+} as any)
+const AppFormulariosIndexRoute = AppFormulariosIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppFormulariosRoute,
+} as any)
 const AppNotificacionesNuevoRoute = AppNotificacionesNuevoRouteImport.update({
   id: '/nuevo',
   path: '/nuevo',
@@ -136,6 +148,8 @@ export interface FileRoutesByFullPath {
   '/formularios/nuevo': typeof AppFormulariosNuevoRoute
   '/notificaciones/$id': typeof AppNotificacionesIdRoute
   '/notificaciones/nuevo': typeof AppNotificacionesNuevoRoute
+  '/formularios/': typeof AppFormulariosIndexRoute
+  '/notificaciones/': typeof AppNotificacionesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -143,9 +157,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/auditoria': typeof AppAuditoriaRoute
   '/contribuyentes': typeof AppContribuyentesRouteWithChildren
-  '/formularios': typeof AppFormulariosRouteWithChildren
   '/mapa': typeof AppMapaRoute
-  '/notificaciones': typeof AppNotificacionesRouteWithChildren
   '/perfil': typeof AppPerfilRoute
   '/reportes': typeof AppReportesRoute
   '/usuarios': typeof AppUsuariosRoute
@@ -155,6 +167,8 @@ export interface FileRoutesByTo {
   '/formularios/nuevo': typeof AppFormulariosNuevoRoute
   '/notificaciones/$id': typeof AppNotificacionesIdRoute
   '/notificaciones/nuevo': typeof AppNotificacionesNuevoRoute
+  '/formularios': typeof AppFormulariosIndexRoute
+  '/notificaciones': typeof AppNotificacionesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -176,6 +190,8 @@ export interface FileRoutesById {
   '/_app/formularios/nuevo': typeof AppFormulariosNuevoRoute
   '/_app/notificaciones/$id': typeof AppNotificacionesIdRoute
   '/_app/notificaciones/nuevo': typeof AppNotificacionesNuevoRoute
+  '/_app/formularios/': typeof AppFormulariosIndexRoute
+  '/_app/notificaciones/': typeof AppNotificacionesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -197,6 +213,8 @@ export interface FileRouteTypes {
     | '/formularios/nuevo'
     | '/notificaciones/$id'
     | '/notificaciones/nuevo'
+    | '/formularios/'
+    | '/notificaciones/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -204,9 +222,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/auditoria'
     | '/contribuyentes'
-    | '/formularios'
     | '/mapa'
-    | '/notificaciones'
     | '/perfil'
     | '/reportes'
     | '/usuarios'
@@ -216,6 +232,8 @@ export interface FileRouteTypes {
     | '/formularios/nuevo'
     | '/notificaciones/$id'
     | '/notificaciones/nuevo'
+    | '/formularios'
+    | '/notificaciones'
   id:
     | '__root__'
     | '/'
@@ -236,6 +254,8 @@ export interface FileRouteTypes {
     | '/_app/formularios/nuevo'
     | '/_app/notificaciones/$id'
     | '/_app/notificaciones/nuevo'
+    | '/_app/formularios/'
+    | '/_app/notificaciones/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -331,6 +351,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAuditoriaRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/notificaciones/': {
+      id: '/_app/notificaciones/'
+      path: '/'
+      fullPath: '/notificaciones/'
+      preLoaderRoute: typeof AppNotificacionesIndexRouteImport
+      parentRoute: typeof AppNotificacionesRoute
+    }
+    '/_app/formularios/': {
+      id: '/_app/formularios/'
+      path: '/'
+      fullPath: '/formularios/'
+      preLoaderRoute: typeof AppFormulariosIndexRouteImport
+      parentRoute: typeof AppFormulariosRoute
+    }
     '/_app/notificaciones/nuevo': {
       id: '/_app/notificaciones/nuevo'
       path: '/nuevo'
@@ -392,11 +426,13 @@ const AppContribuyentesRouteWithChildren =
 interface AppFormulariosRouteChildren {
   AppFormulariosIdRoute: typeof AppFormulariosIdRoute
   AppFormulariosNuevoRoute: typeof AppFormulariosNuevoRoute
+  AppFormulariosIndexRoute: typeof AppFormulariosIndexRoute
 }
 
 const AppFormulariosRouteChildren: AppFormulariosRouteChildren = {
   AppFormulariosIdRoute: AppFormulariosIdRoute,
   AppFormulariosNuevoRoute: AppFormulariosNuevoRoute,
+  AppFormulariosIndexRoute: AppFormulariosIndexRoute,
 }
 
 const AppFormulariosRouteWithChildren = AppFormulariosRoute._addFileChildren(
@@ -406,11 +442,13 @@ const AppFormulariosRouteWithChildren = AppFormulariosRoute._addFileChildren(
 interface AppNotificacionesRouteChildren {
   AppNotificacionesIdRoute: typeof AppNotificacionesIdRoute
   AppNotificacionesNuevoRoute: typeof AppNotificacionesNuevoRoute
+  AppNotificacionesIndexRoute: typeof AppNotificacionesIndexRoute
 }
 
 const AppNotificacionesRouteChildren: AppNotificacionesRouteChildren = {
   AppNotificacionesIdRoute: AppNotificacionesIdRoute,
   AppNotificacionesNuevoRoute: AppNotificacionesNuevoRoute,
+  AppNotificacionesIndexRoute: AppNotificacionesIndexRoute,
 }
 
 const AppNotificacionesRouteWithChildren =

@@ -1,10 +1,10 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, FileDown, Check, Ban } from "lucide-react";
+import { FileDown, Check, Ban } from "lucide-react";
 import { toast } from "sonner";
 import { generateNotificacionPDF } from "@/lib/pdf";
 
@@ -12,7 +12,6 @@ export const Route = createFileRoute("/_app/notificaciones/$id")({ component: De
 
 function Detalle() {
   const { id } = Route.useParams();
-  const nav = useNavigate();
   const [n, setN] = useState<any>(null);
   useEffect(() => { (async () => {
     const { data } = await supabase.from("notificaciones").select("*, contribuyente:contribuyentes(nombre_completo,ci)").eq("id", id).maybeSingle();
@@ -42,7 +41,6 @@ function Detalle() {
 
   return (
     <div className="space-y-4 max-w-xl">
-      <Button variant="ghost" size="sm" onClick={() => nav({ to: "/notificaciones" })}><ArrowLeft className="h-4 w-4 mr-1" />Volver</Button>
       <div className="flex justify-between items-start flex-wrap gap-2">
         <div>
           <p className="text-xs text-muted-foreground font-mono">N° {n.codigo}-{n.numero_correlativo}</p>

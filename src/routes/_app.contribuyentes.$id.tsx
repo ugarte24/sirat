@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { ArrowLeft, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/_app/contribuyentes/$id")({ component: Detalle });
@@ -41,7 +41,6 @@ function Detalle() {
   if (!c) return <p>Cargando…</p>;
   return (
     <div className="space-y-4 max-w-xl">
-      <Button variant="ghost" size="sm" onClick={() => nav({ to: "/contribuyentes" })}><ArrowLeft className="h-4 w-4 mr-1" />Volver</Button>
       <h1 className="font-display text-2xl font-bold">{c.nombre_completo}</h1>
       <Card className="p-5 space-y-4">
         <div><Label>C.I.</Label><Input value={c.ci} onChange={(e) => setC({ ...c, ci: e.target.value })} /></div>

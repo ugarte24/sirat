@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,12 +9,32 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { ArrowLeft, Camera, X } from "lucide-react";
-import { MapPicker } from "@/components/MapPicker";
+import { Camera, X } from "lucide-react";
 import type { ContribuyenteCatalogRow, FormularioNuevoState, TipoActividadCatalogRow } from "@/lib/sirat-forms";
 import { emptyFormularioNuevo, formularioStateToInsert } from "@/lib/sirat-forms";
 
+const MapPicker = lazy(() => import("@/components/MapPicker").then((m) => ({ default: m.MapPicker })));
+
 export const Route = createFileRoute("/_app/formularios/nuevo")({ component: Nuevo });
+
+/** Leaflet usa `window`; evita fallos de SSR / primer render sin DOM. */
+function ClientOnly({ children }: { children: ReactNode }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  if (!mounted) {
+    return (
+      <div
+        className="h-[300px] rounded-lg border bg-muted/30 text-sm text-muted-foreground flex items-center justify-center px-4 text-center"
+        aria-busy="true"
+      >
+        Preparando mapa…
+      </div>
+    );
+  }
+  return <>{children}</>;
+}
 
 function Nuevo() {
   const nav = useNavigate();
@@ -22,15 +42,34 @@ function Nuevo() {
   const [tipos, setTipos] = useState<TipoActividadCatalogRow[]>([]);
   const [busy, setBusy] = useState(false);
   const [photos, setPhotos] = useState<File[]>([]);
-  const [f, setF] = useState<FormularioNuevoState>(emptyFormularioNuevo);
+  const [f, setF] = useState<FormularioNuevoState>(() => emptyFormularioNuevo());
+  const [catalogLoaded, setCatalogLoaded] = useState(false);
 
-  useEffect(() => { (async () => {
-    const [{ data: c }, { data: t }] = await Promise.all([
-      supabase.from("contribuyentes").select("id,ci,nombre_completo").order("nombre_completo"),
-      supabase.from("tipos_actividad").select("id,nombre").order("nombre"),
-    ]);
-    setContribs(c ?? []); setTipos(t ?? []);
-  })(); }, []);
+  useEffect(() => {
+    void (async () => {
+      try {
+        const [cr, tr] = await Promise.all([
+          supabase.from("contribuyentes").select("id,ci,nombre_completo").order("nombre_completo"),
+          supabase.from("tipos_actividad").select("id,nombre").order("nombre"),
+        ]);
+        if (cr.error) toast.error(`Contribuyentes: ${cr.error.message}`);
+        if (tr.error) toast.error(`Tipos de actividad: ${tr.error.message}`);
+        setContribs(cr.data ?? []);
+        setTipos(tr.data ?? []);
+        if (!(cr.data?.length) && !cr.error) {
+          toast.message("No hay contribuyentes. Registre uno antes o use el enlace de abajo.");
+        }
+        if (!(tr.data?.length) && !tr.error) {
+          toast.message("No hay tipos de actividad en la base. Ejecute las migraciones en Supabase.");
+        }
+      } catch (e) {
+        console.error(e);
+        toast.error("No se pudieron cargar los catálogos. Revise la conexión y las variables de Supabase.");
+      } finally {
+        setCatalogLoaded(true);
+      }
+    })();
+  }, []);
 
   const addPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
@@ -61,18 +100,34 @@ function Nuevo() {
 
   return (
     <div className="space-y-4 max-w-2xl">
-      <Button variant="ghost" size="sm" onClick={() => nav({ to: "/formularios" })}><ArrowLeft className="h-4 w-4 mr-1" />Volver</Button>
       <h1 className="font-display text-2xl font-bold">Nuevo formulario de verificación</h1>
+      {!catalogLoaded && (
+        <p className="text-sm text-amber-800 dark:text-amber-200 bg-amber-500/10 border border-amber-500/25 rounded-md px-3 py-2">
+          Cargando listas de contribuyentes y tipos de actividad… Puede completar el resto del formulario mientras tanto.
+        </p>
+      )}
       <form onSubmit={submit} className="space-y-4">
         <Card className="p-5 space-y-4">
           <div>
             <Label>Contribuyente *</Label>
-            <Select value={f.contribuyente_id} onValueChange={v => {
-              const c = contribs.find(c => c.id === v);
-              setF({ ...f, contribuyente_id: v, razon_social: f.razon_social || c?.nombre_completo || "" });
-            }}>
-              <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
-              <SelectContent>{contribs.map(c => <SelectItem key={c.id} value={c.id}>{c.nombre_completo} — {c.ci}</SelectItem>)}</SelectContent>
+            <Select
+              value={f.contribuyente_id || undefined}
+              onValueChange={(v) => {
+                const c = contribs.find((x) => x.id === v);
+                setF({ ...f, contribuyente_id: v, razon_social: f.razon_social || c?.nombre_completo || "" });
+              }}
+              disabled={!catalogLoaded}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={catalogLoaded ? "Seleccionar contribuyente" : "Cargando…"} />
+              </SelectTrigger>
+              <SelectContent>
+                {contribs.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.nombre_completo} — {c.ci}
+                  </SelectItem>
+                ))}
+              </SelectContent>
             </Select>
             <Button type="button" variant="link" size="sm" className="px-0 h-auto mt-1" onClick={() => nav({ to: "/contribuyentes/nuevo" })}>+ Registrar nuevo contribuyente</Button>
           </div>
@@ -91,9 +146,21 @@ function Nuevo() {
             <div><Label>Celular *</Label><Input value={f.celular} onChange={e => setF({ ...f, celular: e.target.value })} required /></div>
           </div>
           <div><Label>Tipo de actividad *</Label>
-            <Select value={f.tipo_actividad_id} onValueChange={v => setF({ ...f, tipo_actividad_id: v })}>
-              <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
-              <SelectContent>{tipos.map(t => <SelectItem key={t.id} value={t.id}>{t.nombre}</SelectItem>)}</SelectContent>
+            <Select
+              value={f.tipo_actividad_id || undefined}
+              onValueChange={(v) => setF({ ...f, tipo_actividad_id: v })}
+              disabled={!catalogLoaded}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={catalogLoaded ? "Seleccionar tipo" : "Cargando…"} />
+              </SelectTrigger>
+              <SelectContent>
+                {tipos.map((t) => (
+                  <SelectItem key={t.id} value={t.id}>
+                    {t.nombre}
+                  </SelectItem>
+                ))}
+              </SelectContent>
             </Select>
           </div>
           <div><Label>Dirección (barrio y avenida) *</Label><Input value={f.direccion} onChange={e => setF({ ...f, direccion: e.target.value })} required /></div>
@@ -102,7 +169,17 @@ function Nuevo() {
 
         <Card className="p-5 space-y-3">
           <Label>Ubicación geográfica (toca el mapa)</Label>
-          <MapPicker lat={f.latitud} lng={f.longitud} onChange={(la, ln) => setF({ ...f, latitud: la, longitud: ln })} />
+          <ClientOnly>
+            <Suspense
+              fallback={
+                <div className="h-[300px] rounded-lg border bg-muted/30 flex items-center justify-center text-sm text-muted-foreground">
+                  Cargando mapa…
+                </div>
+              }
+            >
+              <MapPicker lat={f.latitud} lng={f.longitud} onChange={(la, ln) => setF({ ...f, latitud: la, longitud: ln })} />
+            </Suspense>
+          </ClientOnly>
           {f.latitud != null && f.longitud != null && (
             <p className="text-xs text-muted-foreground">
               Lat: {f.latitud.toFixed(6)} • Lng: {f.longitud.toFixed(6)}

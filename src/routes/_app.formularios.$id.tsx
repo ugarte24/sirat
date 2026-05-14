@@ -1,10 +1,10 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, FileDown, Ban } from "lucide-react";
+import { FileDown, Ban } from "lucide-react";
 import { toast } from "sonner";
 import { MapPicker } from "@/components/MapPicker";
 import { generateFormularioPDF } from "@/lib/pdf";
@@ -14,7 +14,6 @@ export const Route = createFileRoute("/_app/formularios/$id")({ component: Detal
 
 function Detalle() {
   const { id } = Route.useParams();
-  const nav = useNavigate();
   const { role } = useAuth();
   const [f, setF] = useState<any>(null);
   const [photos, setPhotos] = useState<{ url: string }[]>([]);
@@ -52,7 +51,6 @@ function Detalle() {
 
   return (
     <div className="space-y-4 max-w-2xl">
-      <Button variant="ghost" size="sm" onClick={() => nav({ to: "/formularios" })}><ArrowLeft className="h-4 w-4 mr-1" />Volver</Button>
       <div className="flex items-start justify-between flex-wrap gap-2">
         <div>
           <p className="text-xs text-muted-foreground font-mono">N° {f.numero} • {f.codigo_actividad}</p>
