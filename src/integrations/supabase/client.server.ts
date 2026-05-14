@@ -14,7 +14,7 @@ function createSupabaseAdminClient() {
       ...(!SUPABASE_URL ? ['SUPABASE_URL'] : []),
       ...(!SUPABASE_SERVICE_ROLE_KEY ? ['SUPABASE_SERVICE_ROLE_KEY'] : []),
     ];
-    const message = `Missing Supabase environment variable(s): ${missing.join(', ')}. Connect Supabase in Lovable Cloud.`;
+    const message = `Faltan variables de entorno en el servidor: ${missing.join(', ')}. En local, créalas en .env (p. ej. SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY desde el panel de Supabase). En Lovable Cloud, conecta el proyecto y define las mismas variables allí.`;
     console.error(`[Supabase] ${message}`);
     throw new Error(message);
   }

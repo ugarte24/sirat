@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Shield, Loader2 } from "lucide-react";
+import { SiratLoginBrand } from "@/components/SiratLoginBrand";
+import { Eye, EyeOff, Loader2, Lock, User } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/login")({ component: LoginPage });
@@ -14,66 +15,107 @@ export const Route = createFileRoute("/login")({ component: LoginPage });
 function LoginPage() {
   const { session, loading } = useAuth();
   const nav = useNavigate();
-  const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
   const [busy, setBusy] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
-  useEffect(() => { if (!loading && session) nav({ to: "/" }); }, [session, loading, nav]);
+  useEffect(() => {
+    if (!loading && session) nav({ to: "/" });
+  }, [session, loading, nav]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
     try {
-      if (mode === "login") {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        toast.success("Bienvenido");
-        nav({ to: "/" });
-      } else {
-        const { error } = await supabase.auth.signUp({
-          email, password,
-          options: { data: { full_name: fullName }, emailRedirectTo: window.location.origin },
-        });
-        if (error) throw error;
-        toast.success("Cuenta creada. Inicia sesión.");
-        setMode("login");
-      }
-    } catch (err: any) {
-      toast.error(err.message ?? "Error");
-    } finally { setBusy(false); }
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      toast.success("Bienvenido");
+      nav({ to: "/" });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Error";
+      toast.error(message);
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-hero flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-6 text-primary-foreground">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-gold shadow-gold">
-            <Shield className="h-8 w-8 text-gold-foreground" />
-          </div>
-          <h1 className="font-display text-4xl font-bold">SIRAT</h1>
-          <p className="text-sm opacity-90 mt-1">Sistema Integral de Registro y Administración Tributaria</p>
-        </div>
-        <Card className="p-6 shadow-elegant">
-          <div className="flex gap-2 mb-5 p-1 bg-muted rounded-lg">
-            <button type="button" onClick={() => setMode("login")} className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${mode === "login" ? "bg-card text-foreground shadow-soft" : "text-muted-foreground"}`}>Iniciar sesión</button>
-            <button type="button" onClick={() => setMode("signup")} className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${mode === "signup" ? "bg-card text-foreground shadow-soft" : "text-muted-foreground"}`}>Crear cuenta</button>
-          </div>
-          <form onSubmit={submit} className="space-y-4">
-            {mode === "signup" && (
-              <div><Label>Nombre completo</Label><Input value={fullName} onChange={(e) => setFullName(e.target.value)} required /></div>
-            )}
-            <div><Label>Correo electrónico</Label><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" /></div>
-            <div><Label>Contraseña</Label><Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} autoComplete={mode === "login" ? "current-password" : "new-password"} /></div>
-            <Button type="submit" disabled={busy} className="w-full h-11 bg-gradient-primary shadow-elegant">
-              {busy && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              {mode === "login" ? "Ingresar" : "Crear cuenta"}
-            </Button>
-          </form>
-          <p className="mt-4 text-center text-xs text-muted-foreground">El primer usuario registrado será administrador.</p>
-        </Card>
+    <div className="flex min-h-screen flex-col items-center bg-white px-4 py-10">
+      <div className="mb-8 w-full max-w-lg px-2">
+        <SiratLoginBrand />
       </div>
+
+      <Card className="w-full max-w-lg border border-slate-200/80 bg-white p-8 shadow-[0_8px_30px_-12px_rgba(0,45,86,0.12)]">
+        <h2 className="text-center text-xl font-bold text-primary">Iniciar sesión</h2>
+        <p className="mt-2 text-center text-sm text-muted-foreground">
+          Ingrese sus credenciales para acceder al sistema
+        </p>
+
+        <form onSubmit={submit} className="mt-8 space-y-5">
+          <div className="space-y-2">
+            <Label htmlFor="login-email" className="text-sm font-medium text-foreground">
+              Usuario
+            </Label>
+            <div className="relative">
+              <User
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                aria-hidden
+              />
+              <Input
+                id="login-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete="username"
+                placeholder="Ingrese su correo"
+                className="h-11 border-slate-200 bg-white pl-10 pr-3 shadow-sm placeholder:text-slate-400"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="login-password" className="text-sm font-medium text-foreground">
+              Contraseña
+            </Label>
+            <div className="relative">
+              <Lock
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                aria-hidden
+              />
+              <Input
+                id="login-password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={6}
+                autoComplete="current-password"
+                placeholder="Ingrese su contraseña"
+                className="h-11 border-slate-200 bg-white pl-10 pr-11 shadow-sm placeholder:text-slate-400"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1.5 text-muted-foreground hover:bg-slate-100 hover:text-foreground"
+                aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+
+          <Button
+            type="submit"
+            disabled={busy}
+            className="mt-2 h-12 w-full gap-2 bg-gradient-primary text-base font-semibold text-primary-foreground shadow-md hover:opacity-95"
+          >
+            {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <Lock className="h-5 w-5" />}
+            Iniciar sesión
+          </Button>
+        </form>
+      </Card>
     </div>
   );
 }

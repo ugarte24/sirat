@@ -12,4 +12,12 @@ export default defineConfig({
   tanstackStart: {
     server: { entry: "server" },
   },
+  // Puerto fijo para no chocar con otras apps en 8080 (p. ej. J-Cell).
+  vite: {
+    server: {
+      // Puerto por defecto de SIRAT; si está ocupado, Vite prueba el siguiente.
+      port: 5740,
+      strictPort: false,
+    },
+  },
 });

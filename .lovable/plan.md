@@ -1,4 +1,4 @@
-# SIRAT - Sistema Integral de Registro y Administración Tributaria
+# SIRAT - Sistema Integrado de Registro y Administración Tributaria
 
 Sistema web responsivo (mobile-first) para gestión tributaria con autenticación por roles, contribuyentes, formularios de verificación con mapas y fotos, notificaciones y reportes.
 
@@ -7,6 +7,19 @@ Sistema web responsivo (mobile-first) para gestión tributaria con autenticació
 - **Lovable Cloud** (auth, base de datos PostgreSQL, storage de fotos)
 - Leaflet + OpenStreetMap (mapas gratuitos, sin API key)
 - jsPDF + autoTable para PDFs
+
+## Variables de entorno (Supabase y servidor)
+El cliente web usa `VITE_SUPABASE_URL` y `VITE_SUPABASE_PUBLISHABLE_KEY` (o equivalentes inyectados por el hosting).
+
+Las **funciones de servidor** (TanStack Start) que crean o actualizan usuarios necesitan, en el proceso que ejecuta Vite / el despliegue:
+
+| Variable | Uso |
+|----------|-----|
+| `SUPABASE_URL` | URL del proyecto |
+| `SUPABASE_PUBLISHABLE_KEY` | Validar la sesión del admin (JWT del usuario) |
+| **`SUPABASE_SERVICE_ROLE_KEY`** | Operaciones `auth.admin` y escritura con privilegios (solo servidor; no exponer al navegador) |
+
+En **local**: definirlas en `.env` o `.env.local` en la raíz (están en `.gitignore`). En **Lovable Cloud** u otro host: configurar las mismas variables en el panel de secretos/entorno del proyecto. Sin `SUPABASE_SERVICE_ROLE_KEY`, el alta de usuario desde `/usuarios` fallará con un error claro.
 
 ## Diseño visual (mobile-first)
 - Paleta institucional sobria: azul profundo `oklch(0.35 0.13 250)` + dorado `oklch(0.75 0.13 80)` como acento, fondo claro
@@ -62,7 +75,7 @@ Sistema web responsivo (mobile-first) para gestión tributaria con autenticació
 6. Vista mapa global
 7. Generación de PDFs (formulario + notificación)
 8. Dashboard básico por rol
-9. Gestión de usuarios (admin)
+9. Gestión de usuarios (admin): tabla listado, formulario de registro, **edición en diálogo** (nombre, correo, CI, rol, activo, bloqueado), reset de contraseña por fila; funciones servidor `admin-create-user` y `admin-update-user` (verificar rol admin + service role)
 10. Reportes con export PDF/Excel
 
 ## Fuera de alcance del MVP (siguientes iteraciones)
@@ -70,4 +83,4 @@ Sistema web responsivo (mobile-first) para gestión tributaria con autenticació
 - **Reseteo de contraseña por email con contraseña temporal**: en MVP el admin dispara un reset estándar de Supabase Auth (link por email). El "password temporal generado" lo añado en una segunda pasada si lo prefieres.
 - Reportes muy complejos de "deudas" y "padrones pendientes" requieren más detalle del modelo de deuda — los dejo como tablas simples filtradas hasta que definas la lógica de cálculo.
 
-¿Procedo con este alcance?
+Documento vivo: se ajusta conforme avanza el MVP.

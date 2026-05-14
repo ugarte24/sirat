@@ -33,7 +33,7 @@ export function generateFormularioPDF(d: FormularioData) {
   doc.setFont("helvetica", "bold").setFontSize(18);
   doc.text("SIRAT", 14, 14);
   doc.setFontSize(9).setFont("helvetica", "normal");
-  doc.text("Sistema Integral de Registro y Administración Tributaria", 14, 21);
+  doc.text("Sistema Integrado de Registro y Administración Tributaria", 14, 21);
   doc.setFontSize(11).setFont("helvetica", "bold");
   doc.text(`FORMULARIO N° ${d.numero}`, w - 14, 14, { align: "right" });
   doc.setFontSize(9).setFont("helvetica", "normal");

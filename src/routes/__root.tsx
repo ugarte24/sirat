@@ -37,7 +37,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-      { title: "SIRAT — Sistema Integral de Registro y Administración Tributaria" },
+      { title: "SIRAT — Sistema Integrado de Registro y Administración Tributaria" },
       { name: "description", content: "Gestión tributaria municipal: contribuyentes, formularios de verificación, notificaciones y mapas." },
     ],
     links: [
@@ -55,7 +55,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es"><head><HeadContent /></head><body>{children}<Scripts /></body></html>
+    <html lang="es" suppressHydrationWarning>
+      <head>
+        <HeadContent />
+      </head>
+      <body suppressHydrationWarning>
+        {children}
+        <Scripts />
+      </body>
+    </html>
   );
 }
 

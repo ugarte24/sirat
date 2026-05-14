@@ -10,12 +10,19 @@ import {
   UserCog,
   LogOut,
   Menu,
-  Shield,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { SIRAT_TAGLINE } from "@/lib/sirat-brand";
 
 type Role = "admin" | "operador";
 const NAV: { to: string; label: string; icon: any; roles: Role[] }[] = [
@@ -36,6 +43,19 @@ const MOBILE_NAV = [
   { to: "/mapa", label: "Mapa", icon: MapIcon },
 ] as const;
 
+function SiratShellLogo({ className }: { className?: string }) {
+  return (
+    <img
+      src="/logo-sirat.png"
+      alt="SIRAT"
+      width={389}
+      height={436}
+      decoding="async"
+      className={cn("shrink-0 object-contain", className)}
+    />
+  );
+}
+
 export function AppShell({ children }: { children: ReactNode }) {
   const { profile, role, signOut } = useAuth();
   const loc = useLocation();
@@ -47,13 +67,13 @@ export function AppShell({ children }: { children: ReactNode }) {
   const SidebarContent = (
     <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
       <div className="flex items-center gap-3 px-5 py-6 border-b border-sidebar-border">
-        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-gold shadow-gold">
-          <Shield className="h-6 w-6 text-gold-foreground" />
-        </div>
-        <div>
+        <SiratShellLogo className="h-11 w-11 shrink-0 rounded-xl" />
+        <div className="min-w-0 flex-1">
           <div className="font-display text-xl font-bold leading-none">SIRAT</div>
-          <div className="text-[10px] uppercase tracking-wider text-sidebar-foreground/70 mt-1">
-            Sistema Tributario
+          <div
+            className="mt-1 max-w-[min(100%,14rem)] text-[0.68rem] font-normal leading-snug text-sidebar-foreground/75 sm:text-[0.8125rem]"
+          >
+            {SIRAT_TAGLINE}
           </div>
         </div>
       </div>
@@ -108,12 +128,16 @@ export function AppShell({ children }: { children: ReactNode }) {
           <SheetTrigger asChild>
             <Button variant="ghost" size="icon"><Menu className="h-5 w-5" /></Button>
           </SheetTrigger>
-          <SheetContent side="left" className="p-0 w-72">{SidebarContent}</SheetContent>
+          <SheetContent side="left" className="p-0 w-72">
+            <SheetHeader className="sr-only">
+              <SheetTitle>Menú de navegación</SheetTitle>
+              <SheetDescription>Accesos y cuenta de usuario de SIRAT.</SheetDescription>
+            </SheetHeader>
+            {SidebarContent}
+          </SheetContent>
         </Sheet>
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-gold">
-            <Shield className="h-4 w-4 text-gold-foreground" />
-          </div>
+          <SiratShellLogo className="h-8 w-8 rounded-lg" />
           <span className="font-display text-lg font-bold text-primary">SIRAT</span>
         </div>
         <div className="w-9" />
