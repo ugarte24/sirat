@@ -42,8 +42,9 @@ export function MapPicker({ lat, lng, onChange, readOnly, height = "300px", mark
     const el = ref.current;
     if (!el || mapRef.current) return;
 
-    const initialLat = lat ?? -17.7833;
-    const initialLng = lng ?? -63.1821;
+    /** Centro por defecto: Riberalta (Beni) */
+    const initialLat = lat ?? -10.996;
+    const initialLng = lng ?? -66.062;
 
     const attachMap = (map: L.Map) => {
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {

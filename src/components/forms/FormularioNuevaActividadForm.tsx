@@ -9,20 +9,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
-import { Camera, Images, Search, X } from "lucide-react";
+import { Camera, Images, X } from "lucide-react";
 import type { ContribuyenteCatalogRow, FormularioNuevoState, TipoActividadCatalogRow } from "@/lib/sirat-forms";
 import { emptyFormularioNuevo, formularioStateToInsert } from "@/lib/sirat-forms";
 
 const MapPicker = lazy(() => import("@/components/MapPicker").then((m) => ({ default: m.MapPicker })));
 
 type LocalPhoto = { file: File; previewUrl: string };
-
-type RazonSocialHit = {
-  contribuyente_id: string;
-  razon_social: string;
-  nombre_completo: string;
-  ci: string;
-};
 
 function revokePhotos(items: LocalPhoto[]) {
   for (const p of items) URL.revokeObjectURL(p.previewUrl);
@@ -67,10 +60,6 @@ export function FormularioNuevaActividadForm({
   photosRef.current = photos;
   const [f, setF] = useState<FormularioNuevoState>(() => emptyFormularioNuevo());
   const [catalogLoaded, setCatalogLoaded] = useState(false);
-  const [rsBusqueda, setRsBusqueda] = useState("");
-  const [rsHits, setRsHits] = useState<RazonSocialHit[]>([]);
-  const [rsBuscando, setRsBuscando] = useState(false);
-  const rsDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     return () => revokePhotos(photosRef.current);
@@ -103,55 +92,6 @@ export function FormularioNuevaActividadForm({
     })();
   }, [catalogRefreshKey]);
 
-  useEffect(() => {
-    const q = rsBusqueda.trim();
-    if (rsDebounceRef.current) clearTimeout(rsDebounceRef.current);
-    if (q.length < 2) {
-      setRsHits([]);
-      setRsBuscando(false);
-      return;
-    }
-    rsDebounceRef.current = setTimeout(() => {
-      void (async () => {
-        setRsBuscando(true);
-        const { data, error } = await supabase
-          .from("formularios")
-          .select("razon_social, contribuyente_id, contribuyente:contribuyentes(nombre_completo, ci)")
-          .ilike("razon_social", `%${q}%`)
-          .order("numero", { ascending: false })
-          .limit(40);
-        setRsBuscando(false);
-        if (error) {
-          toast.error(error.message);
-          setRsHits([]);
-          return;
-        }
-        const seen = new Set<string>();
-        const hits: RazonSocialHit[] = [];
-        for (const row of data ?? []) {
-          const co = row.contribuyente as { nombre_completo: string; ci: string } | null;
-          if (!co?.nombre_completo) continue;
-          const rs = String(row.razon_social ?? "").trim();
-          if (!rs) continue;
-          const key = `${row.contribuyente_id}\0${rs.toLowerCase()}`;
-          if (seen.has(key)) continue;
-          seen.add(key);
-          hits.push({
-            contribuyente_id: row.contribuyente_id,
-            razon_social: row.razon_social,
-            nombre_completo: co.nombre_completo,
-            ci: co.ci,
-          });
-          if (hits.length >= 15) break;
-        }
-        setRsHits(hits);
-      })();
-    }, 350);
-    return () => {
-      if (rsDebounceRef.current) clearTimeout(rsDebounceRef.current);
-    };
-  }, [rsBusqueda]);
-
   const addPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     e.target.value = "";
@@ -177,6 +117,14 @@ export function FormularioNuevaActividadForm({
     if (!f.padron && !f.bebidas_alcoholicas) {
       return toast.error("Marque al menos una opción: Padrón o Bebidas alcohólicas.");
     }
+    if (
+      f.latitud == null ||
+      f.longitud == null ||
+      !Number.isFinite(f.latitud) ||
+      !Number.isFinite(f.longitud)
+    ) {
+      return toast.error("Marque la ubicación en el mapa o use «Mi ubicación».");
+    }
     setBusy(true);
     const { data: u } = await supabase.auth.getUser();
     const row = formularioStateToInsert(f, u.user?.id);
@@ -194,8 +142,6 @@ export function FormularioNuevaActividadForm({
     revokePhotos(photos);
     setPhotos([]);
     setF(emptyFormularioNuevo());
-    setRsBusqueda("");
-    setRsHits([]);
     setBusy(false);
     onSuccess();
   };
@@ -239,58 +185,6 @@ export function FormularioNuevaActividadForm({
             >
               + Registrar nuevo contribuyente
             </Button>
-          ) : null}
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="buscar-razon-social">Buscar por razón social</Label>
-          <div className="relative">
-            <Search
-              className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"
-              aria-hidden
-            />
-            <Input
-              id="buscar-razon-social"
-              className="pl-9"
-              placeholder="En formularios previos, mín. 2 letras…"
-              value={rsBusqueda}
-              onChange={(e) => setRsBusqueda(e.target.value)}
-              autoComplete="off"
-            />
-          </div>
-          {rsBuscando ? (
-            <p className="text-xs text-muted-foreground">Buscando…</p>
-          ) : null}
-          {rsHits.length > 0 ? (
-            <ul
-              className="rounded-md border bg-popover text-sm max-h-44 overflow-y-auto shadow-sm divide-y"
-              role="listbox"
-            >
-              {rsHits.map((h, i) => (
-                <li key={`${h.contribuyente_id}-${h.razon_social}-${i}`}>
-                  <button
-                    type="button"
-                    className="w-full text-left px-3 py-2 hover:bg-muted/80 transition-colors"
-                    onClick={() => {
-                      setF((prev) => ({
-                        ...prev,
-                        contribuyente_id: h.contribuyente_id,
-                        razon_social: h.razon_social,
-                      }));
-                      setRsBusqueda("");
-                      setRsHits([]);
-                    }}
-                  >
-                    <span className="font-medium">{h.razon_social}</span>
-                    <span className="text-muted-foreground block text-xs">
-                      {h.nombre_completo} — {h.ci}
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-          {rsBusqueda.trim().length >= 2 && !rsBuscando && rsHits.length === 0 ? (
-            <p className="text-xs text-muted-foreground">No hay formularios con esa razón social.</p>
           ) : null}
         </div>
         <div className="grid sm:grid-cols-2 gap-3">
@@ -368,9 +262,9 @@ export function FormularioNuevaActividadForm({
       </Card>
 
       <Card className="p-5 space-y-3 border-0 shadow-none sm:border sm:shadow-sm">
-        <Label>Ubicación geográfica</Label>
+        <Label>Ubicación geográfica *</Label>
         <p className="text-xs text-muted-foreground">
-          Toque el mapa o use «Mi ubicación» para marcar el punto donde se realiza la verificación.
+          Es obligatorio tocar el mapa o usar «Mi ubicación» para marcar el punto donde se realiza la verificación.
         </p>
         <ClientOnly>
           <Suspense
