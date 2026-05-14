@@ -23,11 +23,9 @@ import { Route as AppContribuyentesRouteImport } from './routes/_app.contribuyen
 import { Route as AppAuditoriaRouteImport } from './routes/_app.auditoria'
 import { Route as AppNotificacionesIndexRouteImport } from './routes/_app.notificaciones.index'
 import { Route as AppFormulariosIndexRouteImport } from './routes/_app.formularios.index'
-import { Route as AppNotificacionesNuevoRouteImport } from './routes/_app.notificaciones.nuevo'
+import { Route as AppContribuyentesIndexRouteImport } from './routes/_app.contribuyentes.index'
 import { Route as AppNotificacionesIdRouteImport } from './routes/_app.notificaciones.$id'
-import { Route as AppFormulariosNuevoRouteImport } from './routes/_app.formularios.nuevo'
 import { Route as AppFormulariosIdRouteImport } from './routes/_app.formularios.$id'
-import { Route as AppContribuyentesNuevoRouteImport } from './routes/_app.contribuyentes.nuevo'
 import { Route as AppContribuyentesIdRouteImport } from './routes/_app.contribuyentes.$id'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -99,30 +97,20 @@ const AppFormulariosIndexRoute = AppFormulariosIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppFormulariosRoute,
 } as any)
-const AppNotificacionesNuevoRoute = AppNotificacionesNuevoRouteImport.update({
-  id: '/nuevo',
-  path: '/nuevo',
-  getParentRoute: () => AppNotificacionesRoute,
+const AppContribuyentesIndexRoute = AppContribuyentesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppContribuyentesRoute,
 } as any)
 const AppNotificacionesIdRoute = AppNotificacionesIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => AppNotificacionesRoute,
 } as any)
-const AppFormulariosNuevoRoute = AppFormulariosNuevoRouteImport.update({
-  id: '/nuevo',
-  path: '/nuevo',
-  getParentRoute: () => AppFormulariosRoute,
-} as any)
 const AppFormulariosIdRoute = AppFormulariosIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => AppFormulariosRoute,
-} as any)
-const AppContribuyentesNuevoRoute = AppContribuyentesNuevoRouteImport.update({
-  id: '/nuevo',
-  path: '/nuevo',
-  getParentRoute: () => AppContribuyentesRoute,
 } as any)
 const AppContribuyentesIdRoute = AppContribuyentesIdRouteImport.update({
   id: '/$id',
@@ -143,11 +131,9 @@ export interface FileRoutesByFullPath {
   '/reportes': typeof AppReportesRoute
   '/usuarios': typeof AppUsuariosRoute
   '/contribuyentes/$id': typeof AppContribuyentesIdRoute
-  '/contribuyentes/nuevo': typeof AppContribuyentesNuevoRoute
   '/formularios/$id': typeof AppFormulariosIdRoute
-  '/formularios/nuevo': typeof AppFormulariosNuevoRoute
   '/notificaciones/$id': typeof AppNotificacionesIdRoute
-  '/notificaciones/nuevo': typeof AppNotificacionesNuevoRoute
+  '/contribuyentes/': typeof AppContribuyentesIndexRoute
   '/formularios/': typeof AppFormulariosIndexRoute
   '/notificaciones/': typeof AppNotificacionesIndexRoute
 }
@@ -156,17 +142,14 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/auditoria': typeof AppAuditoriaRoute
-  '/contribuyentes': typeof AppContribuyentesRouteWithChildren
   '/mapa': typeof AppMapaRoute
   '/perfil': typeof AppPerfilRoute
   '/reportes': typeof AppReportesRoute
   '/usuarios': typeof AppUsuariosRoute
   '/contribuyentes/$id': typeof AppContribuyentesIdRoute
-  '/contribuyentes/nuevo': typeof AppContribuyentesNuevoRoute
   '/formularios/$id': typeof AppFormulariosIdRoute
-  '/formularios/nuevo': typeof AppFormulariosNuevoRoute
   '/notificaciones/$id': typeof AppNotificacionesIdRoute
-  '/notificaciones/nuevo': typeof AppNotificacionesNuevoRoute
+  '/contribuyentes': typeof AppContribuyentesIndexRoute
   '/formularios': typeof AppFormulariosIndexRoute
   '/notificaciones': typeof AppNotificacionesIndexRoute
 }
@@ -185,11 +168,9 @@ export interface FileRoutesById {
   '/_app/reportes': typeof AppReportesRoute
   '/_app/usuarios': typeof AppUsuariosRoute
   '/_app/contribuyentes/$id': typeof AppContribuyentesIdRoute
-  '/_app/contribuyentes/nuevo': typeof AppContribuyentesNuevoRoute
   '/_app/formularios/$id': typeof AppFormulariosIdRoute
-  '/_app/formularios/nuevo': typeof AppFormulariosNuevoRoute
   '/_app/notificaciones/$id': typeof AppNotificacionesIdRoute
-  '/_app/notificaciones/nuevo': typeof AppNotificacionesNuevoRoute
+  '/_app/contribuyentes/': typeof AppContribuyentesIndexRoute
   '/_app/formularios/': typeof AppFormulariosIndexRoute
   '/_app/notificaciones/': typeof AppNotificacionesIndexRoute
 }
@@ -208,11 +189,9 @@ export interface FileRouteTypes {
     | '/reportes'
     | '/usuarios'
     | '/contribuyentes/$id'
-    | '/contribuyentes/nuevo'
     | '/formularios/$id'
-    | '/formularios/nuevo'
     | '/notificaciones/$id'
-    | '/notificaciones/nuevo'
+    | '/contribuyentes/'
     | '/formularios/'
     | '/notificaciones/'
   fileRoutesByTo: FileRoutesByTo
@@ -221,17 +200,14 @@ export interface FileRouteTypes {
     | '/login'
     | '/sitemap.xml'
     | '/auditoria'
-    | '/contribuyentes'
     | '/mapa'
     | '/perfil'
     | '/reportes'
     | '/usuarios'
     | '/contribuyentes/$id'
-    | '/contribuyentes/nuevo'
     | '/formularios/$id'
-    | '/formularios/nuevo'
     | '/notificaciones/$id'
-    | '/notificaciones/nuevo'
+    | '/contribuyentes'
     | '/formularios'
     | '/notificaciones'
   id:
@@ -249,11 +225,9 @@ export interface FileRouteTypes {
     | '/_app/reportes'
     | '/_app/usuarios'
     | '/_app/contribuyentes/$id'
-    | '/_app/contribuyentes/nuevo'
     | '/_app/formularios/$id'
-    | '/_app/formularios/nuevo'
     | '/_app/notificaciones/$id'
-    | '/_app/notificaciones/nuevo'
+    | '/_app/contribuyentes/'
     | '/_app/formularios/'
     | '/_app/notificaciones/'
   fileRoutesById: FileRoutesById
@@ -365,12 +339,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppFormulariosIndexRouteImport
       parentRoute: typeof AppFormulariosRoute
     }
-    '/_app/notificaciones/nuevo': {
-      id: '/_app/notificaciones/nuevo'
-      path: '/nuevo'
-      fullPath: '/notificaciones/nuevo'
-      preLoaderRoute: typeof AppNotificacionesNuevoRouteImport
-      parentRoute: typeof AppNotificacionesRoute
+    '/_app/contribuyentes/': {
+      id: '/_app/contribuyentes/'
+      path: '/'
+      fullPath: '/contribuyentes/'
+      preLoaderRoute: typeof AppContribuyentesIndexRouteImport
+      parentRoute: typeof AppContribuyentesRoute
     }
     '/_app/notificaciones/$id': {
       id: '/_app/notificaciones/$id'
@@ -379,26 +353,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppNotificacionesIdRouteImport
       parentRoute: typeof AppNotificacionesRoute
     }
-    '/_app/formularios/nuevo': {
-      id: '/_app/formularios/nuevo'
-      path: '/nuevo'
-      fullPath: '/formularios/nuevo'
-      preLoaderRoute: typeof AppFormulariosNuevoRouteImport
-      parentRoute: typeof AppFormulariosRoute
-    }
     '/_app/formularios/$id': {
       id: '/_app/formularios/$id'
       path: '/$id'
       fullPath: '/formularios/$id'
       preLoaderRoute: typeof AppFormulariosIdRouteImport
       parentRoute: typeof AppFormulariosRoute
-    }
-    '/_app/contribuyentes/nuevo': {
-      id: '/_app/contribuyentes/nuevo'
-      path: '/nuevo'
-      fullPath: '/contribuyentes/nuevo'
-      preLoaderRoute: typeof AppContribuyentesNuevoRouteImport
-      parentRoute: typeof AppContribuyentesRoute
     }
     '/_app/contribuyentes/$id': {
       id: '/_app/contribuyentes/$id'
@@ -412,12 +372,12 @@ declare module '@tanstack/react-router' {
 
 interface AppContribuyentesRouteChildren {
   AppContribuyentesIdRoute: typeof AppContribuyentesIdRoute
-  AppContribuyentesNuevoRoute: typeof AppContribuyentesNuevoRoute
+  AppContribuyentesIndexRoute: typeof AppContribuyentesIndexRoute
 }
 
 const AppContribuyentesRouteChildren: AppContribuyentesRouteChildren = {
   AppContribuyentesIdRoute: AppContribuyentesIdRoute,
-  AppContribuyentesNuevoRoute: AppContribuyentesNuevoRoute,
+  AppContribuyentesIndexRoute: AppContribuyentesIndexRoute,
 }
 
 const AppContribuyentesRouteWithChildren =
@@ -425,13 +385,11 @@ const AppContribuyentesRouteWithChildren =
 
 interface AppFormulariosRouteChildren {
   AppFormulariosIdRoute: typeof AppFormulariosIdRoute
-  AppFormulariosNuevoRoute: typeof AppFormulariosNuevoRoute
   AppFormulariosIndexRoute: typeof AppFormulariosIndexRoute
 }
 
 const AppFormulariosRouteChildren: AppFormulariosRouteChildren = {
   AppFormulariosIdRoute: AppFormulariosIdRoute,
-  AppFormulariosNuevoRoute: AppFormulariosNuevoRoute,
   AppFormulariosIndexRoute: AppFormulariosIndexRoute,
 }
 
@@ -441,13 +399,11 @@ const AppFormulariosRouteWithChildren = AppFormulariosRoute._addFileChildren(
 
 interface AppNotificacionesRouteChildren {
   AppNotificacionesIdRoute: typeof AppNotificacionesIdRoute
-  AppNotificacionesNuevoRoute: typeof AppNotificacionesNuevoRoute
   AppNotificacionesIndexRoute: typeof AppNotificacionesIndexRoute
 }
 
 const AppNotificacionesRouteChildren: AppNotificacionesRouteChildren = {
   AppNotificacionesIdRoute: AppNotificacionesIdRoute,
-  AppNotificacionesNuevoRoute: AppNotificacionesNuevoRoute,
   AppNotificacionesIndexRoute: AppNotificacionesIndexRoute,
 }
 

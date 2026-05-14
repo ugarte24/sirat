@@ -30,10 +30,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
-import { Info, Pencil, UserPlus } from "lucide-react";
+import { Pencil, UserPlus } from "lucide-react";
 import { adminCreateUserFn } from "@/functions/admin-create-user";
 import { adminUpdateUserFn } from "@/functions/admin-update-user";
 import { adminResetPasswordEmailFn } from "@/functions/admin-reset-password-email";
@@ -206,17 +205,6 @@ function Usuarios() {
   return (
     <div className="space-y-4">
       <h1 className="font-display text-2xl font-bold">Usuarios</h1>
-
-      <Alert className="border-primary/25 bg-primary/5">
-        <Info className="h-4 w-4" />
-        <AlertTitle>Registrar usuarios (servidor)</AlertTitle>
-        <AlertDescription>
-          La creación de usuarios usa la clave <code className="text-xs">SUPABASE_SERVICE_ROLE_KEY</code>{" "}
-          solo en el servidor. Configúrala en tu archivo <code className="text-xs">.env</code> junto con{" "}
-          <code className="text-xs">SUPABASE_URL</code> y <code className="text-xs">SUPABASE_PUBLISHABLE_KEY</code>, o
-          en las variables de entorno de Lovable Cloud si despliegas allí.
-        </AlertDescription>
-      </Alert>
 
       <Card className="p-4 border-primary/20">
         <div className="flex gap-2 items-start mb-4">

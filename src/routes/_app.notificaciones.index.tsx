@@ -1,36 +1,94 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { NotificacionNuevaForm } from "@/components/forms/NotificacionNuevaForm";
 import { Plus, Bell } from "lucide-react";
 
-export const Route = createFileRoute("/_app/notificaciones/")({ component: Lista });
+type NotifSearch = { nueva?: boolean };
+
+export const Route = createFileRoute("/_app/notificaciones/")({
+  validateSearch: (raw: Record<string, unknown>): NotifSearch => ({
+    nueva:
+      raw.nueva === true ||
+      raw.nueva === 1 ||
+      raw.nueva === "1" ||
+      raw.nueva === "true",
+  }),
+  component: Lista,
+});
 
 function Lista() {
+  const navigate = useNavigate({ from: Route.id });
+  const { nueva } = Route.useSearch();
   const [list, setList] = useState<any[]>([]);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [formKey, setFormKey] = useState(0);
+
+  const load = async () => {
+    const { data } = await supabase
+      .from("notificaciones")
+      .select("*, contribuyente:contribuyentes(nombre_completo,ci)")
+      .order("codigo", { ascending: false })
+      .limit(200);
+    setList(data ?? []);
+  };
+
   useEffect(() => {
-    (async () => {
-      const { data } = await supabase
-        .from("notificaciones")
-        .select("*, contribuyente:contribuyentes(nombre_completo,ci)")
-        .order("codigo", { ascending: false })
-        .limit(200);
-      setList(data ?? []);
-    })();
+    void load();
   }, []);
+
+  useEffect(() => {
+    if (nueva) {
+      setFormKey((k) => k + 1);
+      setDialogOpen(true);
+      void navigate({ search: { nueva: undefined }, replace: true });
+    }
+  }, [nueva, navigate]);
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="font-display text-2xl font-bold">Notificaciones</h1>
-        <Button size="sm" className="bg-gradient-gold text-gold-foreground" asChild>
-          <Link to="/notificaciones/nuevo">
-            <Plus className="h-4 w-4 mr-1" />
-            Nueva
-          </Link>
+        <Button
+          type="button"
+          size="sm"
+          className="bg-gradient-gold text-gold-foreground"
+          onClick={() => {
+            setFormKey((k) => k + 1);
+            setDialogOpen(true);
+          }}
+        >
+          <Plus className="h-4 w-4 mr-1" />
+          Nueva
         </Button>
       </div>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Nueva notificación</DialogTitle>
+            <DialogDescription>Complete los datos y emita la notificación.</DialogDescription>
+          </DialogHeader>
+          <NotificacionNuevaForm
+            key={formKey}
+            onSuccess={() => {
+              setDialogOpen(false);
+              void load();
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+
       <div className="space-y-2">
         {list.map((n) => (
           <Link key={n.id} to="/notificaciones/$id" params={{ id: n.id }}>

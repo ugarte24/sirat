@@ -64,16 +64,20 @@ function Dashboard() {
       </div>
 
       <div className="grid sm:grid-cols-2 gap-3">
-        <Link to="/formularios/nuevo"><Card className="p-5 bg-gradient-primary text-primary-foreground hover:shadow-elegant transition-shadow cursor-pointer">
-          <Plus className="h-6 w-6 mb-2" />
-          <div className="font-display text-xl font-semibold">Nueva verificación</div>
-          <p className="text-xs opacity-90 mt-1">Registrar actividad económica</p>
-        </Card></Link>
-        <Link to="/notificaciones/nuevo"><Card className="p-5 bg-gradient-gold text-gold-foreground hover:shadow-gold transition-shadow cursor-pointer">
-          <Bell className="h-6 w-6 mb-2" />
-          <div className="font-display text-xl font-semibold">Nueva notificación</div>
-          <p className="text-xs opacity-90 mt-1">Emitir aviso, advertencia o multa</p>
-        </Card></Link>
+        <Link to="/formularios" search={{ nuevo: 1 }}>
+          <Card className="p-5 bg-gradient-primary text-primary-foreground hover:shadow-elegant transition-shadow cursor-pointer">
+            <Plus className="h-6 w-6 mb-2" />
+            <div className="font-display text-xl font-semibold">Nueva verificación</div>
+            <p className="text-xs opacity-90 mt-1">Registrar actividad económica</p>
+          </Card>
+        </Link>
+        <Link to="/notificaciones" search={{ nueva: 1 }}>
+          <Card className="p-5 bg-gradient-gold text-gold-foreground hover:shadow-gold transition-shadow cursor-pointer">
+            <Bell className="h-6 w-6 mb-2" />
+            <div className="font-display text-xl font-semibold">Nueva notificación</div>
+            <p className="text-xs opacity-90 mt-1">Emitir aviso, advertencia o multa</p>
+          </Card>
+        </Link>
       </div>
     </div>
   );

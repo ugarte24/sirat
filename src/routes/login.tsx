@@ -149,7 +149,7 @@ function LoginPage() {
           </Button>
         </form>
         <p className="mt-4 text-center text-xs text-muted-foreground">
-          Si olvidó su contraseña, solicite al administrador el envío del enlace de recuperación a su correo.
+          Si olvidó su contraseña, contáctese con el administrador.
         </p>
       </Card>
     </div>
