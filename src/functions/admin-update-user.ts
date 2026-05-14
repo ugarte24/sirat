@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
+import { auditoriaInsert } from "@/lib/server-audit";
 
 const inputSchema = z.object({
   accessToken: z.string().min(20),
@@ -12,6 +13,7 @@ const inputSchema = z.object({
   activo: z.boolean(),
   bloqueado: z.boolean(),
   role: z.enum(["operador", "admin"]),
+  intentosFallidos: z.number().int().min(0).max(999).optional(),
 });
 
 export const adminUpdateUserFn = createServerFn({ method: "POST" })
@@ -71,16 +73,18 @@ export const adminUpdateUserFn = createServerFn({ method: "POST" })
 
     const ciVal = data.ci?.trim() || null;
 
-    const { error: profErr } = await supabaseAdmin
-      .from("profiles")
-      .update({
-        full_name: data.fullName.trim(),
-        email: data.email.trim(),
-        ci: ciVal,
-        activo: data.activo,
-        bloqueado: data.bloqueado,
-      })
-      .eq("id", data.userId);
+    const profilePatch: Database["public"]["Tables"]["profiles"]["Update"] = {
+      full_name: data.fullName.trim(),
+      email: data.email.trim(),
+      ci: ciVal,
+      activo: data.activo,
+      bloqueado: data.bloqueado,
+    };
+    if (data.intentosFallidos !== undefined) {
+      profilePatch.intentos_fallidos = data.intentosFallidos;
+    }
+
+    const { error: profErr } = await supabaseAdmin.from("profiles").update(profilePatch).eq("id", data.userId);
 
     if (profErr) {
       throw new Error(profErr.message);
@@ -94,6 +98,14 @@ export const adminUpdateUserFn = createServerFn({ method: "POST" })
     if (insRoleErr) {
       throw new Error(`Datos guardados pero error al asignar rol: ${insRoleErr.message}`);
     }
+
+    await auditoriaInsert(supabaseAdmin, {
+      user_id: adminId,
+      accion: "admin_editar_usuario",
+      entidad: "profiles",
+      entidad_id: data.userId,
+      detalle: { email: data.email.trim(), role: data.role },
+    });
 
     return { ok: true as const };
   });

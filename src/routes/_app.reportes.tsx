@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FileDown, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/lib/auth";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -20,8 +21,18 @@ const REPORTES = [
 ];
 
 function Reportes() {
+  const { role } = useAuth();
   const [tipo, setTipo] = useState("formularios");
-  const [from, setFrom] = useState(""); const [to, setTo] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+
+  if (role !== "admin") {
+    return (
+      <p className="text-center py-8 text-muted-foreground">
+        Solo los administradores pueden acceder a reportes globales.
+      </p>
+    );
+  }
 
   const fetchData = async () => {
     let q: any = supabase.from(tipo as any).select("*").order("created_at", { ascending: false }).limit(1000);
@@ -63,8 +74,43 @@ function Reportes() {
           <div><Label>Hasta</Label><Input type="date" value={to} onChange={e => setTo(e.target.value)} /></div>
         </div>
         <div className="flex gap-2">
-          <Button onClick={exportPDF} className="flex-1 bg-gradient-primary"><FileDown className="h-4 w-4 mr-1" />PDF</Button>
-          <Button onClick={exportExcel} className="flex-1 bg-gradient-gold text-gold-foreground"><FileSpreadsheet className="h-4 w-4 mr-1" />Excel</Button>
+          <Button onClick={exportPDF} className="flex-1 bg-gradient-primary">
+            <FileDown className="h-4 w-4 mr-1" />
+            PDF
+          </Button>
+          <Button onClick={exportExcel} className="flex-1 bg-gradient-gold text-gold-foreground">
+            <FileSpreadsheet className="h-4 w-4 mr-1" />
+            Excel
+          </Button>
+        </div>
+        <div className="pt-2 border-t space-y-2">
+          <Label className="text-muted-foreground">En roadmap (modelo de datos pendiente)</Label>
+          <div className="flex gap-2 flex-wrap">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                toast.message(
+                  "Reporte de deudas: requiere definir en base de datos el modelo de deuda y criterios de cálculo.",
+                )
+              }
+            >
+              Deudas
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                toast.message(
+                  "Padrones pendientes: requiere criterios de negocio y tablas asociadas al padrón municipal.",
+                )
+              }
+            >
+              Padrones pendientes
+            </Button>
+          </div>
         </div>
       </Card>
     </div>

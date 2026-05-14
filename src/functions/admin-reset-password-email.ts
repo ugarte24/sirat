@@ -6,13 +6,15 @@ import { auditoriaInsert } from "@/lib/server-audit";
 
 const inputSchema = z.object({
   accessToken: z.string().min(20),
-  email: z.string().email(),
-  password: z.string().min(6),
-  fullName: z.string().min(2).max(200),
-  role: z.enum(["operador", "admin"]),
+  targetEmail: z.string().trim().email(),
+  redirectTo: z.string().url(),
 });
 
-export const adminCreateUserFn = createServerFn({ method: "POST" })
+/**
+ * Solo administradores. Envía al correo del usuario el enlace de recuperación de Supabase Auth
+ * (flujo estándar; la “contraseña temporal” efectiva es establecer una nueva vía ese enlace).
+ */
+export const adminResetPasswordEmailFn = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => inputSchema.parse(data))
   .handler(async ({ data }) => {
     const url = process.env.SUPABASE_URL;
@@ -39,44 +41,26 @@ export const adminCreateUserFn = createServerFn({ method: "POST" })
       .maybeSingle();
 
     if (roleErr || !isAdmin) {
-      throw new Error("Solo un administrador puede registrar usuarios nuevos.");
+      throw new Error("Solo un administrador puede solicitar el restablecimiento de contraseña.");
     }
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const { data: created, error: createErr } = await supabaseAdmin.auth.admin.createUser({
-      email: data.email.trim(),
-      password: data.password,
-      email_confirm: true,
-      user_metadata: { full_name: data.fullName.trim() },
+    const { error } = await supabaseAdmin.auth.resetPasswordForEmail(data.targetEmail.trim(), {
+      redirectTo: data.redirectTo,
     });
 
-    if (createErr) {
-      throw new Error(createErr.message);
-    }
-
-    const newId = created.user?.id;
-    if (!newId) {
-      throw new Error("No se obtuvo el id del usuario creado.");
-    }
-
-    if (data.role === "admin") {
-      await supabaseAdmin.from("user_roles").delete().eq("user_id", newId);
-      const { error: insErr } = await supabaseAdmin
-        .from("user_roles")
-        .insert({ user_id: newId, role: "admin" });
-      if (insErr) {
-        throw new Error(`Usuario creado pero no se pudo asignar rol admin: ${insErr.message}`);
-      }
+    if (error) {
+      throw new Error(error.message);
     }
 
     await auditoriaInsert(supabaseAdmin, {
       user_id: userData.user.id,
-      accion: "admin_crear_usuario",
-      entidad: "profiles",
-      entidad_id: newId,
-      detalle: { email: data.email.trim(), role: data.role },
+      accion: "admin_reset_password_email",
+      entidad: "auth",
+      entidad_id: null,
+      detalle: { destinatario: data.targetEmail.trim() },
     });
 
-    return { ok: true as const, userId: newId };
+    return { ok: true as const };
   });

@@ -15,10 +15,12 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppUsuariosRouteImport } from './routes/_app.usuarios'
 import { Route as AppReportesRouteImport } from './routes/_app.reportes'
+import { Route as AppPerfilRouteImport } from './routes/_app.perfil'
 import { Route as AppNotificacionesRouteImport } from './routes/_app.notificaciones'
 import { Route as AppMapaRouteImport } from './routes/_app.mapa'
 import { Route as AppFormulariosRouteImport } from './routes/_app.formularios'
 import { Route as AppContribuyentesRouteImport } from './routes/_app.contribuyentes'
+import { Route as AppAuditoriaRouteImport } from './routes/_app.auditoria'
 import { Route as AppNotificacionesNuevoRouteImport } from './routes/_app.notificaciones.nuevo'
 import { Route as AppNotificacionesIdRouteImport } from './routes/_app.notificaciones.$id'
 import { Route as AppFormulariosNuevoRouteImport } from './routes/_app.formularios.nuevo'
@@ -55,6 +57,11 @@ const AppReportesRoute = AppReportesRouteImport.update({
   path: '/reportes',
   getParentRoute: () => AppRoute,
 } as any)
+const AppPerfilRoute = AppPerfilRouteImport.update({
+  id: '/perfil',
+  path: '/perfil',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppNotificacionesRoute = AppNotificacionesRouteImport.update({
   id: '/notificaciones',
   path: '/notificaciones',
@@ -73,6 +80,11 @@ const AppFormulariosRoute = AppFormulariosRouteImport.update({
 const AppContribuyentesRoute = AppContribuyentesRouteImport.update({
   id: '/contribuyentes',
   path: '/contribuyentes',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAuditoriaRoute = AppAuditoriaRouteImport.update({
+  id: '/auditoria',
+  path: '/auditoria',
   getParentRoute: () => AppRoute,
 } as any)
 const AppNotificacionesNuevoRoute = AppNotificacionesNuevoRouteImport.update({
@@ -110,10 +122,12 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/auditoria': typeof AppAuditoriaRoute
   '/contribuyentes': typeof AppContribuyentesRouteWithChildren
   '/formularios': typeof AppFormulariosRouteWithChildren
   '/mapa': typeof AppMapaRoute
   '/notificaciones': typeof AppNotificacionesRouteWithChildren
+  '/perfil': typeof AppPerfilRoute
   '/reportes': typeof AppReportesRoute
   '/usuarios': typeof AppUsuariosRoute
   '/contribuyentes/$id': typeof AppContribuyentesIdRoute
@@ -127,10 +141,12 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/auditoria': typeof AppAuditoriaRoute
   '/contribuyentes': typeof AppContribuyentesRouteWithChildren
   '/formularios': typeof AppFormulariosRouteWithChildren
   '/mapa': typeof AppMapaRoute
   '/notificaciones': typeof AppNotificacionesRouteWithChildren
+  '/perfil': typeof AppPerfilRoute
   '/reportes': typeof AppReportesRoute
   '/usuarios': typeof AppUsuariosRoute
   '/contribuyentes/$id': typeof AppContribuyentesIdRoute
@@ -146,10 +162,12 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/_app/auditoria': typeof AppAuditoriaRoute
   '/_app/contribuyentes': typeof AppContribuyentesRouteWithChildren
   '/_app/formularios': typeof AppFormulariosRouteWithChildren
   '/_app/mapa': typeof AppMapaRoute
   '/_app/notificaciones': typeof AppNotificacionesRouteWithChildren
+  '/_app/perfil': typeof AppPerfilRoute
   '/_app/reportes': typeof AppReportesRoute
   '/_app/usuarios': typeof AppUsuariosRoute
   '/_app/contribuyentes/$id': typeof AppContribuyentesIdRoute
@@ -165,10 +183,12 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/sitemap.xml'
+    | '/auditoria'
     | '/contribuyentes'
     | '/formularios'
     | '/mapa'
     | '/notificaciones'
+    | '/perfil'
     | '/reportes'
     | '/usuarios'
     | '/contribuyentes/$id'
@@ -182,10 +202,12 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/sitemap.xml'
+    | '/auditoria'
     | '/contribuyentes'
     | '/formularios'
     | '/mapa'
     | '/notificaciones'
+    | '/perfil'
     | '/reportes'
     | '/usuarios'
     | '/contribuyentes/$id'
@@ -200,10 +222,12 @@ export interface FileRouteTypes {
     | '/_app'
     | '/login'
     | '/sitemap.xml'
+    | '/_app/auditoria'
     | '/_app/contribuyentes'
     | '/_app/formularios'
     | '/_app/mapa'
     | '/_app/notificaciones'
+    | '/_app/perfil'
     | '/_app/reportes'
     | '/_app/usuarios'
     | '/_app/contribuyentes/$id'
@@ -265,6 +289,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppReportesRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/perfil': {
+      id: '/_app/perfil'
+      path: '/perfil'
+      fullPath: '/perfil'
+      preLoaderRoute: typeof AppPerfilRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/notificaciones': {
       id: '/_app/notificaciones'
       path: '/notificaciones'
@@ -291,6 +322,13 @@ declare module '@tanstack/react-router' {
       path: '/contribuyentes'
       fullPath: '/contribuyentes'
       preLoaderRoute: typeof AppContribuyentesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/auditoria': {
+      id: '/_app/auditoria'
+      path: '/auditoria'
+      fullPath: '/auditoria'
+      preLoaderRoute: typeof AppAuditoriaRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/notificaciones/nuevo': {
@@ -379,19 +417,23 @@ const AppNotificacionesRouteWithChildren =
   AppNotificacionesRoute._addFileChildren(AppNotificacionesRouteChildren)
 
 interface AppRouteChildren {
+  AppAuditoriaRoute: typeof AppAuditoriaRoute
   AppContribuyentesRoute: typeof AppContribuyentesRouteWithChildren
   AppFormulariosRoute: typeof AppFormulariosRouteWithChildren
   AppMapaRoute: typeof AppMapaRoute
   AppNotificacionesRoute: typeof AppNotificacionesRouteWithChildren
+  AppPerfilRoute: typeof AppPerfilRoute
   AppReportesRoute: typeof AppReportesRoute
   AppUsuariosRoute: typeof AppUsuariosRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAuditoriaRoute: AppAuditoriaRoute,
   AppContribuyentesRoute: AppContribuyentesRouteWithChildren,
   AppFormulariosRoute: AppFormulariosRouteWithChildren,
   AppMapaRoute: AppMapaRoute,
   AppNotificacionesRoute: AppNotificacionesRouteWithChildren,
+  AppPerfilRoute: AppPerfilRoute,
   AppReportesRoute: AppReportesRoute,
   AppUsuariosRoute: AppUsuariosRoute,
 }

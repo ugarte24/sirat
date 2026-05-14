@@ -21,6 +21,8 @@ Las **funciones de servidor** (TanStack Start) que crean o actualizan usuarios n
 
 En **local**: definirlas en `.env` o `.env.local` en la raíz (están en `.gitignore`). En **Lovable Cloud** u otro host: configurar las mismas variables en el panel de secretos/entorno del proyecto. Sin `SUPABASE_SERVICE_ROLE_KEY`, el alta de usuario desde `/usuarios` fallará con un error claro.
 
+**Login:** las comprobaciones de perfil (activo, bloqueado, intentos fallidos) y el registro de intentos usan la service role cuando está disponible. Si **no** está configurada en el servidor, el inicio de sesión con email/contraseña **sigue funcionando** (sin bloqueo por contador ni auditoría de login en ese modo).
+
 ## Diseño visual (mobile-first)
 - Paleta institucional sobria: azul profundo `oklch(0.35 0.13 250)` + dorado `oklch(0.75 0.13 80)` como acento, fondo claro
 - Tipografía: Inter para UI, Playfair Display para títulos (sello institucional)
@@ -45,6 +47,7 @@ En **local**: definirlas en `.env` o `.env.local` en la raíz (están en `.gitig
 /reportes                           (admin) Reportes y exports
 /usuarios                           (admin) Gestión usuarios
 /perfil                             Cambio de contraseña
+/auditoria                          (admin) Registro de auditoría reciente
 ```
 
 ## Esquema de base de datos
@@ -54,15 +57,18 @@ En **local**: definirlas en `.env` o `.env.local` en la raíz (están en `.gitig
 - `tipos_actividad` (id, nombre)
 - `formularios` (id, numero serial desde 1000, codigo_actividad, contribuyente_id, razon_social, nit, zona, superficie, tipo_actividad_id, direccion, celular, referencia, latitud, longitud, procedente, padron_bebidas, observacion, estado: activo|baja|anulado, created_by, created_at)
 - `formulario_fotos` (id, formulario_id, storage_path) — máx 2 vía check
-- `notificaciones` (id, codigo serial desde 5000, numero_correlativo, contribuyente_id, nombre_notificado, direccion, fecha_limite, tipo: aviso|advertencia|multa, conceptos jsonb, estado: pendiente|cumplido|anulado, created_by, created_at)
+- `notificaciones` (id, codigo serial desde 5000, numero_correlativo, contribuyente_id, nombre_notificado, direccion, fecha_limite, tipo: aviso|advertencia|multa, flags: padron_municipal, impuestos_patente, bienes_inmuebles, vehiculos; estado: pendiente|cumplido|anulado, created_by, created_at)
 - `auditoria` (id, user_id, accion, entidad, entidad_id, detalle jsonb, created_at)
 - Storage bucket `formulario-fotos` (privado, RLS)
 - RLS en todas las tablas; policies usan `has_role()`
 
+## Tipos TypeScript (formularios de registro)
+Archivo `src/lib/sirat-forms.ts`: interfaces y `Pick` sobre `Database` de Supabase para **contribuyente**, **formulario de verificación** y **notificación** (estado de formulario, payloads de `insert`, filas de catálogo para selects). Las rutas `contribuyentes/nuevo`, `formularios/nuevo` y `notificaciones/nuevo` usan estos tipos en lugar de `any`.
+
 ## Reglas de negocio implementadas
 - No eliminar contribuyente con formularios (constraint + UI)
 - Validación duplicado CI + razón social
-- Bloqueo tras 5 intentos fallidos (trigger en login)
+- Bloqueo tras 5 intentos fallidos de login (contador en `profiles`, con reinicio en éxito y edición admin)
 - Estados lógicos en lugar de delete físico
 - Todos los campos obligatorios excepto NIT
 
@@ -75,8 +81,10 @@ En **local**: definirlas en `.env` o `.env.local` en la raíz (están en `.gitig
 6. Vista mapa global
 7. Generación de PDFs (formulario + notificación)
 8. Dashboard básico por rol
-9. Gestión de usuarios (admin): tabla listado, formulario de registro, **edición en diálogo** (nombre, correo, CI, rol, activo, bloqueado), reset de contraseña por fila; funciones servidor `admin-create-user` y `admin-update-user` (verificar rol admin + service role)
-10. Reportes con export PDF/Excel
+9. Gestión de usuarios (admin): tabla listado, formulario de registro, **edición en diálogo** (nombre, correo, CI, rol, activo, bloqueado, intentos fallidos), reset de contraseña **solo admin** (`admin-reset-password-email`); funciones servidor `admin-create-user`, `admin-update-user`, `login-security`, auditoría en altas y accesos cuando hay service role
+10. Reportes con export PDF/Excel (solo admin en ruta); placeholders informativos para deudas / padrones pendientes
+11. **Mi cuenta** (`/perfil`): cambio de contraseña con validación de la actual; **Auditoría** (`/auditoria`, admin): listado de eventos recientes
+12. Catálogo `tipos_actividad`: semilla en migración inicial; **contribuyentes** son datos de operación (alta desde la app)
 
 ## Fuera de alcance del MVP (siguientes iteraciones)
 - **Funcionamiento offline / PWA con sync**: requiere arquitectura compleja (Service Worker + IndexedDB + cola de sincronización). Lo agrego después si confirmas.

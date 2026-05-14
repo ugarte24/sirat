@@ -9,18 +9,28 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
+import type { ContribuyenteCatalogRow, NotificacionNuevaState, NotificacionTipo } from "@/lib/sirat-forms";
+import { defaultNotificacionNueva, notificacionStateToInsert } from "@/lib/sirat-forms";
 
 export const Route = createFileRoute("/_app/notificaciones/nuevo")({ component: Nuevo });
 
+const CONCEPT_OPTS: Array<{
+  key: keyof Pick<
+    NotificacionNuevaState,
+    "padron_municipal" | "impuestos_patente" | "bienes_inmuebles" | "vehiculos"
+  >;
+  label: string;
+}> = [
+  { key: "padron_municipal", label: "Padrón municipal" },
+  { key: "impuestos_patente", label: "Impuestos de patente" },
+  { key: "bienes_inmuebles", label: "Bienes inmuebles" },
+  { key: "vehiculos", label: "Vehículos" },
+];
+
 function Nuevo() {
   const nav = useNavigate();
-  const [contribs, setContribs] = useState<any[]>([]);
-  const [n, setN] = useState<any>({
-    contribuyente_id: "", nombre_notificado: "", direccion: "",
-    fecha_limite: new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10),
-    tipo: "aviso", padron_municipal: false, impuestos_patente: false,
-    bienes_inmuebles: false, vehiculos: false,
-  });
+  const [contribs, setContribs] = useState<ContribuyenteCatalogRow[]>([]);
+  const [n, setN] = useState<NotificacionNuevaState>(defaultNotificacionNueva());
   useEffect(() => { (async () => {
     const { data } = await supabase.from("contribuyentes").select("id,ci,nombre_completo").order("nombre_completo");
     setContribs(data ?? []);
@@ -30,7 +40,8 @@ function Nuevo() {
     e.preventDefault();
     if (!n.contribuyente_id) return toast.error("Selecciona contribuyente");
     const { data: u } = await supabase.auth.getUser();
-    const { data, error } = await supabase.from("notificaciones").insert({ ...n, numero_correlativo: 0, created_by: u.user?.id }).select().single();
+    const payload = notificacionStateToInsert(n, u.user?.id);
+    const { data, error } = await supabase.from("notificaciones").insert(payload).select().single();
     if (error) return toast.error(error.message);
     toast.success(`Notificación N° ${data.codigo} creada`); nav({ to: "/notificaciones" });
   };
@@ -55,7 +66,7 @@ function Nuevo() {
           <div className="grid grid-cols-2 gap-3">
             <div><Label>Fecha límite *</Label><Input type="date" value={n.fecha_limite} onChange={e => setN({ ...n, fecha_limite: e.target.value })} required /></div>
             <div><Label>Tipo *</Label>
-              <Select value={n.tipo} onValueChange={v => setN({ ...n, tipo: v })}>
+              <Select value={n.tipo} onValueChange={(v) => setN({ ...n, tipo: v as NotificacionTipo })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="aviso">Aviso</SelectItem>
@@ -67,15 +78,13 @@ function Nuevo() {
           </div>
           <div className="space-y-2">
             <Label>Conceptos</Label>
-            {[
-              ["padron_municipal", "Padrón municipal"],
-              ["impuestos_patente", "Impuestos de patente"],
-              ["bienes_inmuebles", "Bienes inmuebles"],
-              ["vehiculos", "Vehículos"],
-            ].map(([k, l]) => (
-              <div key={k} className="flex items-center gap-2">
-                <Checkbox checked={n[k]} onCheckedChange={v => setN({ ...n, [k]: !!v })} />
-                <Label className="cursor-pointer">{l}</Label>
+            {CONCEPT_OPTS.map(({ key, label }) => (
+              <div key={key} className="flex items-center gap-2">
+                <Checkbox
+                  checked={n[key]}
+                  onCheckedChange={(v) => setN((prev) => ({ ...prev, [key]: !!v }))}
+                />
+                <Label className="cursor-pointer">{label}</Label>
               </div>
             ))}
           </div>

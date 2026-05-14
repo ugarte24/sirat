@@ -11,20 +11,18 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { ArrowLeft, Camera, X } from "lucide-react";
 import { MapPicker } from "@/components/MapPicker";
+import type { ContribuyenteCatalogRow, FormularioNuevoState, TipoActividadCatalogRow } from "@/lib/sirat-forms";
+import { emptyFormularioNuevo, formularioStateToInsert } from "@/lib/sirat-forms";
 
 export const Route = createFileRoute("/_app/formularios/nuevo")({ component: Nuevo });
 
 function Nuevo() {
   const nav = useNavigate();
-  const [contribs, setContribs] = useState<any[]>([]);
-  const [tipos, setTipos] = useState<any[]>([]);
+  const [contribs, setContribs] = useState<ContribuyenteCatalogRow[]>([]);
+  const [tipos, setTipos] = useState<TipoActividadCatalogRow[]>([]);
   const [busy, setBusy] = useState(false);
   const [photos, setPhotos] = useState<File[]>([]);
-  const [f, setF] = useState<any>({
-    contribuyente_id: "", razon_social: "", nit: "", zona: "A", superficie: "",
-    tipo_actividad_id: "", direccion: "", celular: "", referencia: "",
-    latitud: null, longitud: null, procedente: true, padron_bebidas: false, observacion: "",
-  });
+  const [f, setF] = useState<FormularioNuevoState>(emptyFormularioNuevo);
 
   useEffect(() => { (async () => {
     const [{ data: c }, { data: t }] = await Promise.all([
@@ -43,12 +41,14 @@ function Nuevo() {
     e.preventDefault();
     if (!f.contribuyente_id) return toast.error("Selecciona un contribuyente");
     if (!f.tipo_actividad_id) return toast.error("Selecciona el tipo de actividad");
+    const sup = Number.parseFloat(f.superficie);
+    if (!Number.isFinite(sup) || sup <= 0) {
+      return toast.error("Indica una superficie válida (m²).");
+    }
     setBusy(true);
     const { data: u } = await supabase.auth.getUser();
-    const { data: created, error } = await supabase.from("formularios").insert({
-      ...f, superficie: parseFloat(f.superficie), nit: f.nit || null,
-      observacion: f.observacion || null, created_by: u.user?.id,
-    }).select().single();
+    const row = formularioStateToInsert(f, u.user?.id);
+    const { data: created, error } = await supabase.from("formularios").insert(row).select().single();
     if (error) { setBusy(false); return toast.error(error.message); }
     // upload photos
     for (const file of photos) {
@@ -82,7 +82,7 @@ function Nuevo() {
           </div>
           <div className="grid sm:grid-cols-3 gap-3">
             <div><Label>Zona *</Label>
-              <Select value={f.zona} onValueChange={v => setF({ ...f, zona: v })}>
+              <Select value={f.zona} onValueChange={(v) => setF({ ...f, zona: v as FormularioNuevoState["zona"] })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>{["A","B","C","D","E"].map(z => <SelectItem key={z} value={z}>Zona {z}</SelectItem>)}</SelectContent>
               </Select>
@@ -103,7 +103,11 @@ function Nuevo() {
         <Card className="p-5 space-y-3">
           <Label>Ubicación geográfica (toca el mapa)</Label>
           <MapPicker lat={f.latitud} lng={f.longitud} onChange={(la, ln) => setF({ ...f, latitud: la, longitud: ln })} />
-          {f.latitud && <p className="text-xs text-muted-foreground">Lat: {f.latitud.toFixed(6)} • Lng: {f.longitud.toFixed(6)}</p>}
+          {f.latitud != null && f.longitud != null && (
+            <p className="text-xs text-muted-foreground">
+              Lat: {f.latitud.toFixed(6)} • Lng: {f.longitud.toFixed(6)}
+            </p>
+          )}
         </Card>
 
         <Card className="p-5 space-y-3">

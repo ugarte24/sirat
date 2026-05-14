@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { SiratLoginBrand } from "@/components/SiratLoginBrand";
 import { Eye, EyeOff, Loader2, Lock, User } from "lucide-react";
 import { toast } from "sonner";
+import { checkLoginAllowedFn, recordLoginOutcomeFn } from "@/functions/login-security";
 
 export const Route = createFileRoute("/login")({ component: LoginPage });
 
@@ -27,9 +28,41 @@ function LoginPage() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
+    const em = email.trim();
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
+      let pre: Awaited<ReturnType<typeof checkLoginAllowedFn>>;
+      try {
+        pre = await checkLoginAllowedFn({ data: { email: em } });
+      } catch {
+        pre = { allowed: true as const };
+      }
+      if (!pre.allowed) {
+        const msg =
+          pre.code === "inactive"
+            ? "Su cuenta está desactivada. Contacte al administrador."
+            : pre.code === "blocked"
+              ? "Su cuenta está bloqueada. Contacte al administrador."
+              : "Demasiados intentos fallidos. Espere o solicite al administrador que reinicie el contador de intentos.";
+        toast.error(msg);
+        return;
+      }
+
+      const { error } = await supabase.auth.signInWithPassword({ email: em, password });
+      if (error) {
+        try {
+          await recordLoginOutcomeFn({ data: { email: em, success: false } });
+        } catch {
+          /* sin service role o fallo de red: el login no debe bloquearse */
+        }
+        toast.error("Usuario o contraseña incorrectos.");
+        return;
+      }
+
+      try {
+        await recordLoginOutcomeFn({ data: { email: em, success: true } });
+      } catch {
+        /* igual: sesión ya válida */
+      }
       toast.success("Bienvenido");
       nav({ to: "/" });
     } catch (err: unknown) {
@@ -115,6 +148,9 @@ function LoginPage() {
             Iniciar sesión
           </Button>
         </form>
+        <p className="mt-4 text-center text-xs text-muted-foreground">
+          Si olvidó su contraseña, solicite al administrador el envío del enlace de recuperación a su correo.
+        </p>
       </Card>
     </div>
   );

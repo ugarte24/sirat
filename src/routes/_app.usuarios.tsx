@@ -36,6 +36,7 @@ import { useAuth } from "@/lib/auth";
 import { Info, Pencil, UserPlus } from "lucide-react";
 import { adminCreateUserFn } from "@/functions/admin-create-user";
 import { adminUpdateUserFn } from "@/functions/admin-update-user";
+import { adminResetPasswordEmailFn } from "@/functions/admin-reset-password-email";
 import type { Database } from "@/integrations/supabase/types";
 
 type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"] & { role: string };
@@ -61,6 +62,7 @@ function Usuarios() {
   const [eactivo, setEactivo] = useState(true);
   const [ebloqueado, setEbloqueado] = useState(false);
   const [erole, setErole] = useState<"operador" | "admin">("operador");
+  const [eintentos, setEintentos] = useState(0);
 
   useEffect(() => {
     void load();
@@ -94,6 +96,7 @@ function Usuarios() {
     setEactivo(u.activo);
     setEbloqueado(u.bloqueado);
     setErole(u.role === "admin" ? "admin" : "operador");
+    setEintentos(u.intentos_fallidos ?? 0);
     setEditOpen(true);
   };
 
@@ -130,6 +133,7 @@ function Usuarios() {
           activo: eactivo,
           bloqueado: ebloqueado,
           role: erole,
+          intentosFallidos: eintentos,
         },
       });
       toast.success("Usuario actualizado.");
@@ -179,11 +183,24 @@ function Usuarios() {
   };
 
   const resetPassword = async (resetEmail: string) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-      redirectTo: window.location.origin,
-    });
-    if (error) toast.error(error.message);
-    else toast.success("Enlace enviado al correo");
+    const { data: sess } = await supabase.auth.getSession();
+    const accessToken = sess.session?.access_token;
+    if (!accessToken) {
+      toast.error("No hay sesión activa.");
+      return;
+    }
+    try {
+      await adminResetPasswordEmailFn({
+        data: {
+          accessToken,
+          targetEmail: resetEmail.trim(),
+          redirectTo: window.location.origin,
+        },
+      });
+      toast.success("Se envió al correo el enlace para establecer una nueva contraseña.");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "No se pudo enviar el correo");
+    }
   };
 
   return (
@@ -287,6 +304,7 @@ function Usuarios() {
                 <TableHead>Rol</TableHead>
                 <TableHead className="text-center">Activo</TableHead>
                 <TableHead className="text-center hidden md:table-cell">Bloqueado</TableHead>
+                <TableHead className="text-center w-14">Intentos</TableHead>
                 <TableHead className="text-right w-[1%]">Acciones</TableHead>
               </TableRow>
             </TableHeader>
@@ -315,6 +333,12 @@ function Usuarios() {
                       <span className="text-destructive text-xs font-medium">Sí</span>
                     ) : (
                       <span className="text-muted-foreground text-xs">No</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-center text-xs font-mono">
+                    {u.intentos_fallidos ?? 0}
+                    {(u.intentos_fallidos ?? 0) >= 5 && (
+                      <span className="block text-[10px] text-destructive">bloqueo</span>
                     )}
                   </TableCell>
                   <TableCell className="text-right whitespace-nowrap">
@@ -374,6 +398,17 @@ function Usuarios() {
               <div className="space-y-2">
                 <Label htmlFor="ed-ci">CI (opcional)</Label>
                 <Input id="ed-ci" value={eci} onChange={(e) => setEci(e.target.value)} maxLength={50} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="ed-int">Intentos fallidos de login (0 reinicia el contador)</Label>
+                <Input
+                  id="ed-int"
+                  type="number"
+                  min={0}
+                  max={999}
+                  value={eintentos}
+                  onChange={(e) => setEintentos(Number.parseInt(e.target.value, 10) || 0)}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Rol</Label>
