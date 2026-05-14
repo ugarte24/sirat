@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { SiratLoginBrand } from "@/components/SiratLoginBrand";
+import { SIRAT_APP_VERSION } from "@/lib/sirat-brand";
 import { Eye, EyeOff, Loader2, Lock, User } from "lucide-react";
 import { toast } from "sonner";
 import { checkLoginAllowedFn, recordLoginOutcomeFn } from "@/functions/login-security";
@@ -150,6 +151,9 @@ function LoginPage() {
         </form>
         <p className="mt-4 text-center text-xs text-muted-foreground">
           Si olvidó su contraseña, contáctese con el administrador.
+        </p>
+        <p className="mt-2 text-center text-[10px] text-muted-foreground/80 tabular-nums">
+          Versión {SIRAT_APP_VERSION}
         </p>
       </Card>
     </div>

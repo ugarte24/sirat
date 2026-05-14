@@ -24,7 +24,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import { SIRAT_TAGLINE } from "@/lib/sirat-brand";
+import { SIRAT_APP_VERSION, SIRAT_TAGLINE } from "@/lib/sirat-brand";
 
 type Role = "admin" | "operador";
 const NAV: { to: string; label: string; icon: any; roles: Role[] }[] = [
@@ -120,6 +120,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         >
           <LogOut className="h-4 w-4 mr-2" /> Salir
         </Button>
+        <p className="text-center text-[10px] text-sidebar-foreground/45 tabular-nums">
+          Versión {SIRAT_APP_VERSION}
+        </p>
       </div>
     </div>
   );
