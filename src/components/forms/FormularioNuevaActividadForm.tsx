@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
-import { Camera, X } from "lucide-react";
+import { Camera, Images, X } from "lucide-react";
 import type { ContribuyenteCatalogRow, FormularioNuevoState, TipoActividadCatalogRow } from "@/lib/sirat-forms";
 import { emptyFormularioNuevo, formularioStateToInsert } from "@/lib/sirat-forms";
 
@@ -338,9 +338,6 @@ export function FormularioNuevaActividadForm({
       <Card className="p-5 space-y-3 border-0 shadow-none sm:border sm:shadow-sm">
         <div>
           <Label>Fotografías (máximo 2)</Label>
-          <p className="text-xs text-muted-foreground mt-1">
-            Las imágenes solo se suben al servidor cuando pulse «Registrar formulario».
-          </p>
         </div>
         <div className="flex gap-2 flex-wrap">
           {photos.map((p, i) => (
@@ -359,11 +356,24 @@ export function FormularioNuevaActividadForm({
             </div>
           ))}
           {photos.length < 2 && (
-            <label className="h-24 w-24 rounded-lg border-2 border-dashed flex flex-col items-center justify-center text-muted-foreground cursor-pointer hover:bg-muted">
-              <Camera className="h-5 w-5" />
-              <span className="text-[10px] mt-1">Agregar</span>
-              <input type="file" accept="image/*" capture="environment" className="hidden" onChange={addPhoto} />
-            </label>
+            <div className="flex gap-2 flex-wrap">
+              <label className="h-24 w-24 rounded-lg border-2 border-dashed flex flex-col items-center justify-center text-muted-foreground cursor-pointer hover:bg-muted shrink-0">
+                <Camera className="h-5 w-5" aria-hidden />
+                <span className="text-[10px] mt-1 text-center px-0.5 leading-tight">Cámara</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={addPhoto}
+                />
+              </label>
+              <label className="h-24 w-24 rounded-lg border-2 border-dashed flex flex-col items-center justify-center text-muted-foreground cursor-pointer hover:bg-muted shrink-0">
+                <Images className="h-5 w-5" aria-hidden />
+                <span className="text-[10px] mt-1 text-center px-0.5 leading-tight">Galería</span>
+                <input type="file" accept="image/*" className="hidden" onChange={addPhoto} />
+              </label>
+            </div>
           )}
         </div>
       </Card>
