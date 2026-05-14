@@ -18,7 +18,8 @@ interface FormularioData {
   latitud?: number | null;
   longitud?: number | null;
   procedente: boolean;
-  padron_bebidas: boolean;
+  padron: boolean;
+  bebidas_alcoholicas: boolean;
   observacion?: string | null;
   estado: string;
 }
@@ -57,7 +58,8 @@ export function generateFormularioPDF(d: FormularioData) {
       ["Dirección", d.direccion, "", ""],
       ["Referencia", d.referencia, "", ""],
       ["Coordenadas", d.latitud && d.longitud ? `${d.latitud}, ${d.longitud}` : "—", "", ""],
-      ["Procedente", d.procedente ? "SÍ" : "NO", "Padrón bebidas", d.padron_bebidas ? "SÍ" : "NO"],
+      ["Procedente", d.procedente ? "SÍ" : "NO", "Padrón", d.padron ? "SÍ" : "NO"],
+      ["", "", "Bebidas alcohólicas", d.bebidas_alcoholicas ? "SÍ" : "NO"],
       ["Observación", d.observacion ?? "—", "", ""],
     ],
   });

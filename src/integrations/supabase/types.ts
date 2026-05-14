@@ -119,7 +119,8 @@ export type Database = {
           nit: string | null
           numero: number
           observacion: string | null
-          padron_bebidas: boolean
+          padron: boolean
+          bebidas_alcoholicas: boolean
           procedente: boolean
           razon_social: string
           referencia: string
@@ -143,7 +144,8 @@ export type Database = {
           nit?: string | null
           numero?: number
           observacion?: string | null
-          padron_bebidas?: boolean
+          padron?: boolean
+          bebidas_alcoholicas?: boolean
           procedente?: boolean
           razon_social: string
           referencia: string
@@ -167,7 +169,8 @@ export type Database = {
           nit?: string | null
           numero?: number
           observacion?: string | null
-          padron_bebidas?: boolean
+          padron?: boolean
+          bebidas_alcoholicas?: boolean
           procedente?: boolean
           razon_social?: string
           referencia?: string

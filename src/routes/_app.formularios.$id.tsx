@@ -40,7 +40,11 @@ function Detalle() {
     razon_social: f.razon_social, contribuyente_nombre: f.contribuyente.nombre_completo,
     contribuyente_ci: f.contribuyente.ci, nit: f.nit, zona: f.zona, superficie: f.superficie,
     tipo_actividad: f.tipo.nombre, direccion: f.direccion, celular: f.celular, referencia: f.referencia,
-    latitud: f.latitud, longitud: f.longitud, procedente: f.procedente, padron_bebidas: f.padron_bebidas,
+    latitud: f.latitud,
+    longitud: f.longitud,
+    procedente: f.procedente,
+    padron: f.padron,
+    bebidas_alcoholicas: f.bebidas_alcoholicas,
     observacion: f.observacion, estado: f.estado,
   });
 
@@ -73,7 +77,9 @@ function Detalle() {
         <Info l="Zona" v={f.zona} /><Info l="Superficie" v={`${f.superficie} m²`} />
         <Info l="NIT" v={f.nit ?? "—"} /><Info l="Celular" v={f.celular} />
         <Info l="Dirección" v={f.direccion} /><Info l="Referencia" v={f.referencia} />
-        <Info l="Procedente" v={f.procedente ? "Sí" : "No"} /><Info l="Padrón/Bebidas" v={f.padron_bebidas ? "Sí" : "No"} />
+        <Info l="Procedente" v={f.procedente ? "Sí" : "No"} />
+        <Info l="Padrón" v={f.padron ? "Sí" : "No"} />
+        <Info l="Bebidas alcohólicas" v={f.bebidas_alcoholicas ? "Sí" : "No"} />
         {f.observacion && <div className="sm:col-span-2"><Info l="Observación" v={f.observacion} /></div>}
       </Card>
 

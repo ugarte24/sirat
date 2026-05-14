@@ -41,7 +41,8 @@ export interface FormularioNuevoState {
   latitud: number | null;
   longitud: number | null;
   procedente: boolean;
-  padron_bebidas: boolean;
+  padron: boolean;
+  bebidas_alcoholicas: boolean;
   observacion: string;
 }
 
@@ -59,7 +60,8 @@ export function emptyFormularioNuevo(): FormularioNuevoState {
     latitud: null,
     longitud: null,
     procedente: true,
-    padron_bebidas: false,
+    padron: false,
+    bebidas_alcoholicas: false,
     observacion: "",
   };
 }
@@ -79,7 +81,8 @@ export type FormularioInsertPayload = Pick<
   | "latitud"
   | "longitud"
   | "procedente"
-  | "padron_bebidas"
+  | "padron"
+  | "bebidas_alcoholicas"
   | "observacion"
   | "created_by"
 >;
@@ -101,7 +104,8 @@ export function formularioStateToInsert(
     latitud: f.latitud,
     longitud: f.longitud,
     procedente: f.procedente,
-    padron_bebidas: f.padron_bebidas,
+    padron: f.padron,
+    bebidas_alcoholicas: f.bebidas_alcoholicas,
     observacion: f.observacion.trim() || null,
     created_by: createdBy ?? null,
   };

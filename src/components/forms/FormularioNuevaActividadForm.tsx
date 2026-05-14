@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import { Camera, X } from "lucide-react";
 import type { ContribuyenteCatalogRow, FormularioNuevoState, TipoActividadCatalogRow } from "@/lib/sirat-forms";
@@ -91,6 +92,9 @@ export function FormularioNuevaActividadForm({
     const sup = Number.parseFloat(f.superficie);
     if (!Number.isFinite(sup) || sup <= 0) {
       return toast.error("Indica una superficie válida (m²).");
+    }
+    if (!f.padron && !f.bebidas_alcoholicas) {
+      return toast.error("Marque al menos una opción: Padrón o Bebidas alcohólicas.");
     }
     setBusy(true);
     const { data: u } = await supabase.auth.getUser();
@@ -247,15 +251,54 @@ export function FormularioNuevaActividadForm({
         )}
       </Card>
 
-      <Card className="p-5 space-y-3 border-0 shadow-none sm:border sm:shadow-sm">
-        <div className="flex items-center gap-2">
-          <Checkbox checked={f.procedente} onCheckedChange={(v) => setF({ ...f, procedente: !!v })} />
-          <Label className="cursor-pointer">Procedente</Label>
-        </div>
-        <div className="flex items-center gap-2">
-          <Checkbox checked={f.padron_bebidas} onCheckedChange={(v) => setF({ ...f, padron_bebidas: !!v })} />
-          <Label className="cursor-pointer">Padrón / Bebidas alcohólicas</Label>
-        </div>
+      <Card className="p-5 space-y-4 border-0 shadow-none sm:border sm:shadow-sm">
+        <fieldset className="space-y-2 min-w-0">
+          <legend className="text-sm font-medium text-foreground">Procedencia</legend>
+          <RadioGroup
+            value={f.procedente ? "procedente" : "no_procedente"}
+            onValueChange={(v) => setF({ ...f, procedente: v === "procedente" })}
+            className="flex flex-col gap-2"
+          >
+            <div className="flex items-center gap-2">
+              <RadioGroupItem value="procedente" id="form-proc-si" />
+              <Label htmlFor="form-proc-si" className="cursor-pointer font-normal leading-none">
+                Procedente
+              </Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <RadioGroupItem value="no_procedente" id="form-proc-no" />
+              <Label htmlFor="form-proc-no" className="cursor-pointer font-normal leading-none">
+                No procedente
+              </Label>
+            </div>
+          </RadioGroup>
+        </fieldset>
+
+        <fieldset className="space-y-2 min-w-0">
+          <legend className="text-sm font-medium text-foreground">Padrón y bebidas *</legend>
+          <p className="text-xs text-muted-foreground">Debe marcar al menos una de las dos opciones.</p>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="form-padron"
+              checked={f.padron}
+              onCheckedChange={(v) => setF({ ...f, padron: !!v })}
+            />
+            <Label htmlFor="form-padron" className="cursor-pointer font-normal leading-none">
+              Padrón
+            </Label>
+          </div>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="form-bebidas"
+              checked={f.bebidas_alcoholicas}
+              onCheckedChange={(v) => setF({ ...f, bebidas_alcoholicas: !!v })}
+            />
+            <Label htmlFor="form-bebidas" className="cursor-pointer font-normal leading-none">
+              Bebidas alcohólicas
+            </Label>
+          </div>
+        </fieldset>
+
         <div>
           <Label>Observación</Label>
           <Textarea value={f.observacion} onChange={(e) => setF({ ...f, observacion: e.target.value })} />
