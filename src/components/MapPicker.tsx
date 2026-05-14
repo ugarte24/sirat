@@ -1,6 +1,8 @@
 import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { Button } from "@/components/ui/button";
+import { LocateFixed } from "lucide-react";
 
 // fix default icon paths
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -17,6 +19,8 @@ interface Props {
   readOnly?: boolean;
   height?: string;
   markers?: { lat: number; lng: number; popup?: string }[];
+  /** Si falla la geolocalización (permiso denegado, timeout, etc.) */
+  onLocateError?: (message: string) => void;
 }
 
 function safeInvalidate(map: L.Map) {
@@ -27,10 +31,12 @@ function safeInvalidate(map: L.Map) {
   }
 }
 
-export function MapPicker({ lat, lng, onChange, readOnly, height = "300px", markers }: Props) {
+export function MapPicker({ lat, lng, onChange, readOnly, height = "300px", markers, onLocateError }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
 
   useEffect(() => {
     const el = ref.current;
@@ -62,7 +68,7 @@ export function MapPicker({ lat, lng, onChange, readOnly, height = "300px", mark
             const { lat: la, lng: ln } = e.latlng;
             if (markerRef.current) markerRef.current.setLatLng([la, ln]);
             else markerRef.current = L.marker([la, ln]).addTo(map);
-            onChange?.(la, ln);
+            onChangeRef.current?.(la, ln);
           } catch {
             /* clic con mapa en estado inconsistente */
           }
@@ -142,5 +148,55 @@ export function MapPicker({ lat, lng, onChange, readOnly, height = "300px", mark
     }
   }, [lat, lng]);
 
-  return <div ref={ref} style={{ height }} className="rounded-lg overflow-hidden border" />;
+  const handleLocate = () => {
+    if (readOnly) return;
+    if (!navigator.geolocation) {
+      onLocateError?.("Este dispositivo no permite obtener la ubicación.");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const la = pos.coords.latitude;
+        const ln = pos.coords.longitude;
+        const map = mapRef.current;
+        if (!map) return;
+        const z = Math.max(map.getZoom(), 17);
+        map.setView([la, ln], z);
+        if (markerRef.current) markerRef.current.setLatLng([la, ln]);
+        else markerRef.current = L.marker([la, ln]).addTo(map);
+        onChangeRef.current?.(la, ln);
+        requestAnimationFrame(() => safeInvalidate(map));
+      },
+      (err) => {
+        if (err.code === 1) {
+          onLocateError?.("Permiso de ubicación denegado. Actívelo en el navegador para usar «Mi ubicación».");
+        } else if (err.code === 2) {
+          onLocateError?.("No se pudo determinar la posición (sin señal).");
+        } else if (err.code === 3) {
+          onLocateError?.("Tiempo de espera agotado al obtener la ubicación.");
+        } else {
+          onLocateError?.("No se pudo obtener la ubicación.");
+        }
+      },
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 },
+    );
+  };
+
+  return (
+    <div className="relative rounded-lg overflow-hidden border" style={{ height }}>
+      <div ref={ref} className="h-full w-full min-h-[200px]" />
+      {!readOnly && (
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          className="absolute top-2 right-2 z-[1000] shadow-md gap-1.5"
+          onClick={handleLocate}
+        >
+          <LocateFixed className="h-4 w-4 shrink-0" aria-hidden />
+          Mi ubicación
+        </Button>
+      )}
+    </div>
+  );
 }

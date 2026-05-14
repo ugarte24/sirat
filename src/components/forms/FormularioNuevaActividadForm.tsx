@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useState, useRef, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,12 @@ import type { ContribuyenteCatalogRow, FormularioNuevoState, TipoActividadCatalo
 import { emptyFormularioNuevo, formularioStateToInsert } from "@/lib/sirat-forms";
 
 const MapPicker = lazy(() => import("@/components/MapPicker").then((m) => ({ default: m.MapPicker })));
+
+type LocalPhoto = { file: File; previewUrl: string };
+
+function revokePhotos(items: LocalPhoto[]) {
+  for (const p of items) URL.revokeObjectURL(p.previewUrl);
+}
 
 export type FormularioNuevaActividadFormProps = {
   onSuccess: () => void;
@@ -49,9 +55,15 @@ export function FormularioNuevaActividadForm({
   const [contribs, setContribs] = useState<ContribuyenteCatalogRow[]>([]);
   const [tipos, setTipos] = useState<TipoActividadCatalogRow[]>([]);
   const [busy, setBusy] = useState(false);
-  const [photos, setPhotos] = useState<File[]>([]);
+  const [photos, setPhotos] = useState<LocalPhoto[]>([]);
+  const photosRef = useRef<LocalPhoto[]>([]);
+  photosRef.current = photos;
   const [f, setF] = useState<FormularioNuevoState>(() => emptyFormularioNuevo());
   const [catalogLoaded, setCatalogLoaded] = useState(false);
+
+  useEffect(() => {
+    return () => revokePhotos(photosRef.current);
+  }, []);
 
   useEffect(() => {
     setCatalogLoaded(false);
@@ -82,7 +94,16 @@ export function FormularioNuevaActividadForm({
 
   const addPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
-    setPhotos((p) => [...p, ...files].slice(0, 2));
+    e.target.value = "";
+    if (!files.length) return;
+    setPhotos((prev) => {
+      const next = [...prev];
+      for (const file of files) {
+        if (next.length >= 2) break;
+        next.push({ file, previewUrl: URL.createObjectURL(file) });
+      }
+      return next;
+    });
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -104,12 +125,13 @@ export function FormularioNuevaActividadForm({
       setBusy(false);
       return toast.error(error.message);
     }
-    for (const file of photos) {
+    for (const { file } of photos) {
       const path = `${created.id}/${Date.now()}-${file.name}`;
       const { error: upErr } = await supabase.storage.from("formulario-fotos").upload(path, file);
       if (!upErr) await supabase.from("formulario_fotos").insert({ formulario_id: created.id, storage_path: path });
     }
     toast.success(`Formulario N° ${created.numero} creado`);
+    revokePhotos(photos);
     setPhotos([]);
     setF(emptyFormularioNuevo());
     setBusy(false);
@@ -232,7 +254,10 @@ export function FormularioNuevaActividadForm({
       </Card>
 
       <Card className="p-5 space-y-3 border-0 shadow-none sm:border sm:shadow-sm">
-        <Label>Ubicación geográfica (toca el mapa)</Label>
+        <Label>Ubicación geográfica</Label>
+        <p className="text-xs text-muted-foreground">
+          Toque el mapa o use «Mi ubicación» para marcar el punto donde se realiza la verificación.
+        </p>
         <ClientOnly>
           <Suspense
             fallback={
@@ -241,7 +266,12 @@ export function FormularioNuevaActividadForm({
               </div>
             }
           >
-            <MapPicker lat={f.latitud} lng={f.longitud} onChange={(la, ln) => setF({ ...f, latitud: la, longitud: ln })} />
+            <MapPicker
+              lat={f.latitud}
+              lng={f.longitud}
+              onChange={(la, ln) => setF({ ...f, latitud: la, longitud: ln })}
+              onLocateError={(msg) => toast.error(msg)}
+            />
           </Suspense>
         </ClientOnly>
         {f.latitud != null && f.longitud != null && (
@@ -306,14 +336,22 @@ export function FormularioNuevaActividadForm({
       </Card>
 
       <Card className="p-5 space-y-3 border-0 shadow-none sm:border sm:shadow-sm">
-        <Label>Fotografías (máximo 2)</Label>
+        <div>
+          <Label>Fotografías (máximo 2)</Label>
+          <p className="text-xs text-muted-foreground mt-1">
+            Las imágenes solo se suben al servidor cuando pulse «Registrar formulario».
+          </p>
+        </div>
         <div className="flex gap-2 flex-wrap">
           {photos.map((p, i) => (
-            <div key={i} className="relative h-24 w-24 rounded-lg overflow-hidden border">
-              <img src={URL.createObjectURL(p)} alt="" className="h-full w-full object-cover" />
+            <div key={`${p.previewUrl}-${i}`} className="relative h-24 w-24 rounded-lg overflow-hidden border">
+              <img src={p.previewUrl} alt="" className="h-full w-full object-cover" />
               <button
                 type="button"
-                onClick={() => setPhotos((ph) => ph.filter((_, idx) => idx !== i))}
+                onClick={() => {
+                  URL.revokeObjectURL(p.previewUrl);
+                  setPhotos((ph) => ph.filter((_, idx) => idx !== i));
+                }}
                 className="absolute top-1 right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center"
               >
                 <X className="h-3 w-3" />
