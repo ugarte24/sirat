@@ -1,7 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,7 +18,22 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ContribuyenteAltaForm } from "@/components/forms/ContribuyenteAltaForm";
-import { MoreVertical, Plus, Search, User } from "lucide-react";
+import {
+  DataListCard,
+  DataListTable,
+  DataListTableWrap,
+  DataListTbody,
+  DataListTd,
+  DataListTheadRow,
+  DataListTh,
+  ilikePattern,
+  LIST_PAGE_SIZE,
+  TablePaginationFooter,
+  pillSuccess,
+  pillWarning,
+} from "@/components/data-list";
+import { TableRow } from "@/components/ui/table";
+import { MoreVertical, Plus, Search } from "lucide-react";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -50,28 +64,58 @@ function countByContribuyente(rows: { contribuyente_id: string }[] | null): Map<
   return m;
 }
 
+function fmtFecha(iso: string) {
+  try {
+    return new Date(iso).toLocaleDateString("es-BO", { day: "2-digit", month: "2-digit", year: "numeric" });
+  } catch {
+    return "—";
+  }
+}
+
 function ListaContribuyentes() {
   const navigate = useNavigate();
   const { nuevo } = Route.useSearch();
   const [list, setList] = useState<ContribListItem[]>([]);
-  const [q, setQ] = useState("");
+  const [total, setTotal] = useState<number | null>(null);
+  const [page, setPage] = useState(0);
+  const [qInput, setQInput] = useState("");
+  const [qDeb, setQDeb] = useState("");
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [altaKey, setAltaKey] = useState(0);
 
+  useEffect(() => {
+    const t = setTimeout(() => setQDeb(qInput), 400);
+    return () => clearTimeout(t);
+  }, [qInput]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [qDeb]);
+
   const load = useCallback(async () => {
     setLoading(true);
-    const { data: contribs, error } = await supabase
+    const from = page * LIST_PAGE_SIZE;
+    const to = from + LIST_PAGE_SIZE - 1;
+    const pat = ilikePattern(qDeb);
+
+    let qb = supabase
       .from("contribuyentes")
-      .select("id, ci, nombre_completo, telefono, created_at")
-      .order("created_at", { ascending: false })
-      .limit(200);
+      .select("id, ci, nombre_completo, telefono, created_at", { count: "exact" })
+      .order("created_at", { ascending: false });
+    if (pat) {
+      qb = qb.or(`nombre_completo.ilike.${pat},ci.ilike.${pat}`);
+    }
+    const { data: contribs, error, count } = await qb.range(from, to);
+
     if (error) {
       toast.error(error.message);
       setList([]);
+      setTotal(null);
       setLoading(false);
       return;
     }
+    setTotal(count);
     const base = (contribs ?? []) as ContribRow[];
     if (base.length === 0) {
       setList([]);
@@ -92,7 +136,7 @@ function ListaContribuyentes() {
       })),
     );
     setLoading(false);
-  }, []);
+  }, [page, qDeb]);
 
   useEffect(() => {
     void load();
@@ -113,7 +157,8 @@ function ListaContribuyentes() {
     }
   }, [nuevo, navigate]);
 
-  const darDeBaja = async (item: ContribListItem) => {
+  const darDeBaja = async (item: ContribListItem, e?: React.MouseEvent) => {
+    e?.stopPropagation();
     if (!item.puedeDarDeBaja) {
       toast.error("No se puede dar de baja: tiene formularios o notificaciones asociadas.");
       return;
@@ -126,13 +171,6 @@ function ListaContribuyentes() {
       void load();
     }
   };
-
-  const filtered = list.filter(
-    (c) =>
-      !q ||
-      c.nombre_completo.toLowerCase().includes(q.toLowerCase()) ||
-      c.ci.includes(q),
-  );
 
   return (
     <div className="space-y-4">
@@ -171,73 +209,95 @@ function ListaContribuyentes() {
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
+          value={qInput}
+          onChange={(e) => setQInput(e.target.value)}
           placeholder="Buscar por nombre o C.I."
           className="pl-9"
         />
       </div>
-      <div className="space-y-2">
-        {loading && (
-          <p className="text-center text-sm text-muted-foreground py-8">Cargando…</p>
-        )}
-        {!loading && filtered.length === 0 && (
-          <p className="text-center text-sm text-muted-foreground py-8">Sin contribuyentes</p>
-        )}
-        {filtered.map((c) => (
-          <div key={c.id} className="flex items-stretch gap-1">
-            <Link to="/contribuyentes/$id" params={{ id: c.id }} className="min-w-0 flex-1">
-              <Card className="p-4 flex items-center gap-3 hover:shadow-soft transition-shadow h-full">
-                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                  <User className="h-5 w-5 text-primary" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium truncate">{c.nombre_completo}</div>
-                  <div className="text-xs text-muted-foreground">
-                    C.I. {c.ci} {c.telefono && `• ${c.telefono}`}
-                  </div>
-                </div>
-              </Card>
-            </Link>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="shrink-0 self-center"
-                  aria-label={`Acciones: ${c.nombre_completo}`}
-                >
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem asChild>
-                  <Link to="/contribuyentes/$id" params={{ id: c.id }}>
-                    Editar datos
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  className="text-destructive focus:text-destructive"
-                  disabled={!c.puedeDarDeBaja}
-                  title={
-                    c.puedeDarDeBaja
-                      ? undefined
-                      : "Tiene formularios de actividad o notificaciones vinculadas"
-                  }
-                  onClick={(e) => {
-                    e.preventDefault();
-                    void darDeBaja(c);
-                  }}
-                >
-                  Dar de baja
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        ))}
-      </div>
+
+      <DataListCard>
+        <DataListTableWrap>
+          <DataListTable>
+            <DataListTheadRow>
+              <DataListTh>Fecha</DataListTh>
+              <DataListTh>Contribuyente</DataListTh>
+              <DataListTh>Teléfono</DataListTh>
+              <DataListTh>Vínculos</DataListTh>
+              <DataListTh align="center">Acciones</DataListTh>
+            </DataListTheadRow>
+            <DataListTbody>
+              {loading && (
+                <TableRow>
+                  <DataListTd className="py-10 text-center text-muted-foreground" colSpan={5}>
+                    Cargando…
+                  </DataListTd>
+                </TableRow>
+              )}
+              {!loading && list.length === 0 && (
+                <TableRow>
+                  <DataListTd className="py-10 text-center text-muted-foreground" colSpan={5}>
+                    Sin contribuyentes
+                  </DataListTd>
+                </TableRow>
+              )}
+              {!loading &&
+                list.map((c) => (
+                  <TableRow
+                    key={c.id}
+                    className="cursor-pointer border-b border-border/60 hover:bg-muted/40"
+                    onClick={() => navigate({ to: "/contribuyentes/$id", params: { id: c.id } })}
+                  >
+                    <DataListTd className="whitespace-nowrap text-muted-foreground">{fmtFecha(c.created_at)}</DataListTd>
+                    <DataListTd>
+                      <div className="font-semibold text-foreground">{c.nombre_completo}</div>
+                      <div className="text-xs text-muted-foreground">C.I. {c.ci}</div>
+                    </DataListTd>
+                    <DataListTd className="text-muted-foreground">{c.telefono || "—"}</DataListTd>
+                    <DataListTd>
+                      {c.puedeDarDeBaja ? (
+                        <span className={pillSuccess()}>Sin actividades</span>
+                      ) : (
+                        <span className={pillWarning()}>Con formularios o notif.</span>
+                      )}
+                    </DataListTd>
+                    <DataListTd align="center" onClick={(e) => e.stopPropagation()}>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button type="button" variant="ghost" size="icon" aria-label={`Acciones: ${c.nombre_completo}`}>
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem asChild>
+                            <Link to="/contribuyentes/$id" params={{ id: c.id }}>
+                              Editar datos
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            disabled={!c.puedeDarDeBaja}
+                            onClick={(e) => void darDeBaja(c, e)}
+                          >
+                            Dar de baja
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </DataListTd>
+                  </TableRow>
+                ))}
+            </DataListTbody>
+          </DataListTable>
+        </DataListTableWrap>
+        <TablePaginationFooter
+          page={page}
+          pageSize={LIST_PAGE_SIZE}
+          total={total}
+          loading={loading}
+          onPageChange={setPage}
+        />
+      </DataListCard>
     </div>
   );
 }

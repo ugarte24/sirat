@@ -1,10 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileDown, Ban } from "lucide-react";
+import { ArrowLeft, Ban, FileDown } from "lucide-react";
 import { toast } from "sonner";
 import { MapPicker } from "@/components/MapPicker";
 import { generateFormularioPDF } from "@/lib/pdf";
@@ -33,7 +33,19 @@ function Detalle() {
     }
   })(); }, [id]);
 
-  if (!f) return <p>Cargando…</p>;
+  if (!f) {
+    return (
+      <div className="space-y-4 max-w-2xl">
+        <Button variant="ghost" size="sm" className="-ml-2 gap-1.5 px-2 text-muted-foreground hover:text-foreground" asChild>
+          <Link to="/formularios">
+            <ArrowLeft className="h-4 w-4 shrink-0" />
+            Volver a formularios
+          </Link>
+        </Button>
+        <p className="text-sm text-muted-foreground">Cargando…</p>
+      </div>
+    );
+  }
 
   const pdf = () => generateFormularioPDF({
     numero: f.numero, codigo_actividad: f.codigo_actividad, fecha: f.fecha,
@@ -55,6 +67,13 @@ function Detalle() {
 
   return (
     <div className="space-y-4 max-w-2xl">
+      <Button variant="ghost" size="sm" className="-ml-2 gap-1.5 px-2 text-muted-foreground hover:text-foreground" asChild>
+        <Link to="/formularios">
+          <ArrowLeft className="h-4 w-4 shrink-0" />
+          Volver a formularios
+        </Link>
+      </Button>
+
       <div className="flex items-start justify-between flex-wrap gap-2">
         <div>
           <p className="text-xs text-muted-foreground font-mono">N° {f.numero} • {f.codigo_actividad}</p>

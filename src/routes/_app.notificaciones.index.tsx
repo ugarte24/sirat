@@ -1,9 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -13,9 +12,33 @@ import {
 } from "@/components/ui/dialog";
 import { NotificacionNuevaForm } from "@/components/forms/NotificacionNuevaForm";
 import { ContribuyenteAltaForm } from "@/components/forms/ContribuyenteAltaForm";
-import { Plus, Bell } from "lucide-react";
+import {
+  DataListCard,
+  DataListTable,
+  DataListTableWrap,
+  DataListTbody,
+  DataListTd,
+  DataListTheadRow,
+  DataListTh,
+  ilikePattern,
+  LIST_PAGE_SIZE,
+  pillMuted,
+  pillSuccess,
+  TablePaginationFooter,
+} from "@/components/data-list";
+import { TableRow } from "@/components/ui/table";
+import { ChevronRight, Plus, Search } from "lucide-react";
+import { toast } from "sonner";
+import type { Database } from "@/integrations/supabase/types";
 
 type NotifSearch = { nueva?: boolean };
+
+type NotifRow = Pick<
+  Database["public"]["Tables"]["notificaciones"]["Row"],
+  "id" | "codigo" | "fecha_limite" | "estado" | "nombre_actividad" | "created_at" | "contribuyente_id"
+> & {
+  contribuyente: { nombre_completo: string; ci: string } | null;
+};
 
 export const Route = createFileRoute("/_app/notificaciones/")({
   validateSearch: (raw: Record<string, unknown>): NotifSearch => ({
@@ -28,27 +51,104 @@ export const Route = createFileRoute("/_app/notificaciones/")({
   component: Lista,
 });
 
+function fmtFecha(iso: string) {
+  try {
+    return new Date(iso).toLocaleDateString("es-BO", { day: "2-digit", month: "2-digit", year: "numeric" });
+  } catch {
+    return "—";
+  }
+}
+
+function fmtLimite(d: string) {
+  try {
+    return new Date(d + "T12:00:00").toLocaleDateString("es-BO", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  } catch {
+    return d;
+  }
+}
+
+function NotifEstadoPill({ estado }: { estado: Database["public"]["Enums"]["notificacion_estado"] }) {
+  if (estado === "cumplido") return <span className={pillSuccess()}>Cumplido</span>;
+  if (estado === "anulado") {
+    return (
+      <span className="inline-flex items-center rounded-full bg-destructive/15 px-3 py-0.5 text-xs font-medium text-destructive">
+        Anulado
+      </span>
+    );
+  }
+  return <span className={pillMuted()}>Pendiente</span>;
+}
+
 function Lista() {
   const navigate = useNavigate();
   const { nueva } = Route.useSearch();
-  const [list, setList] = useState<any[]>([]);
+  const [list, setList] = useState<NotifRow[]>([]);
+  const [total, setTotal] = useState<number | null>(null);
+  const [page, setPage] = useState(0);
+  const [qInput, setQInput] = useState("");
+  const [qDeb, setQDeb] = useState("");
+  const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [subvista, setSubvista] = useState<"notificacion" | "contrib">("notificacion");
   const [formKey, setFormKey] = useState(0);
   const [catalogRefreshKey, setCatalogRefreshKey] = useState(0);
 
-  const load = async () => {
-    const { data } = await supabase
+  useEffect(() => {
+    const t = setTimeout(() => setQDeb(qInput), 400);
+    return () => clearTimeout(t);
+  }, [qInput]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [qDeb]);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const from = page * LIST_PAGE_SIZE;
+    const to = from + LIST_PAGE_SIZE - 1;
+    const pat = ilikePattern(qDeb);
+
+    let qb = supabase
       .from("notificaciones")
-      .select("*, contribuyente:contribuyentes(nombre_completo,ci)")
-      .order("codigo", { ascending: false })
-      .limit(200);
-    setList(data ?? []);
-  };
+      .select(
+        "id, codigo, fecha_limite, estado, nombre_actividad, created_at, contribuyente_id, contribuyente:contribuyentes(nombre_completo, ci)",
+        { count: "exact" },
+      )
+      .order("codigo", { ascending: false });
+
+    if (pat) {
+      const { data: cm } = await supabase
+        .from("contribuyentes")
+        .select("id")
+        .or(`nombre_completo.ilike.${pat},ci.ilike.${pat}`)
+        .limit(400);
+      const cids = (cm ?? []).map((r) => r.id);
+      if (cids.length > 0) {
+        qb = qb.or(`nombre_actividad.ilike.${pat},contribuyente_id.in.(${cids.join(",")})`);
+      } else {
+        qb = qb.ilike("nombre_actividad", pat);
+      }
+    }
+
+    const { data, error, count } = await qb.range(from, to);
+    if (error) {
+      toast.error(error.message);
+      setList([]);
+      setTotal(null);
+    } else {
+      setList((data ?? []) as NotifRow[]);
+      setTotal(count);
+    }
+    setLoading(false);
+  }, [page, qDeb]);
 
   useEffect(() => {
     void load();
-  }, []);
+  }, [load]);
 
   useEffect(() => {
     if (nueva) {
@@ -130,40 +230,85 @@ function Lista() {
         </DialogContent>
       </Dialog>
 
-      <div className="space-y-2">
-        {list.map((n) => (
-          <Link key={n.id} to="/notificaciones/$id" params={{ id: n.id }}>
-            <Card className="p-4 flex items-center gap-3 hover:shadow-soft transition-shadow">
-              <div className="h-10 w-10 rounded-lg flex items-center justify-center bg-primary/10 text-primary">
-                <Bell className="h-5 w-5" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex gap-2 items-center flex-wrap">
-                  <span className="font-mono text-xs text-muted-foreground">N° {n.codigo}</span>
-                  <Badge
-                    variant={
-                      n.estado === "cumplido"
-                        ? "default"
-                        : n.estado === "anulado"
-                          ? "destructive"
-                          : "secondary"
-                    }
-                  >
-                    {n.estado}
-                  </Badge>
-                </div>
-                <div className="font-medium truncate mt-0.5">
-                  {n.nombre_actividad?.trim() || n.contribuyente?.nombre_completo || "—"}
-                </div>
-                <div className="text-xs text-muted-foreground">Hasta: {n.fecha_limite}</div>
-              </div>
-            </Card>
-          </Link>
-        ))}
-        {list.length === 0 && (
-          <p className="text-center text-sm text-muted-foreground py-8">Sin notificaciones</p>
-        )}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          value={qInput}
+          onChange={(e) => setQInput(e.target.value)}
+          placeholder="Buscar por actividad o contribuyente"
+          className="pl-9"
+        />
       </div>
+
+      <DataListCard>
+        <DataListTableWrap>
+          <DataListTable>
+            <DataListTheadRow>
+              <DataListTh>Emisión</DataListTh>
+              <DataListTh>Notificación</DataListTh>
+              <DataListTh>Límite</DataListTh>
+              <DataListTh>Estado</DataListTh>
+              <DataListTh align="center">Acciones</DataListTh>
+            </DataListTheadRow>
+            <DataListTbody>
+              {loading && (
+                <TableRow>
+                  <DataListTd className="py-10 text-center text-muted-foreground" colSpan={5}>
+                    Cargando…
+                  </DataListTd>
+                </TableRow>
+              )}
+              {!loading && list.length === 0 && (
+                <TableRow>
+                  <DataListTd className="py-10 text-center text-muted-foreground" colSpan={5}>
+                    Sin notificaciones
+                  </DataListTd>
+                </TableRow>
+              )}
+              {!loading &&
+                list.map((n) => (
+                  <TableRow
+                    key={n.id}
+                    className="cursor-pointer border-b border-border/60 hover:bg-muted/40"
+                    onClick={() => navigate({ to: "/notificaciones/$id", params: { id: n.id } })}
+                  >
+                    <DataListTd className="whitespace-nowrap text-muted-foreground">
+                      {fmtFecha(n.created_at)}
+                    </DataListTd>
+                    <DataListTd>
+                      <div className="font-semibold text-foreground">
+                        {n.nombre_actividad?.trim() || n.contribuyente?.nombre_completo || "—"}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        <span className="font-mono">N° {n.codigo}</span>
+                        {" · "}
+                        {n.contribuyente?.nombre_completo ?? "—"} — C.I. {n.contribuyente?.ci ?? "—"}
+                      </div>
+                    </DataListTd>
+                    <DataListTd className="whitespace-nowrap text-muted-foreground">{fmtLimite(n.fecha_limite)}</DataListTd>
+                    <DataListTd>
+                      <NotifEstadoPill estado={n.estado} />
+                    </DataListTd>
+                    <DataListTd align="center" onClick={(e) => e.stopPropagation()}>
+                      <Button type="button" variant="ghost" size="icon" asChild aria-label="Ver notificación">
+                        <Link to="/notificaciones/$id" params={{ id: n.id }}>
+                          <ChevronRight className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                    </DataListTd>
+                  </TableRow>
+                ))}
+            </DataListTbody>
+          </DataListTable>
+        </DataListTableWrap>
+        <TablePaginationFooter
+          page={page}
+          pageSize={LIST_PAGE_SIZE}
+          total={total}
+          loading={loading}
+          onPageChange={setPage}
+        />
+      </DataListCard>
     </div>
   );
 }

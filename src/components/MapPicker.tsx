@@ -35,6 +35,8 @@ export function MapPicker({ lat, lng, onChange, readOnly, height = "300px", mark
   const ref = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
+  /** Marcadores de solo lectura (`markers` prop), actualizables cuando llegan datos asíncronos */
+  const markersLayerRef = useRef<L.LayerGroup | null>(null);
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
 
@@ -52,15 +54,10 @@ export function MapPicker({ lat, lng, onChange, readOnly, height = "300px", mark
         maxZoom: 19,
       }).addTo(map);
       mapRef.current = map;
+      markersLayerRef.current = L.layerGroup().addTo(map);
 
       if (lat != null && lng != null) {
         markerRef.current = L.marker([lat, lng]).addTo(map);
-      }
-      if (markers?.length) {
-        markers.forEach((m) => {
-          const mk = L.marker([m.lat, m.lng]).addTo(map);
-          if (m.popup) mk.bindPopup(m.popup);
-        });
       }
 
       if (!readOnly) {
@@ -100,6 +97,7 @@ export function MapPicker({ lat, lng, onChange, readOnly, height = "300px", mark
           mapRef.current = null;
         }
         markerRef.current = null;
+        markersLayerRef.current = null;
       };
     }
 
@@ -125,9 +123,33 @@ export function MapPicker({ lat, lng, onChange, readOnly, height = "300px", mark
         mapRef.current = null;
       }
       markerRef.current = null;
+      markersLayerRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- init una vez; lat/lng iniciales en el primer render
   }, []);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    const layer = markersLayerRef.current;
+    if (!map || !layer) return;
+    layer.clearLayers();
+    if (!markers?.length) return;
+    markers.forEach((m) => {
+      const mk = L.marker([m.lat, m.lng]).addTo(layer);
+      if (m.popup) mk.bindPopup(m.popup);
+    });
+    try {
+      if (markers.length === 1) {
+        map.setView([markers[0].lat, markers[0].lng], Math.max(map.getZoom(), 15));
+      } else {
+        const bounds = L.latLngBounds(markers.map((m) => [m.lat, m.lng] as [number, number]));
+        map.fitBounds(bounds, { padding: [36, 36], maxZoom: 16 });
+      }
+      requestAnimationFrame(() => safeInvalidate(map));
+    } catch {
+      /* coordenadas inválidas */
+    }
+  }, [markers]);
 
   useEffect(() => {
     const map = mapRef.current;

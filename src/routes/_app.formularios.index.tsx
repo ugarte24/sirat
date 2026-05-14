@@ -1,10 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -14,9 +12,33 @@ import {
 } from "@/components/ui/dialog";
 import { FormularioNuevaActividadForm } from "@/components/forms/FormularioNuevaActividadForm";
 import { ContribuyenteAltaForm } from "@/components/forms/ContribuyenteAltaForm";
-import { Plus, Search, ClipboardList } from "lucide-react";
+import {
+  DataListCard,
+  DataListTable,
+  DataListTableWrap,
+  DataListTbody,
+  DataListTd,
+  DataListTheadRow,
+  DataListTh,
+  ilikePattern,
+  LIST_PAGE_SIZE,
+  pillMuted,
+  pillSuccess,
+  TablePaginationFooter,
+} from "@/components/data-list";
+import { TableRow } from "@/components/ui/table";
+import { ChevronRight, Plus, Search } from "lucide-react";
+import { toast } from "sonner";
+import type { Database } from "@/integrations/supabase/types";
 
 type FormSearch = { nuevo?: boolean };
+
+type FormRow = Pick<
+  Database["public"]["Tables"]["formularios"]["Row"],
+  "id" | "numero" | "codigo_actividad" | "fecha" | "zona" | "estado" | "razon_social" | "contribuyente_id"
+> & {
+  contribuyente: { nombre_completo: string; ci: string } | null;
+};
 
 export const Route = createFileRoute("/_app/formularios/")({
   validateSearch: (raw: Record<string, unknown>): FormSearch => ({
@@ -29,28 +51,94 @@ export const Route = createFileRoute("/_app/formularios/")({
   component: Lista,
 });
 
+function fmtFecha(iso: string) {
+  try {
+    return new Date(iso + "T12:00:00").toLocaleDateString("es-BO", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  } catch {
+    return "—";
+  }
+}
+
+function FormEstadoPill({ estado }: { estado: Database["public"]["Enums"]["formulario_estado"] }) {
+  if (estado === "activo") return <span className={pillSuccess()}>Activo</span>;
+  if (estado === "baja") return <span className={pillMuted()}>Baja</span>;
+  return (
+    <span className="inline-flex items-center rounded-full bg-destructive/15 px-3 py-0.5 text-xs font-medium text-destructive">
+      Anulado
+    </span>
+  );
+}
+
 function Lista() {
   const navigate = useNavigate();
   const { nuevo } = Route.useSearch();
-  const [list, setList] = useState<any[]>([]);
-  const [q, setQ] = useState("");
+  const [list, setList] = useState<FormRow[]>([]);
+  const [total, setTotal] = useState<number | null>(null);
+  const [page, setPage] = useState(0);
+  const [qInput, setQInput] = useState("");
+  const [qDeb, setQDeb] = useState("");
+  const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [subvista, setSubvista] = useState<"formulario" | "contrib">("formulario");
   const [formKey, setFormKey] = useState(0);
   const [catalogRefreshKey, setCatalogRefreshKey] = useState(0);
 
-  const load = async () => {
-    const { data } = await supabase
+  useEffect(() => {
+    const t = setTimeout(() => setQDeb(qInput), 400);
+    return () => clearTimeout(t);
+  }, [qInput]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [qDeb]);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const from = page * LIST_PAGE_SIZE;
+    const to = from + LIST_PAGE_SIZE - 1;
+    const pat = ilikePattern(qDeb);
+
+    let qb = supabase
       .from("formularios")
-      .select("*, contribuyente:contribuyentes(nombre_completo,ci)")
-      .order("numero", { ascending: false })
-      .limit(200);
-    setList(data ?? []);
-  };
+      .select(
+        "id, numero, codigo_actividad, fecha, zona, estado, razon_social, contribuyente_id, contribuyente:contribuyentes(nombre_completo, ci)",
+        { count: "exact" },
+      )
+      .order("numero", { ascending: false });
+
+    if (pat) {
+      const { data: cm } = await supabase
+        .from("contribuyentes")
+        .select("id")
+        .or(`nombre_completo.ilike.${pat},ci.ilike.${pat}`)
+        .limit(400);
+      const cids = (cm ?? []).map((r) => r.id);
+      if (cids.length > 0) {
+        qb = qb.or(`razon_social.ilike.${pat},contribuyente_id.in.(${cids.join(",")})`);
+      } else {
+        qb = qb.ilike("razon_social", pat);
+      }
+    }
+
+    const { data, error, count } = await qb.range(from, to);
+    if (error) {
+      toast.error(error.message);
+      setList([]);
+      setTotal(null);
+    } else {
+      setList((data ?? []) as FormRow[]);
+      setTotal(count);
+    }
+    setLoading(false);
+  }, [page, qDeb]);
 
   useEffect(() => {
     void load();
-  }, []);
+  }, [load]);
 
   useEffect(() => {
     if (nuevo) {
@@ -67,13 +155,6 @@ function Lista() {
       });
     }
   }, [nuevo, navigate]);
-
-  const filtered = list.filter(
-    (f) =>
-      !q ||
-      f.razon_social.toLowerCase().includes(q.toLowerCase()) ||
-      f.contribuyente?.nombre_completo?.toLowerCase().includes(q.toLowerCase()),
-  );
 
   return (
     <div className="space-y-4">
@@ -142,49 +223,83 @@ function Lista() {
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
+          value={qInput}
+          onChange={(e) => setQInput(e.target.value)}
           placeholder="Buscar por razón social o contribuyente"
           className="pl-9"
         />
       </div>
-      <div className="space-y-2">
-        {filtered.map((f) => (
-          <Link key={f.id} to="/formularios/$id" params={{ id: f.id }}>
-            <Card className="p-4 hover:shadow-soft transition-shadow">
-              <div className="flex items-start gap-3">
-                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <ClipboardList className="h-5 w-5 text-primary" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-mono text-xs text-muted-foreground">N° {f.numero}</span>
-                    <Badge
-                      variant={
-                        f.estado === "activo"
-                          ? "default"
-                          : f.estado === "baja"
-                            ? "secondary"
-                            : "destructive"
-                      }
-                    >
-                      {f.estado}
-                    </Badge>
-                    <Badge variant="outline">Zona {f.zona}</Badge>
-                  </div>
-                  <div className="font-medium truncate mt-1">{f.razon_social}</div>
-                  <div className="text-xs text-muted-foreground truncate">
-                    {f.contribuyente?.nombre_completo} • {f.direccion}
-                  </div>
-                </div>
-              </div>
-            </Card>
-          </Link>
-        ))}
-        {filtered.length === 0 && (
-          <p className="text-center text-sm text-muted-foreground py-8">Sin formularios</p>
-        )}
-      </div>
+
+      <DataListCard>
+        <DataListTableWrap>
+          <DataListTable>
+            <DataListTheadRow>
+              <DataListTh>Fecha</DataListTh>
+              <DataListTh>Actividad</DataListTh>
+              <DataListTh>Zona</DataListTh>
+              <DataListTh>Estado</DataListTh>
+              <DataListTh align="center">Acciones</DataListTh>
+            </DataListTheadRow>
+            <DataListTbody>
+              {loading && (
+                <TableRow>
+                  <DataListTd className="py-10 text-center text-muted-foreground" colSpan={5}>
+                    Cargando…
+                  </DataListTd>
+                </TableRow>
+              )}
+              {!loading && list.length === 0 && (
+                <TableRow>
+                  <DataListTd className="py-10 text-center text-muted-foreground" colSpan={5}>
+                    Sin formularios
+                  </DataListTd>
+                </TableRow>
+              )}
+              {!loading &&
+                list.map((f) => (
+                  <TableRow
+                    key={f.id}
+                    className="cursor-pointer border-b border-border/60 hover:bg-muted/40"
+                    onClick={() => navigate({ to: "/formularios/$id", params: { id: f.id } })}
+                  >
+                    <DataListTd className="whitespace-nowrap text-muted-foreground">{fmtFecha(f.fecha)}</DataListTd>
+                    <DataListTd>
+                      <div className="font-semibold text-foreground">{f.razon_social}</div>
+                      <div className="text-xs text-muted-foreground">
+                        <span className="font-mono">N° {f.numero}</span>
+                        {" · "}
+                        <span className="font-mono">{f.codigo_actividad}</span>
+                      </div>
+                      <div className="mt-0.5 text-xs text-muted-foreground">
+                        {f.contribuyente?.nombre_completo ?? "—"} — C.I. {f.contribuyente?.ci ?? "—"}
+                      </div>
+                    </DataListTd>
+                    <DataListTd>
+                      <span className={pillMuted()}>Zona {f.zona}</span>
+                    </DataListTd>
+                    <DataListTd>
+                      <FormEstadoPill estado={f.estado} />
+                    </DataListTd>
+                    <DataListTd align="center" onClick={(e) => e.stopPropagation()}>
+                      <Button type="button" variant="ghost" size="icon" asChild aria-label="Ver formulario">
+                        <Link to="/formularios/$id" params={{ id: f.id }}>
+                          <ChevronRight className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                    </DataListTd>
+                  </TableRow>
+                ))}
+            </DataListTbody>
+          </DataListTable>
+        </DataListTableWrap>
+        <TablePaginationFooter
+          page={page}
+          pageSize={LIST_PAGE_SIZE}
+          total={total}
+          loading={loading}
+          onPageChange={setPage}
+        />
+      </DataListCard>
     </div>
   );
 }
