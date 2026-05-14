@@ -30,7 +30,7 @@ export const Route = createFileRoute("/_app/formularios/")({
 });
 
 function Lista() {
-  const navigate = useNavigate({ from: Route.id });
+  const navigate = useNavigate();
   const { nuevo } = Route.useSearch();
   const [list, setList] = useState<any[]>([]);
   const [q, setQ] = useState("");
@@ -57,7 +57,14 @@ function Lista() {
       setSubvista("formulario");
       setFormKey((k) => k + 1);
       setDialogOpen(true);
-      void navigate({ search: { nuevo: undefined }, replace: true });
+      void navigate({
+        search: (prev) => {
+          const next = { ...(prev as Record<string, unknown>) };
+          delete next.nuevo;
+          return next as FormSearch;
+        },
+        replace: true,
+      });
     }
   }, [nuevo, navigate]);
 

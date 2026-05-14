@@ -28,7 +28,7 @@ export const Route = createFileRoute("/_app/notificaciones/")({
 });
 
 function Lista() {
-  const navigate = useNavigate({ from: Route.id });
+  const navigate = useNavigate();
   const { nueva } = Route.useSearch();
   const [list, setList] = useState<any[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -51,7 +51,14 @@ function Lista() {
     if (nueva) {
       setFormKey((k) => k + 1);
       setDialogOpen(true);
-      void navigate({ search: { nueva: undefined }, replace: true });
+      void navigate({
+        search: (prev) => {
+          const next = { ...(prev as Record<string, unknown>) };
+          delete next.nueva;
+          return next as NotifSearch;
+        },
+        replace: true,
+      });
     }
   }, [nueva, navigate]);
 
