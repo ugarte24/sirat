@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { NotificacionNuevaForm } from "@/components/forms/NotificacionNuevaForm";
+import { ContribuyenteAltaForm } from "@/components/forms/ContribuyenteAltaForm";
 import { Plus, Bell } from "lucide-react";
 
 type NotifSearch = { nueva?: boolean };
@@ -32,7 +33,9 @@ function Lista() {
   const { nueva } = Route.useSearch();
   const [list, setList] = useState<any[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [subvista, setSubvista] = useState<"notificacion" | "contrib">("notificacion");
   const [formKey, setFormKey] = useState(0);
+  const [catalogRefreshKey, setCatalogRefreshKey] = useState(0);
 
   const load = async () => {
     const { data } = await supabase
@@ -49,6 +52,7 @@ function Lista() {
 
   useEffect(() => {
     if (nueva) {
+      setSubvista("notificacion");
       setFormKey((k) => k + 1);
       setDialogOpen(true);
       void navigate({
@@ -71,6 +75,7 @@ function Lista() {
           size="sm"
           className="bg-gradient-gold text-gold-foreground"
           onClick={() => {
+            setSubvista("notificacion");
             setFormKey((k) => k + 1);
             setDialogOpen(true);
           }}
@@ -80,19 +85,48 @@ function Lista() {
         </Button>
       </div>
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog
+        open={dialogOpen}
+        onOpenChange={(open) => {
+          setDialogOpen(open);
+          if (!open) setSubvista("notificacion");
+        }}
+      >
         <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Nueva notificación</DialogTitle>
-            <DialogDescription>Complete los datos y emita la notificación.</DialogDescription>
+            <DialogTitle>
+              {subvista === "contrib" ? "Nuevo contribuyente" : "Nueva notificación"}
+            </DialogTitle>
+            <DialogDescription>
+              {subvista === "contrib"
+                ? "Registre el contribuyente y continúe con la notificación."
+                : "Complete los datos y emita la notificación."}
+            </DialogDescription>
           </DialogHeader>
-          <NotificacionNuevaForm
-            key={formKey}
-            onSuccess={() => {
-              setDialogOpen(false);
-              void load();
-            }}
-          />
+
+          {subvista === "contrib" ? (
+            <div className="space-y-3">
+              <ContribuyenteAltaForm
+                onSuccess={() => {
+                  setCatalogRefreshKey((k) => k + 1);
+                  setSubvista("notificacion");
+                }}
+              />
+              <Button type="button" variant="outline" className="w-full" onClick={() => setSubvista("notificacion")}>
+                Seguir con la notificación
+              </Button>
+            </div>
+          ) : (
+            <NotificacionNuevaForm
+              key={formKey}
+              catalogRefreshKey={catalogRefreshKey}
+              onSuccess={() => {
+                setDialogOpen(false);
+                void load();
+              }}
+              onPedirAltaContribuyente={() => setSubvista("contrib")}
+            />
+          )}
         </DialogContent>
       </Dialog>
 
@@ -100,21 +134,12 @@ function Lista() {
         {list.map((n) => (
           <Link key={n.id} to="/notificaciones/$id" params={{ id: n.id }}>
             <Card className="p-4 flex items-center gap-3 hover:shadow-soft transition-shadow">
-              <div
-                className={`h-10 w-10 rounded-lg flex items-center justify-center ${
-                  n.tipo === "multa"
-                    ? "bg-destructive/10 text-destructive"
-                    : n.tipo === "advertencia"
-                      ? "bg-warning/20 text-warning"
-                      : "bg-primary/10 text-primary"
-                }`}
-              >
+              <div className="h-10 w-10 rounded-lg flex items-center justify-center bg-primary/10 text-primary">
                 <Bell className="h-5 w-5" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex gap-2 items-center flex-wrap">
                   <span className="font-mono text-xs text-muted-foreground">N° {n.codigo}</span>
-                  <Badge variant="outline">{n.tipo}</Badge>
                   <Badge
                     variant={
                       n.estado === "cumplido"
@@ -127,7 +152,9 @@ function Lista() {
                     {n.estado}
                   </Badge>
                 </div>
-                <div className="font-medium truncate mt-0.5">{n.nombre_notificado}</div>
+                <div className="font-medium truncate mt-0.5">
+                  {n.nombre_actividad?.trim() || n.contribuyente?.nombre_completo || "—"}
+                </div>
                 <div className="text-xs text-muted-foreground">Hasta: {n.fecha_limite}</div>
               </div>
             </Card>

@@ -12,7 +12,6 @@ export type ContribuyenteCatalogRow = Pick<ContribRow, "id" | "ci" | "nombre_com
 export type TipoActividadCatalogRow = Pick<Db["tipos_actividad"]["Row"], "id" | "nombre">;
 
 export type ZonaTipo = Database["public"]["Enums"]["zona_tipo"];
-export type NotificacionTipo = Database["public"]["Enums"]["notificacion_tipo"];
 
 /** Campos del formulario HTML antes de insertar contribuyente */
 export interface ContribuyenteNuevoForm {
@@ -114,27 +113,29 @@ export function formularioStateToInsert(
 /** Estado del formulario “nueva notificación” */
 export interface NotificacionNuevaState {
   contribuyente_id: string;
-  nombre_notificado: string;
+  nombre_actividad: string;
+  numero_identificacion: string;
   direccion: string;
   fecha_limite: string;
-  tipo: NotificacionTipo;
   padron_municipal: boolean;
   impuestos_patente: boolean;
   bienes_inmuebles: boolean;
   vehiculos: boolean;
+  gestiones_adeudadas: string;
 }
 
 export function defaultNotificacionNueva(): NotificacionNuevaState {
   return {
     contribuyente_id: "",
-    nombre_notificado: "",
+    nombre_actividad: "",
+    numero_identificacion: "",
     direccion: "",
     fecha_limite: new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10),
-    tipo: "aviso",
     padron_municipal: false,
     impuestos_patente: false,
     bienes_inmuebles: false,
     vehiculos: false,
+    gestiones_adeudadas: "",
   };
 }
 
@@ -142,14 +143,15 @@ export function defaultNotificacionNueva(): NotificacionNuevaState {
 export type NotificacionInsertPayload = Pick<
   Db["notificaciones"]["Insert"],
   | "contribuyente_id"
-  | "nombre_notificado"
+  | "nombre_actividad"
+  | "numero_identificacion"
   | "direccion"
   | "fecha_limite"
-  | "tipo"
   | "padron_municipal"
   | "impuestos_patente"
   | "bienes_inmuebles"
   | "vehiculos"
+  | "gestiones_adeudadas"
   | "numero_correlativo"
   | "created_by"
 >;
@@ -160,14 +162,15 @@ export function notificacionStateToInsert(
 ): NotificacionInsertPayload {
   return {
     contribuyente_id: n.contribuyente_id,
-    nombre_notificado: n.nombre_notificado.trim(),
+    nombre_actividad: n.nombre_actividad.trim() || null,
+    numero_identificacion: n.numero_identificacion.trim() || null,
     direccion: n.direccion.trim(),
     fecha_limite: n.fecha_limite,
-    tipo: n.tipo,
     padron_municipal: n.padron_municipal,
     impuestos_patente: n.impuestos_patente,
     bienes_inmuebles: n.bienes_inmuebles,
     vehiculos: n.vehiculos,
+    gestiones_adeudadas: n.gestiones_adeudadas.trim() || null,
     numero_correlativo: 0,
     created_by: createdBy ?? null,
   };

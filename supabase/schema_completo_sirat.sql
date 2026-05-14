@@ -8,7 +8,6 @@
 CREATE TYPE public.app_role AS ENUM ('admin', 'operador');
 CREATE TYPE public.formulario_estado AS ENUM ('activo', 'baja', 'anulado');
 CREATE TYPE public.notificacion_estado AS ENUM ('pendiente', 'cumplido', 'anulado');
-CREATE TYPE public.notificacion_tipo AS ENUM ('aviso', 'advertencia', 'multa');
 CREATE TYPE public.zona_tipo AS ENUM ('A', 'B', 'C', 'D', 'E');
 
 -- Profiles
@@ -183,14 +182,15 @@ CREATE TABLE public.notificaciones (
   codigo INT NOT NULL UNIQUE DEFAULT nextval('public.notificacion_codigo_seq'),
   numero_correlativo INT NOT NULL,
   contribuyente_id UUID NOT NULL REFERENCES public.contribuyentes(id) ON DELETE RESTRICT,
-  nombre_notificado TEXT NOT NULL,
+  nombre_actividad TEXT,
+  numero_identificacion TEXT,
   direccion TEXT NOT NULL,
   fecha_limite DATE NOT NULL,
-  tipo public.notificacion_tipo NOT NULL,
   padron_municipal BOOLEAN NOT NULL DEFAULT false,
   impuestos_patente BOOLEAN NOT NULL DEFAULT false,
   bienes_inmuebles BOOLEAN NOT NULL DEFAULT false,
   vehiculos BOOLEAN NOT NULL DEFAULT false,
+  gestiones_adeudadas TEXT,
   estado public.notificacion_estado NOT NULL DEFAULT 'pendiente',
   observacion_seguimiento TEXT,
   created_by UUID REFERENCES auth.users(id),

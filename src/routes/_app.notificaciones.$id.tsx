@@ -29,9 +29,10 @@ function Detalle() {
 
   const pdf = () => generateNotificacionPDF({
     codigo: n.codigo, numero_correlativo: n.numero_correlativo,
-    fecha: n.created_at.slice(0, 10), nombre_notificado: n.nombre_notificado,
+    fecha: n.created_at.slice(0, 10), nombre_actividad: n.nombre_actividad,
+    numero_identificacion: n.numero_identificacion,
     ci: n.contribuyente.ci, direccion: n.direccion, fecha_limite: n.fecha_limite,
-    tipo: n.tipo, conceptos, estado: n.estado,
+    conceptos, estado: n.estado, gestiones_adeudadas: n.gestiones_adeudadas,
   });
 
   const cambiarEstado = async (estado: any) => {
@@ -44,7 +45,7 @@ function Detalle() {
       <div className="flex justify-between items-start flex-wrap gap-2">
         <div>
           <p className="text-xs text-muted-foreground font-mono">N° {n.codigo}-{n.numero_correlativo}</p>
-          <h1 className="font-display text-2xl font-bold">{n.tipo.toUpperCase()}</h1>
+          <h1 className="font-display text-2xl font-bold">Notificación</h1>
         </div>
         <Badge variant={n.estado === "cumplido" ? "default" : n.estado === "anulado" ? "destructive" : "secondary"}>{n.estado}</Badge>
       </div>
@@ -56,11 +57,30 @@ function Detalle() {
         </>}
       </div>
       <Card className="p-5 space-y-2 text-sm">
-        <div><span className="text-muted-foreground">Notificado:</span> <strong>{n.nombre_notificado}</strong></div>
+        <div>
+          <span className="text-muted-foreground">Nombre de la actividad:</span>{" "}
+          <strong>{n.nombre_actividad?.trim() || "—"}</strong>
+        </div>
+        <div>
+          <span className="text-muted-foreground">N.º licencia / placa / inmueble (opcional):</span>{" "}
+          <strong>{n.numero_identificacion?.trim() || "—"}</strong>
+        </div>
+        <div>
+          <span className="text-muted-foreground">Contribuyente:</span>{" "}
+          <strong>{n.contribuyente.nombre_completo}</strong>
+        </div>
         <div><span className="text-muted-foreground">C.I.:</span> {n.contribuyente.ci}</div>
         <div><span className="text-muted-foreground">Dirección:</span> {n.direccion}</div>
         <div><span className="text-muted-foreground">Fecha límite:</span> {n.fecha_limite}</div>
         <div><span className="text-muted-foreground">Conceptos:</span> {conceptos.join(", ") || "—"}</div>
+        <div>
+          <span className="text-muted-foreground">Gestiones que adeuda:</span>{" "}
+          {n.gestiones_adeudadas?.trim() ? (
+            <span className="whitespace-pre-wrap">{n.gestiones_adeudadas.trim()}</span>
+          ) : (
+            "—"
+          )}
+        </div>
       </Card>
     </div>
   );

@@ -207,12 +207,13 @@ export type Database = {
           estado: Database["public"]["Enums"]["notificacion_estado"]
           fecha_limite: string
           id: string
+          gestiones_adeudadas: string | null
           impuestos_patente: boolean
-          nombre_notificado: string
+          nombre_actividad: string | null
+          numero_identificacion: string | null
           numero_correlativo: number
           observacion_seguimiento: string | null
           padron_municipal: boolean
-          tipo: Database["public"]["Enums"]["notificacion_tipo"]
           updated_at: string
           vehiculos: boolean
         }
@@ -226,12 +227,13 @@ export type Database = {
           estado?: Database["public"]["Enums"]["notificacion_estado"]
           fecha_limite: string
           id?: string
+          gestiones_adeudadas?: string | null
           impuestos_patente?: boolean
-          nombre_notificado: string
+          nombre_actividad?: string | null
+          numero_identificacion?: string | null
           numero_correlativo: number
           observacion_seguimiento?: string | null
           padron_municipal?: boolean
-          tipo: Database["public"]["Enums"]["notificacion_tipo"]
           updated_at?: string
           vehiculos?: boolean
         }
@@ -245,12 +247,13 @@ export type Database = {
           estado?: Database["public"]["Enums"]["notificacion_estado"]
           fecha_limite?: string
           id?: string
+          gestiones_adeudadas?: string | null
           impuestos_patente?: boolean
-          nombre_notificado?: string
+          nombre_actividad?: string | null
+          numero_identificacion?: string | null
           numero_correlativo?: number
           observacion_seguimiento?: string | null
           padron_municipal?: boolean
-          tipo?: Database["public"]["Enums"]["notificacion_tipo"]
           updated_at?: string
           vehiculos?: boolean
         }
@@ -356,7 +359,6 @@ export type Database = {
       app_role: "admin" | "operador"
       formulario_estado: "activo" | "baja" | "anulado"
       notificacion_estado: "pendiente" | "cumplido" | "anulado"
-      notificacion_tipo: "aviso" | "advertencia" | "multa"
       zona_tipo: "A" | "B" | "C" | "D" | "E"
     }
     CompositeTypes: {
@@ -488,7 +490,6 @@ export const Constants = {
       app_role: ["admin", "operador"],
       formulario_estado: ["activo", "baja", "anulado"],
       notificacion_estado: ["pendiente", "cumplido", "anulado"],
-      notificacion_tipo: ["aviso", "advertencia", "multa"],
       zona_tipo: ["A", "B", "C", "D", "E"],
     },
   },

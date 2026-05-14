@@ -79,13 +79,14 @@ interface NotificacionData {
   codigo: number;
   numero_correlativo: number;
   fecha: string;
-  nombre_notificado: string;
+  nombre_actividad: string | null;
+  numero_identificacion: string | null;
   ci: string;
   direccion: string;
   fecha_limite: string;
-  tipo: string;
   conceptos: string[];
   estado: string;
+  gestiones_adeudadas: string | null;
 }
 
 export function generateNotificacionPDF(d: NotificacionData) {
@@ -103,7 +104,7 @@ export function generateNotificacionPDF(d: NotificacionData) {
 
   doc.setTextColor(0);
   doc.setFontSize(13).setFont("helvetica", "bold");
-  doc.text(`NOTIFICACIÓN DE ${d.tipo.toUpperCase()}`, w / 2, 40, { align: "center" });
+  doc.text("NOTIFICACIÓN TRIBUTARIA", w / 2, 40, { align: "center" });
 
   autoTable(doc, {
     startY: 46,
@@ -112,9 +113,10 @@ export function generateNotificacionPDF(d: NotificacionData) {
     headStyles: { fillColor: [45, 55, 120] },
     body: [
       ["Fecha emisión", d.fecha, "Estado", d.estado.toUpperCase()],
-      ["Notificado a", d.nombre_notificado, "C.I.", d.ci],
-      ["Dirección", d.direccion, "", ""],
-      ["Fecha límite", d.fecha_limite, "Tipo", d.tipo.toUpperCase()],
+      ["Nombre de la actividad", d.nombre_actividad?.trim() || "—", "Licencia / placa / inmueble", d.numero_identificacion?.trim() || "—"],
+      ["C.I. contribuyente", d.ci, "Dirección", d.direccion],
+      ["Fecha límite", d.fecha_limite, "", ""],
+      ["Gestiones que adeuda", d.gestiones_adeudadas?.trim() || "—", "", ""],
       ["Conceptos", d.conceptos.join(", ") || "—", "", ""],
     ],
   });
