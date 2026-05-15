@@ -1,6 +1,6 @@
 import { toast } from "sonner";
 import type jsPDF from "jspdf";
-import * as XLSX from "xlsx";
+import * as XLSX from "xlsx-js-style";
 
 export type DownloadKind = "pdf" | "excel";
 

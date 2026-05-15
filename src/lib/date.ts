@@ -33,6 +33,17 @@ export function formatDateEsBo(value: string | null | undefined): string {
   }
 }
 
+/** Fecha y hora de generación de reporte: `dd/mm/aaaa, hh:mm:ss`. */
+export function formatReportDateTimeEsBo(value: Date = new Date()): string {
+  return value.toLocaleString("es-BO", {
+    ...fmtDayMonthYear,
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
+}
+
 /** Fecha y hora en es-BO: `dd/mm/aaaa, hh:mm`. */
 export function formatDateTimeEsBo(value: string | null | undefined): string {
   if (!value?.trim()) return "—";

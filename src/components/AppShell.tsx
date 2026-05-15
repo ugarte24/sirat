@@ -32,7 +32,7 @@ const NAV: { to: string; label: string; icon: any; roles: Role[] }[] = [
   { to: "/formularios", label: "Verificación", icon: ClipboardList, roles: ["admin", "operador"] },
   { to: "/notificaciones", label: "Notificaciones", icon: Bell, roles: ["admin", "operador"] },
   { to: "/mapa", label: "Mapa", icon: MapIcon, roles: ["admin", "operador"] },
-  { to: "/reportes", label: "Reportes", icon: FileBarChart, roles: ["admin"] },
+  { to: "/reportes", label: "Reportes", icon: FileBarChart, roles: ["admin", "operador"] },
   { to: "/usuarios", label: "Usuarios", icon: UserCog, roles: ["admin"] },
   { to: "/perfil", label: "Mi cuenta", icon: KeyRound, roles: ["admin", "operador"] },
 ];

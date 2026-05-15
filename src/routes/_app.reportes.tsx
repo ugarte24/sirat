@@ -8,10 +8,13 @@ import { DatePickerField } from "@/components/DatePickerField";
 import { FileDown, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
-import * as XLSX from "xlsx";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
-import { downloadExcelWorkbook, downloadJsPdf } from "@/lib/download-file";
+import {
+  mapReporteRows,
+  REPORTE_COLUMNS,
+  REPORTE_SELECT,
+  type ReporteTipo,
+} from "@/lib/report-export";
+import { downloadStyledReportExcel, downloadStyledReportPDF } from "@/lib/report-format";
 
 export const Route = createFileRoute("/_app/reportes")({ component: Reportes });
 
@@ -21,52 +24,77 @@ const REPORTES = [
   { key: "contribuyentes", label: "Contribuyentes" },
 ];
 
+const REPORTE_META: Record<ReporteTipo, { titulo: string; subtitulo: string }> = {
+  formularios: {
+    titulo: "Formularios de verificación",
+    subtitulo: "Listado de formularios de verificación para actividades económicas",
+  },
+  notificaciones: {
+    titulo: "Notificaciones",
+    subtitulo: "Listado de notificaciones tributarias",
+  },
+  contribuyentes: {
+    titulo: "Contribuyentes",
+    subtitulo: "Registro de contribuyentes",
+  },
+};
+
 function Reportes() {
-  const { role } = useAuth();
+  const { profile } = useAuth();
   const [tipo, setTipo] = useState("formularios");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
 
-  if (role !== "admin") {
-    return (
-      <p className="text-center py-8 text-muted-foreground">
-        Solo los administradores pueden acceder a reportes globales.
-      </p>
-    );
-  }
-
   const fetchData = async () => {
-    let q: any = supabase.from(tipo as any).select("*").order("created_at", { ascending: false }).limit(1000);
+    const reporteTipo = tipo as ReporteTipo;
+    let q = supabase
+      .from(reporteTipo)
+      .select(REPORTE_SELECT[reporteTipo])
+      .order("created_at", { ascending: false })
+      .limit(1000);
     if (from) q = q.gte("created_at", from);
     if (to) q = q.lte("created_at", to + "T23:59:59");
     const { data, error } = await q;
-    if (error) { toast.error(error.message); return null; }
-    return data ?? [];
+    if (error) {
+      toast.error(error.message);
+      return null;
+    }
+    return mapReporteRows(reporteTipo, data ?? []);
+  };
+
+  const reportMeta = () => {
+    const reporteTipo = tipo as ReporteTipo;
+    const info = REPORTE_META[reporteTipo];
+    return {
+      titulo: info.titulo,
+      subtitulo: info.subtitulo,
+      usuario: profile?.full_name || profile?.email || "Administrador",
+      desde: from || undefined,
+      hasta: to || undefined,
+    };
   };
 
   const exportExcel = async () => {
-    const data = await fetchData();
-    if (!data) return;
-    if (!data.length) return toast.error("Sin datos para exportar");
-    const ws = XLSX.utils.json_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, tipo);
-    downloadExcelWorkbook(wb, `reporte-${tipo}-${Date.now()}.xlsx`);
+    const rows = await fetchData();
+    if (!rows) return;
+    if (!rows.length) return toast.error("Sin datos para exportar");
+    const reporteTipo = tipo as ReporteTipo;
+    const cols = REPORTE_COLUMNS[reporteTipo];
+    downloadStyledReportExcel(
+      reportMeta(),
+      cols,
+      rows,
+      reporteTipo,
+      `reporte-${tipo}-${Date.now()}.xlsx`,
+    );
   };
   const exportPDF = async () => {
-    const data = await fetchData();
-    if (!data) return;
-    if (!data.length) return toast.error("Sin datos para exportar");
-    const doc = new jsPDF("l");
-    doc.setFontSize(14).text(`Reporte: ${tipo}`, 14, 14);
-    const cols = Object.keys(data[0]).slice(0, 8);
-    autoTable(doc, {
-      head: [cols],
-      body: data.map((r: Record<string, unknown>) => cols.map((c) => String(r[c] ?? ""))),
-      styles: { fontSize: 7 },
-      startY: 20,
-    });
-    downloadJsPdf(doc, `reporte-${tipo}-${Date.now()}.pdf`);
+    const rows = await fetchData();
+    if (!rows) return;
+    if (!rows.length) return toast.error("Sin datos para exportar");
+    const reporteTipo = tipo as ReporteTipo;
+    const cols = REPORTE_COLUMNS[reporteTipo];
+    downloadStyledReportPDF(reportMeta(), cols, rows, `reporte-${tipo}-${Date.now()}.pdf`);
   };
 
   return (

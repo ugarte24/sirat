@@ -4,6 +4,18 @@ import pkg from "../../package.json";
 export const SIRAT_TAGLINE =
   "Sistema Integrado de Registro y Administración Tributaria";
 
+/** Colores institucionales para reportes PDF/Excel (alineados con la UI). */
+export const SIRAT_REPORT_COLORS = {
+  /** Azul primario — encabezados y cabecera de tabla */
+  primary: { r: 45, g: 55, b: 120, hex: "2D3778" },
+  /** Dorado — línea de acento y título principal */
+  gold: { r: 201, g: 162, b: 59, hex: "C9A23B" },
+  /** Fila alterna de tabla */
+  zebra: { r: 245, g: 247, b: 252, hex: "F5F7FC" },
+  white: { r: 255, g: 255, b: 255, hex: "FFFFFF" },
+  text: { r: 30, g: 35, b: 55, hex: "1E2337" },
+} as const;
+
 /** Versión de la aplicación (sincronizada con package.json; el hook pre-commit la incrementa en cada commit). */
 export const SIRAT_APP_VERSION = pkg.version;
 
