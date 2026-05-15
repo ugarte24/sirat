@@ -21,7 +21,7 @@ function Detalle() {
 
   useEffect(() => { (async () => {
     const { data } = await supabase.from("formularios").select(
-      "*, contribuyente:contribuyentes(nombre_completo,ci), tipo:tipos_actividad(nombre)"
+      "*, contribuyente:contribuyentes(nombre_completo,ci)"
     ).eq("id", id).maybeSingle();
     setF(data);
     const { data: fotos } = await supabase.from("formulario_fotos").select("storage_path").eq("formulario_id", id);
@@ -52,7 +52,7 @@ function Detalle() {
     numero: f.numero, codigo_actividad: f.codigo_actividad, fecha: f.fecha,
     razon_social: f.razon_social, contribuyente_nombre: f.contribuyente.nombre_completo,
     contribuyente_ci: f.contribuyente.ci, nit: f.nit, zona: f.zona, superficie: f.superficie,
-    tipo_actividad: f.tipo.nombre, direccion: f.direccion, celular: f.celular, referencia: f.referencia,
+    direccion: f.direccion, celular: f.celular, referencia: f.referencia,
     latitud: f.latitud,
     longitud: f.longitud,
     procedente: f.procedente,
@@ -118,7 +118,6 @@ function Detalle() {
 
       <Card className="p-5 grid sm:grid-cols-2 gap-3 text-sm">
         <Info l="Contribuyente" v={`${f.contribuyente.nombre_completo} (${f.contribuyente.ci})`} />
-        <Info l="Tipo actividad" v={f.tipo.nombre} />
         <Info l="Zona" v={f.zona} /><Info l="Superficie" v={`${f.superficie} m²`} />
         <Info l="NIT" v={f.nit ?? "—"} /><Info l="Celular" v={f.celular} />
         <Info l="Dirección" v={f.direccion} /><Info l="Referencia" v={f.referencia} />

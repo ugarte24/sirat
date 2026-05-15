@@ -103,19 +103,6 @@ ALTER TABLE public.contribuyentes ENABLE ROW LEVEL SECURITY;
 CREATE TRIGGER contribuyentes_updated BEFORE UPDATE ON public.contribuyentes
 FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
--- Tipos de actividad
-CREATE TABLE public.tipos_actividad (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  nombre TEXT NOT NULL UNIQUE,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-ALTER TABLE public.tipos_actividad ENABLE ROW LEVEL SECURITY;
-
-INSERT INTO public.tipos_actividad (nombre) VALUES
-  ('Comercio'), ('Servicios'), ('Industria'),
-  ('Restaurante'), ('Bar / Bebidas alcohólicas'),
-  ('Transporte'), ('Construcción'), ('Otros');
-
 -- Formularios (con número serial desde 1000)
 CREATE SEQUENCE public.formulario_numero_seq START 1000;
 CREATE SEQUENCE public.formulario_codigo_seq START 100000;
@@ -130,7 +117,6 @@ CREATE TABLE public.formularios (
   fecha DATE NOT NULL DEFAULT CURRENT_DATE,
   zona public.zona_tipo NOT NULL,
   superficie NUMERIC(10,2) NOT NULL,
-  tipo_actividad_id UUID NOT NULL REFERENCES public.tipos_actividad(id),
   direccion TEXT NOT NULL,
   celular TEXT NOT NULL,
   referencia TEXT NOT NULL,
@@ -244,9 +230,6 @@ CREATE POLICY "Contrib: read auth" ON public.contribuyentes FOR SELECT TO authen
 CREATE POLICY "Contrib: insert auth" ON public.contribuyentes FOR INSERT TO authenticated WITH CHECK (auth.uid() IS NOT NULL);
 CREATE POLICY "Contrib: update auth" ON public.contribuyentes FOR UPDATE TO authenticated USING (auth.uid() IS NOT NULL);
 CREATE POLICY "Contrib: delete admin" ON public.contribuyentes FOR DELETE TO authenticated USING (public.has_role(auth.uid(), 'admin'));
-
-CREATE POLICY "Tipos: read auth" ON public.tipos_actividad FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Tipos: admin all" ON public.tipos_actividad FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin')) WITH CHECK (public.has_role(auth.uid(), 'admin'));
 
 CREATE POLICY "Form: read auth" ON public.formularios FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Form: insert auth" ON public.formularios FOR INSERT TO authenticated WITH CHECK (auth.uid() IS NOT NULL);

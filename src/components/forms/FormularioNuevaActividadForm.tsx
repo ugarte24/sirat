@@ -11,7 +11,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ContribuyenteCombobox } from "@/components/ContribuyenteCombobox";
 import { toast } from "sonner";
 import { Camera, Images, X } from "lucide-react";
-import type { ContribuyenteCatalogRow, FormularioNuevoState, TipoActividadCatalogRow } from "@/lib/sirat-forms";
+import type { ContribuyenteCatalogRow, FormularioNuevoState } from "@/lib/sirat-forms";
 import { emptyFormularioNuevo, formularioStateToInsert } from "@/lib/sirat-forms";
 
 const MapPicker = lazy(() => import("@/components/MapPicker").then((m) => ({ default: m.MapPicker })));
@@ -54,7 +54,6 @@ export function FormularioNuevaActividadForm({
   catalogRefreshKey = 0,
 }: FormularioNuevaActividadFormProps) {
   const [contribs, setContribs] = useState<ContribuyenteCatalogRow[]>([]);
-  const [tipos, setTipos] = useState<TipoActividadCatalogRow[]>([]);
   const [busy, setBusy] = useState(false);
   const [photos, setPhotos] = useState<LocalPhoto[]>([]);
   const photosRef = useRef<LocalPhoto[]>([]);
@@ -70,23 +69,18 @@ export function FormularioNuevaActividadForm({
     setCatalogLoaded(false);
     void (async () => {
       try {
-        const [cr, tr] = await Promise.all([
-          supabase.from("contribuyentes").select("id,ci,nombre_completo").order("nombre_completo"),
-          supabase.from("tipos_actividad").select("id,nombre").order("nombre"),
-        ]);
-        if (cr.error) toast.error(`Contribuyentes: ${cr.error.message}`);
-        if (tr.error) toast.error(`Tipos de actividad: ${tr.error.message}`);
-        setContribs(cr.data ?? []);
-        setTipos(tr.data ?? []);
-        if (!(cr.data?.length) && !cr.error) {
+        const { data, error } = await supabase
+          .from("contribuyentes")
+          .select("id,ci,nombre_completo")
+          .order("nombre_completo");
+        if (error) toast.error(`Contribuyentes: ${error.message}`);
+        setContribs(data ?? []);
+        if (!(data?.length) && !error) {
           toast.message("No hay contribuyentes. Registre uno antes o use el enlace de abajo.");
-        }
-        if (!(tr.data?.length) && !tr.error) {
-          toast.message("No hay tipos de actividad en la base. Ejecute las migraciones en Supabase.");
         }
       } catch (e) {
         console.error(e);
-        toast.error("No se pudieron cargar los catálogos. Revise la conexión y las variables de Supabase.");
+        toast.error("No se pudieron cargar los contribuyentes. Revise la conexión y las variables de Supabase.");
       } finally {
         setCatalogLoaded(true);
       }
@@ -110,7 +104,6 @@ export function FormularioNuevaActividadForm({
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!f.contribuyente_id) return toast.error("Selecciona un contribuyente");
-    if (!f.tipo_actividad_id) return toast.error("Selecciona el tipo de actividad");
     const sup = Number.parseFloat(f.superficie);
     if (!Number.isFinite(sup) || sup <= 0) {
       return toast.error("Indica una superficie válida (m²).");
@@ -149,11 +142,6 @@ export function FormularioNuevaActividadForm({
 
   return (
     <form onSubmit={submit} className="space-y-4">
-      {!catalogLoaded && (
-        <p className="text-sm text-amber-800 dark:text-amber-200 bg-amber-500/10 border border-amber-500/25 rounded-md px-3 py-2">
-          Cargando listas de contribuyentes y tipos de actividad… Puede completar el resto del formulario mientras tanto.
-        </p>
-      )}
       <Card className="p-5 space-y-4 border-0 shadow-none sm:border sm:shadow-sm">
         <div>
           <Label>Contribuyente *</Label>
@@ -220,25 +208,6 @@ export function FormularioNuevaActividadForm({
             <Label>Celular *</Label>
             <Input value={f.celular} onChange={(e) => setF({ ...f, celular: e.target.value })} required />
           </div>
-        </div>
-        <div>
-          <Label>Tipo de actividad *</Label>
-          <Select
-            value={f.tipo_actividad_id}
-            onValueChange={(v) => setF({ ...f, tipo_actividad_id: v })}
-            disabled={!catalogLoaded}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder={catalogLoaded ? "Seleccionar tipo" : "Cargando…"} />
-            </SelectTrigger>
-            <SelectContent>
-              {tipos.map((t) => (
-                <SelectItem key={t.id} value={t.id}>
-                  {t.nombre}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
         <div>
           <Label>Dirección (barrio y avenida) *</Label>

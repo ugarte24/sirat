@@ -8,9 +8,6 @@ type NotifRow = Db["notificaciones"]["Row"];
 /** Fila para selects (contribuyente) */
 export type ContribuyenteCatalogRow = Pick<ContribRow, "id" | "ci" | "nombre_completo">;
 
-/** Fila para select de tipo de actividad */
-export type TipoActividadCatalogRow = Pick<Db["tipos_actividad"]["Row"], "id" | "nombre">;
-
 export type ZonaTipo = Database["public"]["Enums"]["zona_tipo"];
 
 /** Campos del formulario HTML antes de insertar contribuyente */
@@ -33,7 +30,6 @@ export interface FormularioNuevoState {
   nit: string;
   zona: ZonaTipo;
   superficie: string;
-  tipo_actividad_id: string;
   direccion: string;
   celular: string;
   referencia: string;
@@ -52,7 +48,6 @@ export function emptyFormularioNuevo(): FormularioNuevoState {
     nit: "",
     zona: "A",
     superficie: "",
-    tipo_actividad_id: "",
     direccion: "",
     celular: "",
     referencia: "",
@@ -73,7 +68,6 @@ export type FormularioInsertPayload = Pick<
   | "nit"
   | "zona"
   | "superficie"
-  | "tipo_actividad_id"
   | "direccion"
   | "celular"
   | "referencia"
@@ -96,7 +90,6 @@ export function formularioStateToInsert(
     nit: f.nit.trim() || null,
     zona: f.zona,
     superficie: Number.parseFloat(f.superficie),
-    tipo_actividad_id: f.tipo_actividad_id,
     direccion: f.direccion.trim(),
     celular: f.celular.trim(),
     referencia: f.referencia.trim(),

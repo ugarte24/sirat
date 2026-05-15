@@ -54,7 +54,7 @@ export function ContribuyenteAltaForm({ onSuccess, submitLabel = "Registrar" }: 
           />
         </div>
         <div>
-          <Label>Teléfono</Label>
+          <Label>Celular (opcional)</Label>
           <Input
             value={form.telefono}
             onChange={(e) => setForm((p) => ({ ...p, telefono: e.target.value }))}

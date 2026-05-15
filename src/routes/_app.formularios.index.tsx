@@ -178,6 +178,10 @@ function Lista() {
       <Dialog
         open={dialogOpen}
         onOpenChange={(open) => {
+          if (!open && subvista === "contrib") {
+            setSubvista("formulario");
+            return;
+          }
           setDialogOpen(open);
           if (!open) setSubvista("formulario");
         }}
@@ -195,17 +199,12 @@ function Lista() {
           </DialogHeader>
 
           {subvista === "contrib" ? (
-            <div className="space-y-3">
-              <ContribuyenteAltaForm
-                onSuccess={() => {
-                  setCatalogRefreshKey((k) => k + 1);
-                  setSubvista("formulario");
-                }}
-              />
-              <Button type="button" variant="outline" className="w-full" onClick={() => setSubvista("formulario")}>
-                Seguir con el formulario de verificación
-              </Button>
-            </div>
+            <ContribuyenteAltaForm
+              onSuccess={() => {
+                setCatalogRefreshKey((k) => k + 1);
+                setSubvista("formulario");
+              }}
+            />
           ) : (
             <FormularioNuevaActividadForm
               key={formKey}

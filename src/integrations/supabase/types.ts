@@ -125,7 +125,6 @@ export type Database = {
           razon_social: string
           referencia: string
           superficie: number
-          tipo_actividad_id: string
           updated_at: string
           zona: Database["public"]["Enums"]["zona_tipo"]
         }
@@ -150,7 +149,6 @@ export type Database = {
           razon_social: string
           referencia: string
           superficie: number
-          tipo_actividad_id: string
           updated_at?: string
           zona: Database["public"]["Enums"]["zona_tipo"]
         }
@@ -175,7 +173,6 @@ export type Database = {
           razon_social?: string
           referencia?: string
           superficie?: number
-          tipo_actividad_id?: string
           updated_at?: string
           zona?: Database["public"]["Enums"]["zona_tipo"]
         }
@@ -185,13 +182,6 @@ export type Database = {
             columns: ["contribuyente_id"]
             isOneToOne: false
             referencedRelation: "contribuyentes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "formularios_tipo_actividad_id_fkey"
-            columns: ["tipo_actividad_id"]
-            isOneToOne: false
-            referencedRelation: "tipos_actividad"
             referencedColumns: ["id"]
           },
         ]
@@ -300,24 +290,6 @@ export type Database = {
           id?: string
           intentos_fallidos?: number
           updated_at?: string
-        }
-        Relationships: []
-      }
-      tipos_actividad: {
-        Row: {
-          created_at: string
-          id: string
-          nombre: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          nombre: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          nombre?: string
         }
         Relationships: []
       }

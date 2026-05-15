@@ -11,7 +11,6 @@ interface FormularioData {
   nit?: string | null;
   zona: string;
   superficie: number;
-  tipo_actividad: string;
   direccion: string;
   celular: string;
   referencia: string;
@@ -53,8 +52,8 @@ export function generateFormularioPDF(d: FormularioData) {
       ["Fecha", d.fecha, "Estado", d.estado.toUpperCase()],
       ["Contribuyente", d.contribuyente_nombre, "C.I.", d.contribuyente_ci],
       ["Razón social", d.razon_social, "NIT", d.nit ?? "—"],
-      ["Tipo actividad", d.tipo_actividad, "Zona", d.zona],
-      ["Superficie (m²)", String(d.superficie), "Celular", d.celular],
+      ["Zona", d.zona, "Superficie (m²)", String(d.superficie)],
+      ["Celular", d.celular, "", ""],
       ["Dirección", d.direccion, "", ""],
       ["Referencia", d.referencia, "", ""],
       ["Coordenadas", d.latitud && d.longitud ? `${d.latitud}, ${d.longitud}` : "—", "", ""],

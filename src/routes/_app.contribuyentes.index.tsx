@@ -194,7 +194,7 @@ function ListaContribuyentes() {
         <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Nuevo contribuyente</DialogTitle>
-            <DialogDescription>Ingrese C.I., nombre completo y teléfono opcional.</DialogDescription>
+            <DialogDescription>Ingrese C.I., nombre completo y celular opcional.</DialogDescription>
           </DialogHeader>
           <ContribuyenteAltaForm
             key={altaKey}
