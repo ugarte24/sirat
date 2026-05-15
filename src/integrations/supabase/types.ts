@@ -106,7 +106,6 @@ export type Database = {
       formularios: {
         Row: {
           celular: string
-          codigo_actividad: string
           contribuyente_id: string
           created_at: string
           created_by: string | null
@@ -117,7 +116,6 @@ export type Database = {
           latitud: number | null
           longitud: number | null
           nit: string | null
-          numero: number
           observacion: string | null
           padron: boolean
           bebidas_alcoholicas: boolean
@@ -130,7 +128,6 @@ export type Database = {
         }
         Insert: {
           celular: string
-          codigo_actividad?: string
           contribuyente_id: string
           created_at?: string
           created_by?: string | null
@@ -141,7 +138,6 @@ export type Database = {
           latitud?: number | null
           longitud?: number | null
           nit?: string | null
-          numero?: number
           observacion?: string | null
           padron?: boolean
           bebidas_alcoholicas?: boolean
@@ -154,7 +150,6 @@ export type Database = {
         }
         Update: {
           celular?: string
-          codigo_actividad?: string
           contribuyente_id?: string
           created_at?: string
           created_by?: string | null
@@ -165,7 +160,6 @@ export type Database = {
           latitud?: number | null
           longitud?: number | null
           nit?: string | null
-          numero?: number
           observacion?: string | null
           padron?: boolean
           bebidas_alcoholicas?: boolean
@@ -189,7 +183,6 @@ export type Database = {
       notificaciones: {
         Row: {
           bienes_inmuebles: boolean
-          codigo: number
           contribuyente_id: string
           created_at: string
           created_by: string | null
@@ -201,7 +194,6 @@ export type Database = {
           impuestos_patente: boolean
           nombre_actividad: string | null
           numero_identificacion: string | null
-          numero_correlativo: number
           observacion_seguimiento: string | null
           padron_municipal: boolean
           updated_at: string
@@ -209,7 +201,6 @@ export type Database = {
         }
         Insert: {
           bienes_inmuebles?: boolean
-          codigo?: number
           contribuyente_id: string
           created_at?: string
           created_by?: string | null
@@ -221,7 +212,6 @@ export type Database = {
           impuestos_patente?: boolean
           nombre_actividad?: string | null
           numero_identificacion?: string | null
-          numero_correlativo: number
           observacion_seguimiento?: string | null
           padron_municipal?: boolean
           updated_at?: string
@@ -229,7 +219,6 @@ export type Database = {
         }
         Update: {
           bienes_inmuebles?: boolean
-          codigo?: number
           contribuyente_id?: string
           created_at?: string
           created_by?: string | null
@@ -241,7 +230,6 @@ export type Database = {
           impuestos_patente?: boolean
           nombre_actividad?: string | null
           numero_identificacion?: string | null
-          numero_correlativo?: number
           observacion_seguimiento?: string | null
           padron_municipal?: boolean
           updated_at?: string

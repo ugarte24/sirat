@@ -18,7 +18,7 @@ function Detalle() {
     nombre_completo: string;
     telefono: string | null;
   } | null>(null);
-  const [forms, setForms] = useState<{ id: string; numero: number; razon_social: string; estado: string }[]>([]);
+  const [forms, setForms] = useState<{ id: string; razon_social: string; estado: string }[]>([]);
   const [notifCount, setNotifCount] = useState(0);
 
   useEffect(() => {
@@ -26,7 +26,7 @@ function Detalle() {
       const { data } = await supabase.from("contribuyentes").select("ci,nombre_completo,telefono").eq("id", id).maybeSingle();
       setC(data);
       const [{ data: f }, { count }] = await Promise.all([
-        supabase.from("formularios").select("id,numero,razon_social,estado").eq("contribuyente_id", id),
+        supabase.from("formularios").select("id,razon_social,estado").eq("contribuyente_id", id),
         supabase.from("notificaciones").select("id", { count: "exact", head: true }).eq("contribuyente_id", id),
       ]);
       setForms(f ?? []);
@@ -107,7 +107,7 @@ function Detalle() {
         <ul className="space-y-1">
           {forms.map((f) => (
             <li key={f.id} className="text-sm">
-              N° {f.numero} — {f.razon_social}{" "}
+              {f.razon_social}{" "}
               <span className="text-muted-foreground">({f.estado})</span>
             </li>
           ))}

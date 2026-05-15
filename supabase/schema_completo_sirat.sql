@@ -103,14 +103,9 @@ ALTER TABLE public.contribuyentes ENABLE ROW LEVEL SECURITY;
 CREATE TRIGGER contribuyentes_updated BEFORE UPDATE ON public.contribuyentes
 FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
--- Formularios (con número serial desde 1000)
-CREATE SEQUENCE public.formulario_numero_seq START 1000;
-CREATE SEQUENCE public.formulario_codigo_seq START 100000;
-
+-- Formularios
 CREATE TABLE public.formularios (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  numero INT NOT NULL UNIQUE DEFAULT nextval('public.formulario_numero_seq'),
-  codigo_actividad TEXT NOT NULL UNIQUE DEFAULT ('AE-' || nextval('public.formulario_codigo_seq')),
   contribuyente_id UUID NOT NULL REFERENCES public.contribuyentes(id) ON DELETE RESTRICT,
   razon_social TEXT NOT NULL,
   nit TEXT,
@@ -161,12 +156,8 @@ CREATE TRIGGER fotos_max_check BEFORE INSERT ON public.formulario_fotos
 FOR EACH ROW EXECUTE FUNCTION public.check_max_fotos();
 
 -- Notificaciones
-CREATE SEQUENCE public.notificacion_codigo_seq START 5000;
-
 CREATE TABLE public.notificaciones (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  codigo INT NOT NULL UNIQUE DEFAULT nextval('public.notificacion_codigo_seq'),
-  numero_correlativo INT NOT NULL,
   contribuyente_id UUID NOT NULL REFERENCES public.contribuyentes(id) ON DELETE RESTRICT,
   nombre_actividad TEXT,
   numero_identificacion TEXT,
@@ -188,21 +179,6 @@ CREATE TRIGGER notif_updated BEFORE UPDATE ON public.notificaciones
 FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 CREATE INDEX idx_notif_contrib ON public.notificaciones(contribuyente_id);
 CREATE INDEX idx_notif_estado ON public.notificaciones(estado);
-
-CREATE OR REPLACE FUNCTION public.set_notif_correlativo()
-RETURNS TRIGGER LANGUAGE plpgsql SET search_path = public AS $$
-BEGIN
-  IF NEW.numero_correlativo IS NULL OR NEW.numero_correlativo = 0 THEN
-    SELECT COALESCE(MAX(numero_correlativo), 0) + 1
-      INTO NEW.numero_correlativo
-      FROM public.notificaciones
-      WHERE contribuyente_id = NEW.contribuyente_id;
-  END IF;
-  RETURN NEW;
-END;
-$$;
-CREATE TRIGGER notif_correlativo BEFORE INSERT ON public.notificaciones
-FOR EACH ROW EXECUTE FUNCTION public.set_notif_correlativo();
 
 -- Auditoría
 CREATE TABLE public.auditoria (

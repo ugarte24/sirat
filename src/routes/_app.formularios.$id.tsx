@@ -50,7 +50,7 @@ function Detalle() {
   }
 
   const pdf = () => generateFormularioPDF({
-    numero: f.numero, codigo_actividad: f.codigo_actividad, fecha: f.fecha,
+    fecha: f.fecha,
     razon_social: f.razon_social, contribuyente_nombre: f.contribuyente.nombre_completo,
     contribuyente_ci: f.contribuyente.ci, nit: f.nit, zona: f.zona, superficie: f.superficie,
     direccion: f.direccion, celular: f.celular, referencia: f.referencia,
@@ -71,8 +71,6 @@ function Detalle() {
     setFotosPdfBusy(true);
     try {
       await generateFormularioFotosPDF({
-        numero: f.numero,
-        codigo_actividad: f.codigo_actividad,
         razon_social: f.razon_social,
         imageUrls: urls,
       });
@@ -103,7 +101,6 @@ function Detalle() {
 
       <div className="flex items-start justify-between flex-wrap gap-2">
         <div>
-          <p className="text-xs text-muted-foreground font-mono">N° {f.numero} • {f.codigo_actividad}</p>
           <h1 className="font-display text-2xl font-bold">{f.razon_social}</h1>
         </div>
         <Badge variant={f.estado === "activo" ? "default" : f.estado === "baja" ? "secondary" : "destructive"}>{f.estado}</Badge>

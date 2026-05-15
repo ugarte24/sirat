@@ -3,8 +3,6 @@ import autoTable from "jspdf-autotable";
 import { FORMULARIO_VERIFICACION_PDF_TITULO } from "@/lib/sirat-brand";
 
 interface FormularioData {
-  numero: number;
-  codigo_actividad: string;
   fecha: string;
   razon_social: string;
   contribuyente_nombre: string;
@@ -35,10 +33,6 @@ export function generateFormularioPDF(d: FormularioData) {
   doc.text("SIRAT", 14, 14);
   doc.setFontSize(9).setFont("helvetica", "normal");
   doc.text("Sistema Integrado de Registro y Administración Tributaria", 14, 21);
-  doc.setFontSize(11).setFont("helvetica", "bold");
-  doc.text(`FORMULARIO N° ${d.numero}`, w - 14, 14, { align: "right" });
-  doc.setFontSize(9).setFont("helvetica", "normal");
-  doc.text(`Cód: ${d.codigo_actividad}`, w - 14, 20, { align: "right" });
 
   doc.setTextColor(0);
   doc.setFontSize(13).setFont("helvetica", "bold");
@@ -72,12 +66,11 @@ export function generateFormularioPDF(d: FormularioData) {
     doc.setFontSize(8).text(label, x + sigW / 2, finalY + 24, { align: "center" });
   });
 
-  doc.save(`formulario-${d.numero}.pdf`);
+  const slug = d.razon_social.replace(/[^\w\s-]/g, "").trim().replace(/\s+/g, "-").slice(0, 40) || "formulario";
+  doc.save(`verificacion-${slug}.pdf`);
 }
 
 interface NotificacionData {
-  codigo: number;
-  numero_correlativo: number;
   fecha: string;
   nombre_actividad: string | null;
   numero_identificacion: string | null;
@@ -99,8 +92,6 @@ export function generateNotificacionPDF(d: NotificacionData) {
   doc.text("SIRAT", 14, 14);
   doc.setFontSize(9).setFont("helvetica", "normal");
   doc.text("Notificación tributaria", 14, 21);
-  doc.setFontSize(11).setFont("helvetica", "bold");
-  doc.text(`NOTIF. N° ${d.codigo}-${d.numero_correlativo}`, w - 14, 14, { align: "right" });
 
   doc.setTextColor(0);
   doc.setFontSize(13).setFont("helvetica", "bold");
@@ -137,12 +128,15 @@ export function generateNotificacionPDF(d: NotificacionData) {
     doc.setFontSize(9).text(label, x + sigW / 2, finalY + 24, { align: "center" });
   });
 
-  doc.save(`notificacion-${d.codigo}.pdf`);
+  const slug = (d.nombre_actividad?.trim() || d.ci)
+    .replace(/[^\w\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-")
+    .slice(0, 40) || "notificacion";
+  doc.save(`notificacion-${slug}.pdf`);
 }
 
 export interface FormularioFotosPdfOpts {
-  numero: number;
-  codigo_actividad?: string;
   razon_social?: string;
   /** URLs firmadas o públicas de las imágenes */
   imageUrls: string[];
@@ -196,7 +190,7 @@ export async function generateFormularioFotosPDF(opts: FormularioFotosPdfOpts): 
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
   const margin = 12;
-  const headerH = opts.razon_social ? 26 : 22;
+  const headerH = opts.razon_social ? 26 : 18;
   const maxW = pageW - 2 * margin;
 
   const drawHeader = () => {
@@ -205,13 +199,6 @@ export async function generateFormularioFotosPDF(opts: FormularioFotosPdfOpts): 
     doc.setTextColor(255);
     doc.setFont("helvetica", "bold").setFontSize(12);
     doc.text("SIRAT — Fotos de la verificación", margin, 9);
-    doc.setFontSize(7).setFont("helvetica", "normal");
-    doc.text(
-      `N° ${opts.numero}${opts.codigo_actividad ? ` • ${opts.codigo_actividad}` : ""}`,
-      pageW - margin,
-      9,
-      { align: "right" },
-    );
     if (opts.razon_social) {
       doc.setFontSize(8);
       const lines = doc.splitTextToSize(opts.razon_social, pageW - 2 * margin);
@@ -250,5 +237,10 @@ export async function generateFormularioFotosPDF(opts: FormularioFotosPdfOpts): 
     y += dispH + captionGap + 4;
   }
 
-  doc.save(`formulario-${opts.numero}-fotos.pdf`);
+  const slug = (opts.razon_social ?? "formulario")
+    .replace(/[^\w\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-")
+    .slice(0, 40) || "formulario";
+  doc.save(`verificacion-${slug}-fotos.pdf`);
 }

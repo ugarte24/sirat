@@ -12,7 +12,6 @@ type FormularioMapaRow = {
   latitud: number | null;
   longitud: number | null;
   razon_social: string;
-  numero: number;
   contribuyente: { nombre_completo: string } | null;
 };
 
@@ -37,7 +36,7 @@ function Mapa() {
     (async () => {
       const { data } = await supabase
         .from("formularios")
-        .select("latitud,longitud,razon_social,numero,contribuyente:contribuyentes(nombre_completo)")
+        .select("latitud,longitud,razon_social,contribuyente:contribuyentes(nombre_completo)")
         .not("latitud", "is", null)
         .eq("estado", "activo")
         .limit(500);
@@ -64,8 +63,7 @@ function Mapa() {
           lat: la,
           lng: ln,
           popup: [
-            `<strong>N° ${f.numero}</strong>`,
-            f.razon_social ? escHtml(String(f.razon_social)) : "",
+            f.razon_social ? `<strong>${escHtml(String(f.razon_social))}</strong>` : "",
             f.contribuyente?.nombre_completo ? `Contribuyente: ${escHtml(f.contribuyente.nombre_completo)}` : "",
             `<p style="margin:8px 0 0"><a href="${gmaps}" target="_blank" rel="noopener noreferrer">Abrir en Google Maps — cómo llegar</a></p>`,
           ]

@@ -133,7 +133,7 @@ export function FormularioNuevaActividadForm({
       const { error: upErr } = await supabase.storage.from("formulario-fotos").upload(path, file);
       if (!upErr) await supabase.from("formulario_fotos").insert({ formulario_id: created.id, storage_path: path });
     }
-    toast.success(`${FORMULARIO_VERIFICACION_NOMBRE} N° ${created.numero} registrado`);
+    toast.success(`${FORMULARIO_VERIFICACION_NOMBRE} registrado`);
     revokePhotos(photos);
     setPhotos([]);
     setF(emptyFormularioNuevo());

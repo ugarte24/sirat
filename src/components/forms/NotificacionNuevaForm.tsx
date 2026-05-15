@@ -72,7 +72,7 @@ export function NotificacionNuevaForm({
     const payload = notificacionStateToInsert(n, u.user?.id);
     const { data, error } = await supabase.from("notificaciones").insert(payload).select().single();
     if (error) return toast.error(error.message);
-    toast.success(`Notificación N° ${data.codigo} creada`);
+    toast.success("Notificación registrada");
     setN(defaultNotificacionNueva());
     setNaHits([]);
     onSuccess();
@@ -90,7 +90,7 @@ export function NotificacionNuevaForm({
       .from("formularios")
       .select("razon_social, contribuyente:contribuyentes(nombre_completo, ci)")
       .ilike("razon_social", `%${q}%`)
-      .order("numero", { ascending: false })
+      .order("fecha", { ascending: false })
       .limit(40);
     setNaBuscando(false);
     if (error) {

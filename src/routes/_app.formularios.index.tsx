@@ -42,7 +42,7 @@ type FormSearch = { nuevo?: boolean; editar?: string };
 
 type FormRow = Pick<
   Database["public"]["Tables"]["formularios"]["Row"],
-  "id" | "numero" | "codigo_actividad" | "fecha" | "zona" | "estado" | "razon_social" | "contribuyente_id"
+  "id" | "fecha" | "zona" | "estado" | "razon_social" | "contribuyente_id"
 > & {
   contribuyente: { nombre_completo: string; ci: string } | null;
 };
@@ -114,10 +114,10 @@ function Lista() {
     let qb = supabase
       .from("formularios")
       .select(
-        "id, numero, codigo_actividad, fecha, zona, estado, razon_social, contribuyente_id, contribuyente:contribuyentes(nombre_completo, ci)",
+        "id, fecha, zona, estado, razon_social, contribuyente_id, contribuyente:contribuyentes(nombre_completo, ci)",
         { count: "exact" },
       )
-      .order("numero", { ascending: false });
+      .order("fecha", { ascending: false });
 
     if (pat) {
       const { data: cm } = await supabase
@@ -315,11 +315,6 @@ function Lista() {
                     <DataListTd className="whitespace-nowrap text-muted-foreground">{fmtFecha(f.fecha)}</DataListTd>
                     <DataListTd>
                       <div className="font-semibold text-foreground">{f.razon_social}</div>
-                      <div className="text-xs text-muted-foreground">
-                        <span className="font-mono">N° {f.numero}</span>
-                        {" · "}
-                        <span className="font-mono">{f.codigo_actividad}</span>
-                      </div>
                       <div className="mt-0.5 text-xs text-muted-foreground">
                         {f.contribuyente?.nombre_completo ?? "—"} — C.I. {f.contribuyente?.ci ?? "—"}
                       </div>

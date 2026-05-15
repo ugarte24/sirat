@@ -28,7 +28,6 @@ function Detalle() {
   ].filter(Boolean) as string[];
 
   const pdf = () => generateNotificacionPDF({
-    codigo: n.codigo, numero_correlativo: n.numero_correlativo,
     fecha: n.created_at.slice(0, 10), nombre_actividad: n.nombre_actividad,
     numero_identificacion: n.numero_identificacion,
     ci: n.contribuyente.ci, direccion: n.direccion, fecha_limite: n.fecha_limite,
@@ -44,7 +43,6 @@ function Detalle() {
     <div className="space-y-4 max-w-xl">
       <div className="flex justify-between items-start flex-wrap gap-2">
         <div>
-          <p className="text-xs text-muted-foreground font-mono">N° {n.codigo}-{n.numero_correlativo}</p>
           <h1 className="font-display text-2xl font-bold">Notificación</h1>
         </div>
         <Badge variant={n.estado === "cumplido" ? "default" : n.estado === "anulado" ? "destructive" : "secondary"}>{n.estado}</Badge>

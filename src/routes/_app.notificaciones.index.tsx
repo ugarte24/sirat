@@ -35,7 +35,7 @@ type NotifSearch = { nueva?: boolean };
 
 type NotifRow = Pick<
   Database["public"]["Tables"]["notificaciones"]["Row"],
-  "id" | "codigo" | "fecha_limite" | "estado" | "nombre_actividad" | "created_at" | "contribuyente_id"
+  "id" | "fecha_limite" | "estado" | "nombre_actividad" | "created_at" | "contribuyente_id"
 > & {
   contribuyente: { nombre_completo: string; ci: string } | null;
 };
@@ -115,10 +115,10 @@ function Lista() {
     let qb = supabase
       .from("notificaciones")
       .select(
-        "id, codigo, fecha_limite, estado, nombre_actividad, created_at, contribuyente_id, contribuyente:contribuyentes(nombre_completo, ci)",
+        "id, fecha_limite, estado, nombre_actividad, created_at, contribuyente_id, contribuyente:contribuyentes(nombre_completo, ci)",
         { count: "exact" },
       )
-      .order("codigo", { ascending: false });
+      .order("created_at", { ascending: false });
 
     if (pat) {
       const { data: cm } = await supabase
@@ -284,8 +284,6 @@ function Lista() {
                         {n.nombre_actividad?.trim() || n.contribuyente?.nombre_completo || "—"}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        <span className="font-mono">N° {n.codigo}</span>
-                        {" · "}
                         {n.contribuyente?.nombre_completo ?? "—"} — C.I. {n.contribuyente?.ci ?? "—"}
                       </div>
                     </DataListTd>

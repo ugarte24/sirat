@@ -202,7 +202,6 @@ export type NotificacionInsertPayload = Pick<
   | "bienes_inmuebles"
   | "vehiculos"
   | "gestiones_adeudadas"
-  | "numero_correlativo"
   | "created_by"
 >;
 
@@ -221,11 +220,10 @@ export function notificacionStateToInsert(
     bienes_inmuebles: n.bienes_inmuebles,
     vehiculos: n.vehiculos,
     gestiones_adeudadas: n.gestiones_adeudadas.trim() || null,
-    numero_correlativo: 0,
     created_by: createdBy ?? null,
   };
 }
 
 /** Tipado útil al leer la fila creada */
-export type FormularioCreadoRow = Pick<FormRow, "id" | "numero">;
-export type NotificacionCreadaRow = Pick<NotifRow, "id" | "codigo">;
+export type FormularioCreadoRow = Pick<FormRow, "id">;
+export type NotificacionCreadaRow = Pick<NotifRow, "id">;

@@ -49,7 +49,6 @@ function ClientOnly({ children }: { children: ReactNode }) {
 }
 
 export function FormularioEditarForm({ formularioId, onSuccess, onCancel }: FormularioEditarFormProps) {
-  const [meta, setMeta] = useState<{ numero: number; codigo_actividad: string } | null>(null);
   const [contribs, setContribs] = useState<ContribuyenteCatalogRow[]>([]);
   const [f, setF] = useState<FormularioNuevoState | null>(null);
   const [existingPhotos, setExistingPhotos] = useState<ExistingPhoto[]>([]);
@@ -97,7 +96,6 @@ export function FormularioEditarForm({ formularioId, onSuccess, onCancel }: Form
           return;
         }
 
-        setMeta({ numero: formRes.data.numero, codigo_actividad: formRes.data.codigo_actividad });
         setF(formularioRowToState(formRes.data));
 
         const { data: fotos } = await supabase
@@ -192,11 +190,7 @@ export function FormularioEditarForm({ formularioId, onSuccess, onCancel }: Form
     revokeLocalPhotos(newPhotos);
     setNewPhotos([]);
     setBusy(false);
-    toast.success(
-      meta
-        ? `${FORMULARIO_VERIFICACION_NOMBRE} N° ${meta.numero} actualizado`
-        : `${FORMULARIO_VERIFICACION_NOMBRE} actualizado`,
-    );
+    toast.success(`${FORMULARIO_VERIFICACION_NOMBRE} actualizado`);
     onSuccess();
   };
 
@@ -206,11 +200,6 @@ export function FormularioEditarForm({ formularioId, onSuccess, onCancel }: Form
 
   return (
     <form onSubmit={submit} className="space-y-4">
-      {meta && (
-        <p className="text-xs text-muted-foreground font-mono">
-          N° {meta.numero} · {meta.codigo_actividad}
-        </p>
-      )}
       <Card className="p-5 space-y-4 border-0 shadow-none sm:border sm:shadow-sm">
         <div>
           <Label>Contribuyente *</Label>
