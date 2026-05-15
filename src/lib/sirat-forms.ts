@@ -160,6 +160,22 @@ export function formularioRowToState(row: FormRow): FormularioNuevoState {
   };
 }
 
+export const NOTIFICACION_CONCEPTO_OPTS = [
+  { key: "padron_municipal" as const, label: "Padrón municipal" },
+  { key: "permiso_bebidas_alcoholicas" as const, label: "Permiso de bebidas alcohólicas" },
+  { key: "impuestos_patente" as const, label: "Impuestos de patente" },
+  { key: "bienes_inmuebles" as const, label: "Impuesto a la propiedad de bienes inmuebles" },
+  { key: "vehiculos" as const, label: "Impuesto a la propiedad de vehículo automotor" },
+];
+
+export type NotificacionConceptoKey = (typeof NOTIFICACION_CONCEPTO_OPTS)[number]["key"];
+
+export function notificacionConceptosMarcados(
+  n: Pick<NotificacionNuevaState, NotificacionConceptoKey>,
+): string[] {
+  return NOTIFICACION_CONCEPTO_OPTS.filter((o) => n[o.key]).map((o) => o.label);
+}
+
 /** Estado del formulario “nueva notificación” */
 export interface NotificacionNuevaState {
   contribuyente_id: string;
@@ -168,6 +184,7 @@ export interface NotificacionNuevaState {
   direccion: string;
   fecha_limite: string;
   padron_municipal: boolean;
+  permiso_bebidas_alcoholicas: boolean;
   impuestos_patente: boolean;
   bienes_inmuebles: boolean;
   vehiculos: boolean;
@@ -182,6 +199,7 @@ export function defaultNotificacionNueva(): NotificacionNuevaState {
     direccion: "",
     fecha_limite: "",
     padron_municipal: false,
+    permiso_bebidas_alcoholicas: false,
     impuestos_patente: false,
     bienes_inmuebles: false,
     vehiculos: false,
@@ -198,6 +216,7 @@ export type NotificacionInsertPayload = Pick<
   | "direccion"
   | "fecha_limite"
   | "padron_municipal"
+  | "permiso_bebidas_alcoholicas"
   | "impuestos_patente"
   | "bienes_inmuebles"
   | "vehiculos"
@@ -216,6 +235,7 @@ export function notificacionStateToInsert(
     direccion: n.direccion.trim(),
     fecha_limite: n.fecha_limite,
     padron_municipal: n.padron_municipal,
+    permiso_bebidas_alcoholicas: n.permiso_bebidas_alcoholicas,
     impuestos_patente: n.impuestos_patente,
     bienes_inmuebles: n.bienes_inmuebles,
     vehiculos: n.vehiculos,

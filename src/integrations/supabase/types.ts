@@ -166,6 +166,7 @@ export type Database = {
           numero_identificacion: string | null
           observacion_seguimiento: string | null
           padron_municipal: boolean
+          permiso_bebidas_alcoholicas: boolean
           updated_at: string
           vehiculos: boolean
         }
@@ -184,6 +185,7 @@ export type Database = {
           numero_identificacion?: string | null
           observacion_seguimiento?: string | null
           padron_municipal?: boolean
+          permiso_bebidas_alcoholicas?: boolean
           updated_at?: string
           vehiculos?: boolean
         }
@@ -202,6 +204,7 @@ export type Database = {
           numero_identificacion?: string | null
           observacion_seguimiento?: string | null
           padron_municipal?: boolean
+          permiso_bebidas_alcoholicas?: boolean
           updated_at?: string
           vehiculos?: boolean
         }

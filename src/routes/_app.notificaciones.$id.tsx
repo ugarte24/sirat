@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { FileDown, Check, Ban } from "lucide-react";
 import { toast } from "sonner";
 import { generateNotificacionPDF } from "@/lib/pdf";
+import { notificacionConceptosMarcados } from "@/lib/sirat-forms";
 import { formatDateEsBo } from "@/lib/date";
 
 export const Route = createFileRoute("/_app/notificaciones/$id")({ component: Detalle });
@@ -21,12 +22,7 @@ function Detalle() {
 
   if (!n) return <p>Cargando…</p>;
 
-  const conceptos = [
-    n.padron_municipal && "Padrón municipal",
-    n.impuestos_patente && "Impuestos de patente",
-    n.bienes_inmuebles && "Bienes inmuebles",
-    n.vehiculos && "Vehículos",
-  ].filter(Boolean) as string[];
+  const conceptos = notificacionConceptosMarcados(n);
 
   const pdf = () => generateNotificacionPDF({
     fecha: n.created_at.slice(0, 10), nombre_actividad: n.nombre_actividad,

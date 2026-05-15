@@ -164,6 +164,7 @@ CREATE TABLE public.notificaciones (
   direccion TEXT NOT NULL,
   fecha_limite DATE NOT NULL,
   padron_municipal BOOLEAN NOT NULL DEFAULT false,
+  permiso_bebidas_alcoholicas BOOLEAN NOT NULL DEFAULT false,
   impuestos_patente BOOLEAN NOT NULL DEFAULT false,
   bienes_inmuebles BOOLEAN NOT NULL DEFAULT false,
   vehiculos BOOLEAN NOT NULL DEFAULT false,

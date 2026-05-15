@@ -11,21 +11,12 @@ import { DatePickerField } from "@/components/DatePickerField";
 import { toast } from "sonner";
 import { Search } from "lucide-react";
 import type { ContribuyenteCatalogRow, NotificacionNuevaState } from "@/lib/sirat-forms";
-import { defaultNotificacionNueva, notificacionStateToInsert } from "@/lib/sirat-forms";
+import {
+  defaultNotificacionNueva,
+  NOTIFICACION_CONCEPTO_OPTS,
+  notificacionStateToInsert,
+} from "@/lib/sirat-forms";
 import { FORMULARIO_VERIFICACION_SECCION } from "@/lib/sirat-brand";
-
-const CONCEPT_OPTS: Array<{
-  key: keyof Pick<
-    NotificacionNuevaState,
-    "padron_municipal" | "impuestos_patente" | "bienes_inmuebles" | "vehiculos"
-  >;
-  label: string;
-}> = [
-  { key: "padron_municipal", label: "Padrón municipal" },
-  { key: "impuestos_patente", label: "Impuestos de patente" },
-  { key: "bienes_inmuebles", label: "Bienes inmuebles" },
-  { key: "vehiculos", label: "Vehículos" },
-];
 
 type RazonSocialFormHit = {
   razon_social: string;
@@ -66,9 +57,15 @@ export function NotificacionNuevaForm({
     if (!n.contribuyente_id) return toast.error("Selecciona contribuyente");
     if (!n.fecha_limite.trim()) return toast.error("Indique la fecha límite");
     const hasConcepto =
-      n.padron_municipal || n.impuestos_patente || n.bienes_inmuebles || n.vehiculos;
+      n.padron_municipal ||
+      n.permiso_bebidas_alcoholicas ||
+      n.impuestos_patente ||
+      n.bienes_inmuebles ||
+      n.vehiculos;
     if (!hasConcepto) {
-      return toast.error("Marque al menos un concepto (Padrón municipal, Impuestos de patente, Bienes inmuebles o Vehículos).");
+      return toast.error(
+        `Marque al menos un concepto (${NOTIFICACION_CONCEPTO_OPTS.map((o) => o.label).join(", ")}).`,
+      );
     }
     const { data: u } = await supabase.auth.getUser();
     const payload = notificacionStateToInsert(n, u.user?.id);
@@ -219,7 +216,7 @@ export function NotificacionNuevaForm({
         <fieldset className="space-y-2 min-w-0">
           <legend className="text-sm font-medium leading-none">Conceptos *</legend>
           <p className="text-xs text-muted-foreground">Debe marcar al menos una de las opciones.</p>
-          {CONCEPT_OPTS.map(({ key, label }) => (
+          {NOTIFICACION_CONCEPTO_OPTS.map(({ key, label }) => (
             <div key={key} className="flex items-center gap-2">
               <Checkbox
                 id={`notif-concept-${key}`}
