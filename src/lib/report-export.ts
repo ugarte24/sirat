@@ -31,6 +31,7 @@ export const REPORTE_COLUMNS: Record<ReporteTipo, ReportColumn[]> = {
   ],
   notificaciones: [
     { key: "fecha_emision", header: "Fecha emisión" },
+    { key: "contribuyente_nombre", header: "Contribuyente" },
     { key: "contribuyente_ci", header: "C.I." },
     { key: "nombre_actividad", header: "Nombre de la actividad" },
     { key: "numero_identificacion", header: "Licencia / placa / inmueble" },
@@ -77,7 +78,7 @@ type NotificacionRow = {
   impuestos_patente: boolean;
   bienes_inmuebles: boolean;
   vehiculos: boolean;
-  contribuyente: { ci: string } | null;
+  contribuyente: { nombre_completo: string; ci: string } | null;
 };
 
 type ContribuyenteRow = {
@@ -115,6 +116,7 @@ function mapNotificacion(row: NotificacionRow): ReporteFila {
   const conceptos = notificacionConceptosMarcados(row).join(", ");
   return {
     fecha_emision: formatDateEsBo(row.created_at.slice(0, 10)),
+    contribuyente_nombre: row.contribuyente?.nombre_completo ?? "",
     contribuyente_ci: row.contribuyente?.ci ?? "",
     nombre_actividad: row.nombre_actividad ?? "",
     numero_identificacion: row.numero_identificacion ?? "",
@@ -155,7 +157,7 @@ export const REPORTE_SELECT: Record<ReporteTipo, string> = {
     created_at, nombre_actividad, numero_identificacion, direccion, fecha_limite,
     gestiones_adeudadas, padron_municipal, permiso_bebidas_alcoholicas, impuestos_patente,
     bienes_inmuebles, vehiculos,
-    contribuyente:contribuyentes(ci)
+    contribuyente:contribuyentes(nombre_completo, ci)
   `,
   contribuyentes: "created_at, ci, nombre_completo, telefono",
 };

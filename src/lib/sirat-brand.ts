@@ -35,3 +35,6 @@ export const FORMULARIO_VERIFICACION_SECCION = "Formularios de verificación";
 /** Título en PDF impreso */
 export const FORMULARIO_VERIFICACION_PDF_TITULO =
   "FORMULARIO DE VERIFICACIÓN PARA LAS ACTIVIDADES ECONÓMICAS";
+
+/** Título en PDF de notificación tributaria */
+export const NOTIFICACION_TRIBUTARIA_PDF_TITULO = "NOTIFICACIÓN TRIBUTARIA";

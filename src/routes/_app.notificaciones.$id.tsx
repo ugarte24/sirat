@@ -55,10 +55,15 @@ function Detalle() {
   const conceptos = notificacionConceptosMarcados(n);
 
   const pdf = () => generateNotificacionPDF({
-    fecha: n.created_at.slice(0, 10), nombre_actividad: n.nombre_actividad,
+    fecha: n.created_at.slice(0, 10),
+    contribuyente_nombre: n.contribuyente.nombre_completo,
+    contribuyente_ci: n.contribuyente.ci,
+    nombre_actividad: n.nombre_actividad,
     numero_identificacion: n.numero_identificacion,
-    ci: n.contribuyente.ci, direccion: n.direccion, fecha_limite: n.fecha_limite,
-    conceptos, estado: n.estado, gestiones_adeudadas: n.gestiones_adeudadas,
+    direccion: n.direccion,
+    fecha_limite: n.fecha_limite,
+    conceptos,
+    gestiones_adeudadas: n.gestiones_adeudadas,
   });
 
   const cambiarEstado = async (estado: any) => {

@@ -2,7 +2,38 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { formatDateEsBo } from "@/lib/date";
 import { downloadJsPdf } from "@/lib/download-file";
-import { FORMULARIO_VERIFICACION_PDF_TITULO } from "@/lib/sirat-brand";
+import {
+  FORMULARIO_VERIFICACION_PDF_TITULO,
+  NOTIFICACION_TRIBUTARIA_PDF_TITULO,
+  SIRAT_REPORT_COLORS,
+  SIRAT_TAGLINE,
+} from "@/lib/sirat-brand";
+
+const PDF_PRIMARY = SIRAT_REPORT_COLORS.primary;
+const PDF_TABLE_THEME = {
+  theme: "grid" as const,
+  styles: { fontSize: 9, cellPadding: 2 },
+  headStyles: { fillColor: [PDF_PRIMARY.r, PDF_PRIMARY.g, PDF_PRIMARY.b] as [number, number, number] },
+};
+
+function drawSiratPdfBanner(doc: jsPDF, w: number) {
+  doc.setFillColor(PDF_PRIMARY.r, PDF_PRIMARY.g, PDF_PRIMARY.b);
+  doc.rect(0, 0, w, 28, "F");
+  doc.setTextColor(255);
+  doc.setFont("helvetica", "bold").setFontSize(18);
+  doc.text("SIRAT", 14, 14);
+  doc.setFontSize(9).setFont("helvetica", "normal");
+  doc.text(SIRAT_TAGLINE, 14, 21);
+}
+
+function drawSiratPdfSignatures(doc: jsPDF, w: number, finalY: number) {
+  const sigW = (w - 28) / 3;
+  ["Inspector Tributario", "Contribuyente", "Asesor Legal"].forEach((label, i) => {
+    const x = 14 + i * sigW;
+    doc.line(x + 5, finalY + 18, x + sigW - 5, finalY + 18);
+    doc.setFontSize(8).text(label, x + sigW / 2, finalY + 24, { align: "center" });
+  });
+}
 
 interface FormularioData {
   fecha: string;
@@ -27,14 +58,7 @@ interface FormularioData {
 export function generateFormularioPDF(d: FormularioData) {
   const doc = new jsPDF();
   const w = doc.internal.pageSize.getWidth();
-  // Header
-  doc.setFillColor(45, 55, 120);
-  doc.rect(0, 0, w, 28, "F");
-  doc.setTextColor(255);
-  doc.setFont("helvetica", "bold").setFontSize(18);
-  doc.text("SIRAT", 14, 14);
-  doc.setFontSize(9).setFont("helvetica", "normal");
-  doc.text("Sistema Integrado de Registro y Administración Tributaria", 14, 21);
+  drawSiratPdfBanner(doc, w);
 
   doc.setTextColor(0);
   doc.setFontSize(13).setFont("helvetica", "bold");
@@ -42,9 +66,7 @@ export function generateFormularioPDF(d: FormularioData) {
 
   autoTable(doc, {
     startY: 44,
-    theme: "grid",
-    styles: { fontSize: 9, cellPadding: 2 },
-    headStyles: { fillColor: [45, 55, 120] },
+    ...PDF_TABLE_THEME,
     body: [
       ["Fecha", formatDateEsBo(d.fecha), "Estado", d.estado.toUpperCase()],
       ["Contribuyente", d.contribuyente_nombre, "C.I.", d.contribuyente_ci],
@@ -61,12 +83,7 @@ export function generateFormularioPDF(d: FormularioData) {
   });
 
   const finalY = (doc as any).lastAutoTable.finalY + 20;
-  const sigW = (w - 28) / 3;
-  ["Inspector Tributario", "Contribuyente", "Asesor Legal"].forEach((label, i) => {
-    const x = 14 + i * sigW;
-    doc.line(x + 5, finalY + 18, x + sigW - 5, finalY + 18);
-    doc.setFontSize(8).text(label, x + sigW / 2, finalY + 24, { align: "center" });
-  });
+  drawSiratPdfSignatures(doc, w, finalY);
 
   const slug = d.razon_social.replace(/[^\w\s-]/g, "").trim().replace(/\s+/g, "-").slice(0, 40) || "formulario";
   downloadJsPdf(doc, `verificacion-${slug}.pdf`);
@@ -74,63 +91,47 @@ export function generateFormularioPDF(d: FormularioData) {
 
 interface NotificacionData {
   fecha: string;
+  contribuyente_nombre: string;
+  contribuyente_ci: string;
   nombre_actividad: string | null;
   numero_identificacion: string | null;
-  ci: string;
   direccion: string;
   fecha_limite: string;
   conceptos: string[];
-  estado: string;
   gestiones_adeudadas: string | null;
 }
 
 export function generateNotificacionPDF(d: NotificacionData) {
   const doc = new jsPDF();
   const w = doc.internal.pageSize.getWidth();
-  doc.setFillColor(45, 55, 120);
-  doc.rect(0, 0, w, 28, "F");
-  doc.setTextColor(255);
-  doc.setFont("helvetica", "bold").setFontSize(18);
-  doc.text("SIRAT", 14, 14);
-  doc.setFontSize(9).setFont("helvetica", "normal");
-  doc.text("Notificación tributaria", 14, 21);
+  drawSiratPdfBanner(doc, w);
 
   doc.setTextColor(0);
   doc.setFontSize(13).setFont("helvetica", "bold");
-  doc.text("NOTIFICACIÓN TRIBUTARIA", w / 2, 40, { align: "center" });
+  doc.text(NOTIFICACION_TRIBUTARIA_PDF_TITULO, w / 2, 38, { align: "center" });
 
   autoTable(doc, {
-    startY: 46,
-    theme: "grid",
-    styles: { fontSize: 9, cellPadding: 2.5 },
-    headStyles: { fillColor: [45, 55, 120] },
+    startY: 44,
+    ...PDF_TABLE_THEME,
     body: [
-      ["Fecha emisión", formatDateEsBo(d.fecha), "Estado", d.estado.toUpperCase()],
-      ["Nombre de la actividad", d.nombre_actividad?.trim() || "—", "Licencia / placa / inmueble", d.numero_identificacion?.trim() || "—"],
-      ["C.I. contribuyente", d.ci, "Dirección", d.direccion],
-      ["Fecha límite", formatDateEsBo(d.fecha_limite), "", ""],
-      ["Observaciones / gestiones adeudadas", d.gestiones_adeudadas?.trim() || "—", "", ""],
+      ["Fecha emisión", formatDateEsBo(d.fecha), "", ""],
+      ["Contribuyente", d.contribuyente_nombre, "C.I.", d.contribuyente_ci],
+      [
+        "Nombre de la actividad",
+        d.nombre_actividad?.trim() || "—",
+        "Licencia / placa / inmueble",
+        d.numero_identificacion?.trim() || "—",
+      ],
+      ["Dirección", d.direccion, "Fecha límite", formatDateEsBo(d.fecha_limite)],
       ["Conceptos", d.conceptos.join(", ") || "—", "", ""],
+      ["Gestiones adeudadas", d.gestiones_adeudadas?.trim() || "—", "", ""],
     ],
   });
 
-  const y = (doc as any).lastAutoTable.finalY + 12;
-  doc.setFontSize(10).setFont("helvetica", "normal");
-  const text =
-    "Por la presente se le notifica formalmente para que cumpla con sus obligaciones tributarias " +
-    "antes de la fecha límite indicada. El incumplimiento dará lugar a las sanciones previstas por ley.";
-  const lines = doc.splitTextToSize(text, w - 28);
-  doc.text(lines, 14, y);
+  const finalY = (doc as any).lastAutoTable.finalY + 20;
+  drawSiratPdfSignatures(doc, w, finalY);
 
-  const finalY = y + lines.length * 5 + 25;
-  const sigW = (w - 28) / 2;
-  ["Inspector Tributario", "Notificado / Contribuyente"].forEach((label, i) => {
-    const x = 14 + i * sigW;
-    doc.line(x + 10, finalY + 18, x + sigW - 10, finalY + 18);
-    doc.setFontSize(9).text(label, x + sigW / 2, finalY + 24, { align: "center" });
-  });
-
-  const slug = (d.nombre_actividad?.trim() || d.ci)
+  const slug = (d.nombre_actividad?.trim() || d.contribuyente_ci)
     .replace(/[^\w\s-]/g, "")
     .trim()
     .replace(/\s+/g, "-")
