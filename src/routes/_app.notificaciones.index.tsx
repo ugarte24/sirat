@@ -188,6 +188,10 @@ function Lista() {
       <Dialog
         open={dialogOpen}
         onOpenChange={(open) => {
+          if (!open && subvista === "contrib") {
+            setSubvista("notificacion");
+            return;
+          }
           setDialogOpen(open);
           if (!open) setSubvista("notificacion");
         }}
@@ -212,8 +216,8 @@ function Lista() {
                   setSubvista("notificacion");
                 }}
               />
-              <Button type="button" variant="outline" className="w-full" onClick={() => setSubvista("notificacion")}>
-                Seguir con la notificación
+              <Button type="button" variant="ghost" className="w-full" onClick={() => setSubvista("notificacion")}>
+                Volver a nueva notificación
               </Button>
             </div>
           ) : (
