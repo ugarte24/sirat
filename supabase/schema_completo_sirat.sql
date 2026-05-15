@@ -180,19 +180,6 @@ FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 CREATE INDEX idx_notif_contrib ON public.notificaciones(contribuyente_id);
 CREATE INDEX idx_notif_estado ON public.notificaciones(estado);
 
--- Auditoría
-CREATE TABLE public.auditoria (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES auth.users(id),
-  accion TEXT NOT NULL,
-  entidad TEXT NOT NULL,
-  entidad_id UUID,
-  detalle JSONB,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-ALTER TABLE public.auditoria ENABLE ROW LEVEL SECURITY;
-CREATE INDEX idx_audit_created ON public.auditoria(created_at DESC);
-
 -- ========== POLICIES ==========
 
 CREATE POLICY "Profiles: self select" ON public.profiles FOR SELECT TO authenticated USING (auth.uid() = id OR public.has_role(auth.uid(), 'admin'));
@@ -220,9 +207,6 @@ CREATE POLICY "Notif: read auth" ON public.notificaciones FOR SELECT TO authenti
 CREATE POLICY "Notif: insert auth" ON public.notificaciones FOR INSERT TO authenticated WITH CHECK (auth.uid() IS NOT NULL);
 CREATE POLICY "Notif: update auth" ON public.notificaciones FOR UPDATE TO authenticated USING (auth.uid() IS NOT NULL);
 CREATE POLICY "Notif: delete admin" ON public.notificaciones FOR DELETE TO authenticated USING (public.has_role(auth.uid(), 'admin'));
-
-CREATE POLICY "Audit: admin read" ON public.auditoria FOR SELECT TO authenticated USING (public.has_role(auth.uid(), 'admin'));
-CREATE POLICY "Audit: insert auth" ON public.auditoria FOR INSERT TO authenticated WITH CHECK (auth.uid() IS NOT NULL);
 
 -- ========== STORAGE (bucket privado; lectura solo usuarios autenticados) ==========
 INSERT INTO storage.buckets (id, name, public) VALUES ('formulario-fotos', 'formulario-fotos', false)

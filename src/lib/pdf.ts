@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { formatDateEsBo } from "@/lib/date";
 import { FORMULARIO_VERIFICACION_PDF_TITULO } from "@/lib/sirat-brand";
 
 interface FormularioData {
@@ -44,7 +45,7 @@ export function generateFormularioPDF(d: FormularioData) {
     styles: { fontSize: 9, cellPadding: 2 },
     headStyles: { fillColor: [45, 55, 120] },
     body: [
-      ["Fecha", d.fecha, "Estado", d.estado.toUpperCase()],
+      ["Fecha", formatDateEsBo(d.fecha), "Estado", d.estado.toUpperCase()],
       ["Contribuyente", d.contribuyente_nombre, "C.I.", d.contribuyente_ci],
       ["Razón social", d.razon_social, "NIT", d.nit ?? "—"],
       ["Zona", d.zona, "Superficie (m²)", String(d.superficie)],
@@ -103,10 +104,10 @@ export function generateNotificacionPDF(d: NotificacionData) {
     styles: { fontSize: 9, cellPadding: 2.5 },
     headStyles: { fillColor: [45, 55, 120] },
     body: [
-      ["Fecha emisión", d.fecha, "Estado", d.estado.toUpperCase()],
+      ["Fecha emisión", formatDateEsBo(d.fecha), "Estado", d.estado.toUpperCase()],
       ["Nombre de la actividad", d.nombre_actividad?.trim() || "—", "Licencia / placa / inmueble", d.numero_identificacion?.trim() || "—"],
       ["C.I. contribuyente", d.ci, "Dirección", d.direccion],
-      ["Fecha límite", d.fecha_limite, "", ""],
+      ["Fecha límite", formatDateEsBo(d.fecha_limite), "", ""],
       ["Gestiones que adeuda", d.gestiones_adeudadas?.trim() || "—", "", ""],
       ["Conceptos", d.conceptos.join(", ") || "—", "", ""],
     ],

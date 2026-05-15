@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { FileDown, Check, Ban } from "lucide-react";
 import { toast } from "sonner";
 import { generateNotificacionPDF } from "@/lib/pdf";
+import { formatDateEsBo } from "@/lib/date";
 
 export const Route = createFileRoute("/_app/notificaciones/$id")({ component: Detalle });
 
@@ -69,7 +70,7 @@ function Detalle() {
         </div>
         <div><span className="text-muted-foreground">C.I.:</span> {n.contribuyente.ci}</div>
         <div><span className="text-muted-foreground">Dirección:</span> {n.direccion}</div>
-        <div><span className="text-muted-foreground">Fecha límite:</span> {n.fecha_limite}</div>
+        <div><span className="text-muted-foreground">Fecha límite:</span> {formatDateEsBo(n.fecha_limite)}</div>
         <div><span className="text-muted-foreground">Conceptos:</span> {conceptos.join(", ") || "—"}</div>
         <div>
           <span className="text-muted-foreground">Gestiones que adeuda:</span>{" "}

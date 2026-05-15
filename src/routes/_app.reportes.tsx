@@ -3,8 +3,8 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DatePickerField } from "@/components/DatePickerField";
 import { FileDown, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
@@ -70,8 +70,14 @@ function Reportes() {
           </div>
         </div>
         <div className="grid sm:grid-cols-2 gap-3">
-          <div><Label>Desde</Label><Input type="date" value={from} onChange={e => setFrom(e.target.value)} /></div>
-          <div><Label>Hasta</Label><Input type="date" value={to} onChange={e => setTo(e.target.value)} /></div>
+          <div>
+            <Label htmlFor="reporte-desde">Desde</Label>
+            <DatePickerField id="reporte-desde" value={from} onChange={setFrom} placeholder="Desde (día / mes / año)" />
+          </div>
+          <div>
+            <Label htmlFor="reporte-hasta">Hasta</Label>
+            <DatePickerField id="reporte-hasta" value={to} onChange={setTo} placeholder="Hasta (día / mes / año)" />
+          </div>
         </div>
         <div className="flex gap-2">
           <Button onClick={exportPDF} className="flex-1 bg-gradient-primary">

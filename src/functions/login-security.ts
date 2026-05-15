@@ -1,7 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { auditoriaInsert } from "@/lib/server-audit";
-
 const emailSchema = z.object({
   email: z.string().trim().email(),
 });
@@ -13,7 +11,7 @@ const outcomeSchema = z.object({
 
 const MAX_INTENTOS = 5;
 
-/** Sin service role el servidor no puede leer perfiles ignorando RLS: el login sigue funcionando sin contador/auditoría. */
+/** Sin service role el servidor no puede leer perfiles ignorando RLS: el login sigue funcionando sin contador de intentos. */
 function hasSupabaseServiceEnv(): boolean {
   return !!(process.env.SUPABASE_URL?.trim() && process.env.SUPABASE_SERVICE_ROLE_KEY?.trim());
 }
@@ -61,7 +59,7 @@ export const checkLoginAllowedFn = createServerFn({ method: "POST" })
     }
   });
 
-/** Tras intento de login: contador de fallos, auditoría y reinicio en éxito. */
+/** Tras intento de login: contador de fallos y reinicio en éxito. */
 export const recordLoginOutcomeFn = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => outcomeSchema.parse(data))
   .handler(async ({ data }) => {
@@ -86,26 +84,11 @@ export const recordLoginOutcomeFn = createServerFn({ method: "POST" })
 
       if (data.success) {
         await supabaseAdmin.from("profiles").update({ intentos_fallidos: 0 }).eq("id", prof.id);
-        await auditoriaInsert(supabaseAdmin, {
-          user_id: prof.id,
-          accion: "login_exitoso",
-          entidad: "auth",
-          entidad_id: prof.id,
-          detalle: { email: data.email.trim() },
-        });
         return { ok: true as const };
       }
 
       const next = (prof.intentos_fallidos ?? 0) + 1;
       await supabaseAdmin.from("profiles").update({ intentos_fallidos: next }).eq("id", prof.id);
-
-      await auditoriaInsert(supabaseAdmin, {
-        user_id: prof.id,
-        accion: "login_fallido",
-        entidad: "auth",
-        entidad_id: prof.id,
-        detalle: { email: data.email.trim(), intentos_fallidos: next },
-      });
 
       return { ok: true as const, intentosFallidos: next };
     } catch (e) {

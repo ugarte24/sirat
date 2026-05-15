@@ -36,6 +36,7 @@ import { TableRow } from "@/components/ui/table";
 import { MoreVertical, Plus, Search } from "lucide-react";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
+import { formatDateEsBo } from "@/lib/date";
 
 type ContribSearch = { nuevo?: boolean };
 
@@ -62,14 +63,6 @@ function countByContribuyente(rows: { contribuyente_id: string }[] | null): Map<
     m.set(r.contribuyente_id, (m.get(r.contribuyente_id) ?? 0) + 1);
   }
   return m;
-}
-
-function fmtFecha(iso: string) {
-  try {
-    return new Date(iso).toLocaleDateString("es-BO", { day: "2-digit", month: "2-digit", year: "numeric" });
-  } catch {
-    return "—";
-  }
 }
 
 function ListaContribuyentes() {
@@ -248,7 +241,7 @@ function ListaContribuyentes() {
                     className="cursor-pointer border-b border-border/60 hover:bg-muted/40"
                     onClick={() => navigate({ to: "/contribuyentes/$id", params: { id: c.id } })}
                   >
-                    <DataListTd className="whitespace-nowrap text-muted-foreground">{fmtFecha(c.created_at)}</DataListTd>
+                    <DataListTd className="whitespace-nowrap text-muted-foreground">{formatDateEsBo(c.created_at)}</DataListTd>
                     <DataListTd>
                       <div className="font-semibold text-foreground">{c.nombre_completo}</div>
                       <div className="text-xs text-muted-foreground">C.I. {c.ci}</div>

@@ -2,8 +2,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
-import { auditoriaInsert } from "@/lib/server-audit";
-
 const inputSchema = z.object({
   accessToken: z.string().min(20),
   userId: z.string().uuid(),
@@ -98,14 +96,6 @@ export const adminUpdateUserFn = createServerFn({ method: "POST" })
     if (insRoleErr) {
       throw new Error(`Datos guardados pero error al asignar rol: ${insRoleErr.message}`);
     }
-
-    await auditoriaInsert(supabaseAdmin, {
-      user_id: adminId,
-      accion: "admin_editar_usuario",
-      entidad: "profiles",
-      entidad_id: data.userId,
-      detalle: { email: data.email.trim(), role: data.role },
-    });
 
     return { ok: true as const };
   });

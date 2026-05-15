@@ -14,6 +14,7 @@ import { Camera, Images, X } from "lucide-react";
 import type { ContribuyenteCatalogRow, FormularioNuevoState } from "@/lib/sirat-forms";
 import { formularioRowToState, formularioStateToUpdate } from "@/lib/sirat-forms";
 import { FORMULARIO_VERIFICACION_NOMBRE } from "@/lib/sirat-brand";
+import { formatFileSize, prepareFormularioFotoFile } from "@/lib/formulario-fotos";
 
 const MapPicker = lazy(() => import("@/components/MapPicker").then((m) => ({ default: m.MapPicker })));
 
@@ -59,6 +60,7 @@ export function FormularioEditarForm({ formularioId, onSuccess, onCancel }: Form
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [catalogLoaded, setCatalogLoaded] = useState(false);
+  const [photoBusy, setPhotoBusy] = useState(false);
 
   useEffect(() => {
     return () => revokeLocalPhotos(newPhotosRef.current);
@@ -133,14 +135,40 @@ export function FormularioEditarForm({ formularioId, onSuccess, onCancel }: Form
     const files = Array.from(e.target.files ?? []);
     e.target.value = "";
     if (!files.length) return;
-    setNewPhotos((prev) => {
-      const next = [...prev];
-      for (const file of files) {
-        if (visibleExisting.length + next.length >= 2) break;
-        next.push({ file, previewUrl: URL.createObjectURL(file) });
+    const slotsLeft = 2 - visibleExisting.length;
+    void (async () => {
+      setPhotoBusy(true);
+      const pending: LocalPhoto[] = [];
+      try {
+        for (const raw of files) {
+          if (slotsLeft - pending.length <= 0) break;
+          try {
+            const { file, compressed } = await prepareFormularioFotoFile(raw);
+            if (compressed) {
+              toast.message(`Foto comprimida a ${formatFileSize(file.size)} (era ${formatFileSize(raw.size)}).`);
+            }
+            pending.push({ file, previewUrl: URL.createObjectURL(file) });
+          } catch (err) {
+            toast.error(err instanceof Error ? err.message : "No se pudo procesar la foto.");
+          }
+        }
+        if (pending.length) {
+          setNewPhotos((prev) => {
+            const next = [...prev];
+            for (const p of pending) {
+              if (visibleExisting.length + next.length >= 2) {
+                URL.revokeObjectURL(p.previewUrl);
+                continue;
+              }
+              next.push(p);
+            }
+            return next;
+          });
+        }
+      } finally {
+        setPhotoBusy(false);
       }
-      return next;
-    });
+    })();
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -181,7 +209,8 @@ export function FormularioEditarForm({ formularioId, onSuccess, onCancel }: Form
       }
     }
 
-    for (const { file } of newPhotos) {
+    for (const { file: raw } of newPhotos) {
+      const file = await prepareFormularioFotoFile(raw).then((r) => r.file);
       const path = `${formularioId}/${Date.now()}-${file.name}`;
       const { error: upErr } = await supabase.storage.from("formulario-fotos").upload(path, file);
       if (!upErr) await supabase.from("formulario_fotos").insert({ formulario_id: formularioId, storage_path: path });
@@ -343,6 +372,10 @@ export function FormularioEditarForm({ formularioId, onSuccess, onCancel }: Form
 
       <Card className="p-5 space-y-3 border-0 shadow-none sm:border sm:shadow-sm">
         <Label>Fotografías (máximo 2)</Label>
+        <p className="text-xs text-muted-foreground">
+          Máximo 2 fotos; si superan 1 MB se comprimen automáticamente.
+          {photoBusy ? " Comprimiendo…" : ""}
+        </p>
         <div className="flex gap-2 flex-wrap">
           {visibleExisting.map((p) => (
             <div key={p.id} className="relative h-24 w-24 rounded-lg overflow-hidden border">

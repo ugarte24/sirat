@@ -2,8 +2,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
-import { auditoriaInsert } from "@/lib/server-audit";
-
 const inputSchema = z.object({
   accessToken: z.string().min(20),
   targetEmail: z.string().trim().email(),
@@ -53,14 +51,6 @@ export const adminResetPasswordEmailFn = createServerFn({ method: "POST" })
     if (error) {
       throw new Error(error.message);
     }
-
-    await auditoriaInsert(supabaseAdmin, {
-      user_id: userData.user.id,
-      accion: "admin_reset_password_email",
-      entidad: "auth",
-      entidad_id: null,
-      detalle: { destinatario: data.targetEmail.trim() },
-    });
 
     return { ok: true as const };
   });

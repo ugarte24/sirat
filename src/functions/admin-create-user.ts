@@ -2,8 +2,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
-import { auditoriaInsert } from "@/lib/server-audit";
-
 const inputSchema = z.object({
   accessToken: z.string().min(20),
   email: z.string().email(),
@@ -69,14 +67,6 @@ export const adminCreateUserFn = createServerFn({ method: "POST" })
         throw new Error(`Usuario creado pero no se pudo asignar rol admin: ${insErr.message}`);
       }
     }
-
-    await auditoriaInsert(supabaseAdmin, {
-      user_id: userData.user.id,
-      accion: "admin_crear_usuario",
-      entidad: "profiles",
-      entidad_id: newId,
-      detalle: { email: data.email.trim(), role: data.role },
-    });
 
     return { ok: true as const, userId: newId };
   });

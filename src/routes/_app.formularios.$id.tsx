@@ -10,6 +10,7 @@ import { MapPicker } from "@/components/MapPicker";
 import { generateFormularioPDF, generateFormularioFotosPDF } from "@/lib/pdf";
 import { useAuth } from "@/lib/auth";
 import { FORMULARIO_VERIFICACION_NOMBRE, FORMULARIO_VERIFICACION_SECCION } from "@/lib/sirat-brand";
+import { formatDateEsBo } from "@/lib/date";
 
 export const Route = createFileRoute("/_app/formularios/$id")({ component: Detalle });
 
@@ -123,6 +124,7 @@ function Detalle() {
       </div>
 
       <Card className="p-5 grid sm:grid-cols-2 gap-3 text-sm">
+        <Info l="Fecha" v={formatDateEsBo(f.fecha)} />
         <Info l="Contribuyente" v={`${f.contribuyente.nombre_completo} (${f.contribuyente.ci})`} />
         <Info l="Zona" v={f.zona} /><Info l="Superficie" v={`${f.superficie} m²`} />
         <Info l="NIT" v={f.nit ?? "—"} /><Info l="Celular" v={f.celular} />

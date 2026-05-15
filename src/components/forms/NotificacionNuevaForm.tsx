@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ContribuyenteCombobox } from "@/components/ContribuyenteCombobox";
+import { DatePickerField } from "@/components/DatePickerField";
 import { toast } from "sonner";
 import { Search } from "lucide-react";
 import type { ContribuyenteCatalogRow, NotificacionNuevaState } from "@/lib/sirat-forms";
@@ -63,6 +64,7 @@ export function NotificacionNuevaForm({
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!n.contribuyente_id) return toast.error("Selecciona contribuyente");
+    if (!n.fecha_limite.trim()) return toast.error("Indique la fecha límite");
     const hasConcepto =
       n.padron_municipal || n.impuestos_patente || n.bienes_inmuebles || n.vehiculos;
     if (!hasConcepto) {
@@ -206,11 +208,11 @@ export function NotificacionNuevaForm({
           <Input value={n.direccion} onChange={(e) => setN({ ...n, direccion: e.target.value })} required />
         </div>
         <div>
-          <Label>Fecha límite *</Label>
-          <Input
-            type="date"
+          <Label htmlFor="notif-fecha-limite">Fecha límite *</Label>
+          <DatePickerField
+            id="notif-fecha-limite"
             value={n.fecha_limite}
-            onChange={(e) => setN({ ...n, fecha_limite: e.target.value })}
+            onChange={(fecha_limite) => setN({ ...n, fecha_limite })}
             required
           />
         </div>

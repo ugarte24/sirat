@@ -30,6 +30,7 @@ import { TableRow } from "@/components/ui/table";
 import { ChevronRight, Plus, Search } from "lucide-react";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
+import { formatDateEsBo, formatDateTimeEsBo } from "@/lib/date";
 
 type NotifSearch = { nueva?: boolean };
 
@@ -50,26 +51,6 @@ export const Route = createFileRoute("/_app/notificaciones/")({
   }),
   component: Lista,
 });
-
-function fmtFecha(iso: string) {
-  try {
-    return new Date(iso).toLocaleDateString("es-BO", { day: "2-digit", month: "2-digit", year: "numeric" });
-  } catch {
-    return "—";
-  }
-}
-
-function fmtLimite(d: string) {
-  try {
-    return new Date(d + "T12:00:00").toLocaleDateString("es-BO", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-  } catch {
-    return d;
-  }
-}
 
 function NotifEstadoPill({ estado }: { estado: Database["public"]["Enums"]["notificacion_estado"] }) {
   if (estado === "cumplido") return <span className={pillSuccess()}>Cumplido</span>;
@@ -277,7 +258,7 @@ function Lista() {
                     onClick={() => navigate({ to: "/notificaciones/$id", params: { id: n.id } })}
                   >
                     <DataListTd className="whitespace-nowrap text-muted-foreground">
-                      {fmtFecha(n.created_at)}
+                      {formatDateTimeEsBo(n.created_at)}
                     </DataListTd>
                     <DataListTd>
                       <div className="font-semibold text-foreground">
@@ -287,7 +268,7 @@ function Lista() {
                         {n.contribuyente?.nombre_completo ?? "—"} — C.I. {n.contribuyente?.ci ?? "—"}
                       </div>
                     </DataListTd>
-                    <DataListTd className="whitespace-nowrap text-muted-foreground">{fmtLimite(n.fecha_limite)}</DataListTd>
+                    <DataListTd className="whitespace-nowrap text-muted-foreground">{formatDateEsBo(n.fecha_limite)}</DataListTd>
                     <DataListTd>
                       <NotifEstadoPill estado={n.estado} />
                     </DataListTd>

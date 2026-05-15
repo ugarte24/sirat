@@ -14,36 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      auditoria: {
-        Row: {
-          accion: string
-          created_at: string
-          detalle: Json | null
-          entidad: string
-          entidad_id: string | null
-          id: string
-          user_id: string | null
-        }
-        Insert: {
-          accion: string
-          created_at?: string
-          detalle?: Json | null
-          entidad: string
-          entidad_id?: string | null
-          id?: string
-          user_id?: string | null
-        }
-        Update: {
-          accion?: string
-          created_at?: string
-          detalle?: Json | null
-          entidad?: string
-          entidad_id?: string | null
-          id?: string
-          user_id?: string | null
-        }
-        Relationships: []
-      }
       contribuyentes: {
         Row: {
           ci: string

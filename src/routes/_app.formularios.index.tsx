@@ -37,6 +37,7 @@ import {
   FORMULARIO_VERIFICACION_TITULO_EDITAR,
   FORMULARIO_VERIFICACION_TITULO_NUEVO,
 } from "@/lib/sirat-brand";
+import { formatDateEsBo } from "@/lib/date";
 
 type FormSearch = { nuevo?: boolean; editar?: string };
 
@@ -58,18 +59,6 @@ export const Route = createFileRoute("/_app/formularios/")({
   }),
   component: Lista,
 });
-
-function fmtFecha(iso: string) {
-  try {
-    return new Date(iso + "T12:00:00").toLocaleDateString("es-BO", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-  } catch {
-    return "—";
-  }
-}
 
 function FormEstadoPill({ estado }: { estado: Database["public"]["Enums"]["formulario_estado"] }) {
   if (estado === "activo") return <span className={pillSuccess()}>Activo</span>;
@@ -312,7 +301,7 @@ function Lista() {
                     className="cursor-pointer border-b border-border/60 hover:bg-muted/40"
                     onClick={() => navigate({ to: "/formularios/$id", params: { id: f.id } })}
                   >
-                    <DataListTd className="whitespace-nowrap text-muted-foreground">{fmtFecha(f.fecha)}</DataListTd>
+                    <DataListTd className="whitespace-nowrap text-muted-foreground">{formatDateEsBo(f.fecha)}</DataListTd>
                     <DataListTd>
                       <div className="font-semibold text-foreground">{f.razon_social}</div>
                       <div className="mt-0.5 text-xs text-muted-foreground">

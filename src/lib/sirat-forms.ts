@@ -180,7 +180,7 @@ export function defaultNotificacionNueva(): NotificacionNuevaState {
     nombre_actividad: "",
     numero_identificacion: "",
     direccion: "",
-    fecha_limite: new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10),
+    fecha_limite: "",
     padron_municipal: false,
     impuestos_patente: false,
     bienes_inmuebles: false,
