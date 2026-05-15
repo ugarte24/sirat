@@ -1,10 +1,18 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileDown, Check, Ban } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { NotificacionEditarForm } from "@/components/forms/NotificacionEditarForm";
+import { ArrowLeft, FileDown, Check, Ban, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { generateNotificacionPDF } from "@/lib/pdf";
 import { notificacionConceptosMarcados } from "@/lib/sirat-forms";
@@ -15,12 +23,34 @@ export const Route = createFileRoute("/_app/notificaciones/$id")({ component: De
 function Detalle() {
   const { id } = Route.useParams();
   const [n, setN] = useState<any>(null);
-  useEffect(() => { (async () => {
-    const { data } = await supabase.from("notificaciones").select("*, contribuyente:contribuyentes(nombre_completo,ci)").eq("id", id).maybeSingle();
-    setN(data);
-  })(); }, [id]);
+  const [editOpen, setEditOpen] = useState(false);
 
-  if (!n) return <p>Cargando…</p>;
+  const reload = useCallback(async () => {
+    const { data } = await supabase
+      .from("notificaciones")
+      .select("*, contribuyente:contribuyentes(nombre_completo,ci)")
+      .eq("id", id)
+      .maybeSingle();
+    setN(data);
+  }, [id]);
+
+  useEffect(() => {
+    void reload();
+  }, [reload]);
+
+  if (!n) {
+    return (
+      <div className="space-y-4 max-w-xl">
+        <Button variant="ghost" size="sm" className="-ml-2 gap-1.5 px-2 text-muted-foreground hover:text-foreground" asChild>
+          <Link to="/notificaciones">
+            <ArrowLeft className="h-4 w-4 shrink-0" />
+            Volver a notificaciones
+          </Link>
+        </Button>
+        <p className="text-sm text-muted-foreground">Cargando…</p>
+      </div>
+    );
+  }
 
   const conceptos = notificacionConceptosMarcados(n);
 
@@ -38,6 +68,13 @@ function Detalle() {
 
   return (
     <div className="space-y-4 max-w-xl">
+      <Button variant="ghost" size="sm" className="-ml-2 gap-1.5 px-2 text-muted-foreground hover:text-foreground" asChild>
+        <Link to="/notificaciones">
+          <ArrowLeft className="h-4 w-4 shrink-0" />
+          Volver a notificaciones
+        </Link>
+      </Button>
+
       <div className="flex justify-between items-start flex-wrap gap-2">
         <div>
           <h1 className="font-display text-2xl font-bold">Notificación</h1>
@@ -46,6 +83,12 @@ function Detalle() {
       </div>
       <div className="flex gap-2 flex-wrap">
         <Button onClick={pdf} className="bg-gradient-primary"><FileDown className="h-4 w-4 mr-1" />PDF</Button>
+        {n.estado === "pendiente" && (
+          <Button variant="outline" type="button" onClick={() => setEditOpen(true)}>
+            <Pencil className="h-4 w-4 mr-1" />
+            Editar
+          </Button>
+        )}
         {n.estado === "pendiente" && <>
           <Button variant="outline" onClick={() => cambiarEstado("cumplido")}><Check className="h-4 w-4 mr-1" />Cumplido</Button>
           <Button variant="destructive" onClick={() => cambiarEstado("anulado")}><Ban className="h-4 w-4 mr-1" />Anular</Button>
@@ -69,7 +112,7 @@ function Detalle() {
         <div><span className="text-muted-foreground">Fecha límite:</span> {formatDateEsBo(n.fecha_limite)}</div>
         <div><span className="text-muted-foreground">Conceptos:</span> {conceptos.join(", ") || "—"}</div>
         <div>
-          <span className="text-muted-foreground">Gestiones que adeuda:</span>{" "}
+          <span className="text-muted-foreground">Observaciones o gestiones adeudadas:</span>{" "}
           {n.gestiones_adeudadas?.trim() ? (
             <span className="whitespace-pre-wrap">{n.gestiones_adeudadas.trim()}</span>
           ) : (
@@ -77,6 +120,24 @@ function Detalle() {
           )}
         </div>
       </Card>
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar notificación</DialogTitle>
+            <DialogDescription>Modifique los datos de la notificación pendiente.</DialogDescription>
+          </DialogHeader>
+          <NotificacionEditarForm
+            key={id}
+            notificacionId={id}
+            onSuccess={() => {
+              setEditOpen(false);
+              void reload();
+            }}
+            onCancel={() => setEditOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

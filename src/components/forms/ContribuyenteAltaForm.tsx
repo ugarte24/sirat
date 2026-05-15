@@ -5,10 +5,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import type { ContribuyenteInsertPayload, ContribuyenteNuevoForm } from "@/lib/sirat-forms";
+import type {
+  ContribuyenteCatalogRow,
+  ContribuyenteInsertPayload,
+  ContribuyenteNuevoForm,
+} from "@/lib/sirat-forms";
 
 export type ContribuyenteAltaFormProps = {
-  onSuccess: () => void;
+  onSuccess: (contribuyente: ContribuyenteCatalogRow) => void;
   submitLabel?: string;
 };
 
@@ -26,12 +30,17 @@ export function ContribuyenteAltaForm({ onSuccess, submitLabel = "Registrar" }: 
       telefono: form.telefono.trim() || null,
       created_by: u.user?.id ?? null,
     };
-    const { error } = await supabase.from("contribuyentes").insert(payload);
+    const { data: created, error } = await supabase
+      .from("contribuyentes")
+      .insert(payload)
+      .select("id,ci,nombre_completo")
+      .single();
     setBusy(false);
     if (error) return toast.error(error.message);
+    if (!created) return toast.error("No se obtuvo el contribuyente creado.");
     toast.success("Contribuyente registrado");
     setForm({ ci: "", nombre_completo: "", telefono: "" });
-    onSuccess();
+    onSuccess(created);
   };
 
   return (

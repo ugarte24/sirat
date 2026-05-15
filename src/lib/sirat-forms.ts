@@ -224,10 +224,7 @@ export type NotificacionInsertPayload = Pick<
   | "created_by"
 >;
 
-export function notificacionStateToInsert(
-  n: NotificacionNuevaState,
-  createdBy: string | null | undefined,
-): NotificacionInsertPayload {
+function notificacionStateToRowFields(n: NotificacionNuevaState) {
   return {
     contribuyente_id: n.contribuyente_id,
     nombre_actividad: n.nombre_actividad.trim() || null,
@@ -240,7 +237,49 @@ export function notificacionStateToInsert(
     bienes_inmuebles: n.bienes_inmuebles,
     vehiculos: n.vehiculos,
     gestiones_adeudadas: n.gestiones_adeudadas.trim() || null,
-    created_by: createdBy ?? null,
+  };
+}
+
+export function notificacionStateToInsert(
+  n: NotificacionNuevaState,
+  createdBy: string | null | undefined,
+): NotificacionInsertPayload {
+  return { ...notificacionStateToRowFields(n), created_by: createdBy ?? null };
+}
+
+/** Payload hacia `notificaciones.update` */
+export type NotificacionUpdatePayload = Pick<
+  Db["notificaciones"]["Update"],
+  | "contribuyente_id"
+  | "nombre_actividad"
+  | "numero_identificacion"
+  | "direccion"
+  | "fecha_limite"
+  | "padron_municipal"
+  | "permiso_bebidas_alcoholicas"
+  | "impuestos_patente"
+  | "bienes_inmuebles"
+  | "vehiculos"
+  | "gestiones_adeudadas"
+>;
+
+export function notificacionStateToUpdate(n: NotificacionNuevaState): NotificacionUpdatePayload {
+  return notificacionStateToRowFields(n);
+}
+
+export function notificacionRowToState(row: NotifRow): NotificacionNuevaState {
+  return {
+    contribuyente_id: row.contribuyente_id,
+    nombre_actividad: row.nombre_actividad ?? "",
+    numero_identificacion: row.numero_identificacion ?? "",
+    direccion: row.direccion,
+    fecha_limite: row.fecha_limite,
+    padron_municipal: row.padron_municipal,
+    permiso_bebidas_alcoholicas: row.permiso_bebidas_alcoholicas,
+    impuestos_patente: row.impuestos_patente,
+    bienes_inmuebles: row.bienes_inmuebles,
+    vehiculos: row.vehiculos,
+    gestiones_adeudadas: row.gestiones_adeudadas ?? "",
   };
 }
 

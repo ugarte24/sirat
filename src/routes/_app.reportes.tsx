@@ -11,6 +11,7 @@ import { useAuth } from "@/lib/auth";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { downloadExcelWorkbook, downloadJsPdf } from "@/lib/download-file";
 
 export const Route = createFileRoute("/_app/reportes")({ component: Reportes });
 
@@ -44,18 +45,28 @@ function Reportes() {
   };
 
   const exportExcel = async () => {
-    const data = await fetchData(); if (!data) return;
+    const data = await fetchData();
+    if (!data) return;
+    if (!data.length) return toast.error("Sin datos para exportar");
     const ws = XLSX.utils.json_to_sheet(data);
-    const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, tipo);
-    XLSX.writeFile(wb, `reporte-${tipo}-${Date.now()}.xlsx`);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, tipo);
+    downloadExcelWorkbook(wb, `reporte-${tipo}-${Date.now()}.xlsx`);
   };
   const exportPDF = async () => {
-    const data = await fetchData(); if (!data || !data.length) return toast.error("Sin datos");
+    const data = await fetchData();
+    if (!data) return;
+    if (!data.length) return toast.error("Sin datos para exportar");
     const doc = new jsPDF("l");
     doc.setFontSize(14).text(`Reporte: ${tipo}`, 14, 14);
     const cols = Object.keys(data[0]).slice(0, 8);
-    autoTable(doc, { head: [cols], body: data.map((r: any) => cols.map(c => String(r[c] ?? ""))), styles: { fontSize: 7 }, startY: 20 });
-    doc.save(`reporte-${tipo}.pdf`);
+    autoTable(doc, {
+      head: [cols],
+      body: data.map((r: Record<string, unknown>) => cols.map((c) => String(r[c] ?? ""))),
+      styles: { fontSize: 7 },
+      startY: 20,
+    });
+    downloadJsPdf(doc, `reporte-${tipo}-${Date.now()}.pdf`);
   };
 
   return (

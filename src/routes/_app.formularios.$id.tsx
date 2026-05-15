@@ -75,7 +75,6 @@ function Detalle() {
         razon_social: f.razon_social,
         imageUrls: urls,
       });
-      toast.success("PDF de fotos generado. Puede abrirlo e imprimir desde el visor.");
     } catch (e) {
       console.error(e);
       toast.error(

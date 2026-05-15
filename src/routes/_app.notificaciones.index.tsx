@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { NotificacionNuevaForm } from "@/components/forms/NotificacionNuevaForm";
+import { NotificacionEditarForm } from "@/components/forms/NotificacionEditarForm";
 import { ContribuyenteAltaForm } from "@/components/forms/ContribuyenteAltaForm";
 import {
   DataListCard,
@@ -27,11 +28,11 @@ import {
   TablePaginationFooter,
 } from "@/components/data-list";
 import { TableRow } from "@/components/ui/table";
-import { ChevronRight, Plus, Search } from "lucide-react";
+import { ChevronRight, Pencil, Plus, Search } from "lucide-react";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
+import type { ContribuyenteCatalogRow } from "@/lib/sirat-forms";
 import { formatDateEsBo, formatDateTimeEsBo } from "@/lib/date";
-
 type NotifSearch = { nueva?: boolean };
 
 type NotifRow = Pick<
@@ -73,10 +74,12 @@ function Lista() {
   const [qInput, setQInput] = useState("");
   const [qDeb, setQDeb] = useState("");
   const [loading, setLoading] = useState(true);
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogMode, setDialogMode] = useState<"create" | "edit" | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
   const [subvista, setSubvista] = useState<"notificacion" | "contrib">("notificacion");
   const [formKey, setFormKey] = useState(0);
   const [catalogRefreshKey, setCatalogRefreshKey] = useState(0);
+  const [contribRecien, setContribRecien] = useState<ContribuyenteCatalogRow | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => setQDeb(qInput), 400);
@@ -131,11 +134,30 @@ function Lista() {
     void load();
   }, [load]);
 
+  const openCreate = () => {
+    setSubvista("notificacion");
+    setContribRecien(null);
+    setFormKey((k) => k + 1);
+    setEditId(null);
+    setDialogMode("create");
+  };
+
+  const openEdit = (id: string) => {
+    setSubvista("notificacion");
+    setEditId(id);
+    setDialogMode("edit");
+  };
+
+  const closeDialog = () => {
+    setDialogMode(null);
+    setEditId(null);
+    setSubvista("notificacion");
+    setContribRecien(null);
+  };
+
   useEffect(() => {
     if (nueva) {
-      setSubvista("notificacion");
-      setFormKey((k) => k + 1);
-      setDialogOpen(true);
+      openCreate();
       void navigate({
         search: (prev) => {
           const next = { ...(prev as Record<string, unknown>) };
@@ -155,11 +177,7 @@ function Lista() {
           type="button"
           size="sm"
           className="bg-gradient-gold text-gold-foreground"
-          onClick={() => {
-            setSubvista("notificacion");
-            setFormKey((k) => k + 1);
-            setDialogOpen(true);
-          }}
+          onClick={openCreate}
         >
           <Plus className="h-4 w-4 mr-1" />
           Nueva
@@ -167,46 +185,59 @@ function Lista() {
       </div>
 
       <Dialog
-        open={dialogOpen}
+        open={dialogMode !== null}
         onOpenChange={(open) => {
-          if (!open && subvista === "contrib") {
+          if (!open && dialogMode === "create" && subvista === "contrib") {
             setSubvista("notificacion");
             return;
           }
-          setDialogOpen(open);
-          if (!open) setSubvista("notificacion");
+          if (!open) closeDialog();
         }}
       >
         <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {subvista === "contrib" ? "Nuevo contribuyente" : "Nueva notificación"}
+              {dialogMode === "edit"
+                ? "Editar notificación"
+                : subvista === "contrib"
+                  ? "Nuevo contribuyente"
+                  : "Nueva notificación"}
             </DialogTitle>
             <DialogDescription>
-              {subvista === "contrib"
-                ? "Registre el contribuyente y continúe con la notificación."
-                : "Complete los datos y emita la notificación."}
+              {dialogMode === "edit"
+                ? "Modifique los datos de la notificación pendiente."
+                : subvista === "contrib"
+                  ? "Registre el contribuyente y continúe con la notificación."
+                  : "Complete los datos y emita la notificación."}
             </DialogDescription>
           </DialogHeader>
 
-          {subvista === "contrib" ? (
-            <div className="space-y-3">
-              <ContribuyenteAltaForm
-                onSuccess={() => {
-                  setCatalogRefreshKey((k) => k + 1);
-                  setSubvista("notificacion");
-                }}
-              />
-              <Button type="button" variant="ghost" className="w-full" onClick={() => setSubvista("notificacion")}>
-                Volver a nueva notificación
-              </Button>
-            </div>
+          {dialogMode === "edit" && editId ? (
+            <NotificacionEditarForm
+              key={editId}
+              notificacionId={editId}
+              onSuccess={() => {
+                closeDialog();
+                void load();
+              }}
+              onCancel={closeDialog}
+            />
+          ) : subvista === "contrib" ? (
+            <ContribuyenteAltaForm
+              onSuccess={(contribuyente) => {
+                setContribRecien(contribuyente);
+                setCatalogRefreshKey((k) => k + 1);
+                setSubvista("notificacion");
+              }}
+            />
           ) : (
             <NotificacionNuevaForm
               key={formKey}
               catalogRefreshKey={catalogRefreshKey}
+              contribuyenteRecienRegistrado={contribRecien}
+              onContribuyentePreseleccionado={() => setContribRecien(null)}
               onSuccess={() => {
-                setDialogOpen(false);
+                closeDialog();
                 void load();
               }}
               onPedirAltaContribuyente={() => setSubvista("contrib")}
@@ -273,11 +304,29 @@ function Lista() {
                       <NotifEstadoPill estado={n.estado} />
                     </DataListTd>
                     <DataListTd align="center" onClick={(e) => e.stopPropagation()}>
-                      <Button type="button" variant="ghost" size="icon" asChild aria-label="Ver notificación">
-                        <Link to="/notificaciones/$id" params={{ id: n.id }}>
-                          <ChevronRight className="h-4 w-4" />
-                        </Link>
-                      </Button>
+                      <div className="flex items-center justify-center gap-0.5">
+                        {n.estado === "pendiente" && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Editar notificación"
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              openEdit(n.id);
+                            }}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        )}
+                        <Button type="button" variant="ghost" size="icon" asChild aria-label="Ver notificación">
+                          <Link to="/notificaciones/$id" params={{ id: n.id }}>
+                            <ChevronRight className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                      </div>
                     </DataListTd>
                   </TableRow>
                 ))}

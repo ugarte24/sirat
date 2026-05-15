@@ -1,6 +1,7 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { formatDateEsBo } from "@/lib/date";
+import { downloadJsPdf } from "@/lib/download-file";
 import { FORMULARIO_VERIFICACION_PDF_TITULO } from "@/lib/sirat-brand";
 
 interface FormularioData {
@@ -68,7 +69,7 @@ export function generateFormularioPDF(d: FormularioData) {
   });
 
   const slug = d.razon_social.replace(/[^\w\s-]/g, "").trim().replace(/\s+/g, "-").slice(0, 40) || "formulario";
-  doc.save(`verificacion-${slug}.pdf`);
+  downloadJsPdf(doc, `verificacion-${slug}.pdf`);
 }
 
 interface NotificacionData {
@@ -108,7 +109,7 @@ export function generateNotificacionPDF(d: NotificacionData) {
       ["Nombre de la actividad", d.nombre_actividad?.trim() || "—", "Licencia / placa / inmueble", d.numero_identificacion?.trim() || "—"],
       ["C.I. contribuyente", d.ci, "Dirección", d.direccion],
       ["Fecha límite", formatDateEsBo(d.fecha_limite), "", ""],
-      ["Gestiones que adeuda", d.gestiones_adeudadas?.trim() || "—", "", ""],
+      ["Observaciones / gestiones adeudadas", d.gestiones_adeudadas?.trim() || "—", "", ""],
       ["Conceptos", d.conceptos.join(", ") || "—", "", ""],
     ],
   });
@@ -134,7 +135,7 @@ export function generateNotificacionPDF(d: NotificacionData) {
     .trim()
     .replace(/\s+/g, "-")
     .slice(0, 40) || "notificacion";
-  doc.save(`notificacion-${slug}.pdf`);
+  downloadJsPdf(doc, `notificacion-${slug}.pdf`);
 }
 
 export interface FormularioFotosPdfOpts {
@@ -243,5 +244,5 @@ export async function generateFormularioFotosPDF(opts: FormularioFotosPdfOpts): 
     .trim()
     .replace(/\s+/g, "-")
     .slice(0, 40) || "formulario";
-  doc.save(`verificacion-${slug}-fotos.pdf`);
+  downloadJsPdf(doc, `verificacion-${slug}-fotos.pdf`);
 }

@@ -12,9 +12,9 @@ import { toast } from "sonner";
 import { Search } from "lucide-react";
 import type { ContribuyenteCatalogRow, NotificacionNuevaState } from "@/lib/sirat-forms";
 import {
-  defaultNotificacionNueva,
   NOTIFICACION_CONCEPTO_OPTS,
-  notificacionStateToInsert,
+  notificacionRowToState,
+  notificacionStateToUpdate,
 } from "@/lib/sirat-forms";
 import { FORMULARIO_VERIFICACION_SECCION } from "@/lib/sirat-brand";
 
@@ -24,77 +24,59 @@ type RazonSocialFormHit = {
   ci: string;
 };
 
-export type NotificacionNuevaFormProps = {
+export type NotificacionEditarFormProps = {
+  notificacionId: string;
   onSuccess: () => void;
-  onPedirAltaContribuyente?: () => void;
-  /** Incrementar desde el padre para recargar el catálogo de contribuyentes */
-  catalogRefreshKey?: number;
-  /** Tras registrar contribuyente en el mismo diálogo, preseleccionarlo aquí */
-  contribuyenteRecienRegistrado?: ContribuyenteCatalogRow | null;
-  onContribuyentePreseleccionado?: () => void;
+  onCancel?: () => void;
 };
 
-export function NotificacionNuevaForm({
-  onSuccess,
-  onPedirAltaContribuyente,
-  catalogRefreshKey = 0,
-  contribuyenteRecienRegistrado = null,
-  onContribuyentePreseleccionado,
-}: NotificacionNuevaFormProps) {
+export function NotificacionEditarForm({ notificacionId, onSuccess, onCancel }: NotificacionEditarFormProps) {
   const [contribs, setContribs] = useState<ContribuyenteCatalogRow[]>([]);
-  const [n, setN] = useState<NotificacionNuevaState>(defaultNotificacionNueva());
+  const [n, setN] = useState<NotificacionNuevaState | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
   const [naHits, setNaHits] = useState<RazonSocialFormHit[]>([]);
   const [naBuscando, setNaBuscando] = useState(false);
 
   useEffect(() => {
-    void (async () => {
-      const { data, error } = await supabase
-        .from("contribuyentes")
-        .select("id,ci,nombre_completo")
-        .order("nombre_completo");
-      if (error) toast.error(`Contribuyentes: ${error.message}`);
-      setContribs(data ?? []);
-    })();
-  }, [catalogRefreshKey]);
-
-  useEffect(() => {
-    if (!contribuyenteRecienRegistrado) return;
-    setN((prev) => ({ ...prev, contribuyente_id: contribuyenteRecienRegistrado.id }));
-    setContribs((prev) => {
-      if (prev.some((c) => c.id === contribuyenteRecienRegistrado.id)) return prev;
-      return [...prev, contribuyenteRecienRegistrado].sort((a, b) =>
-        a.nombre_completo.localeCompare(b.nombre_completo, "es"),
-      );
-    });
-    onContribuyentePreseleccionado?.();
-  }, [contribuyenteRecienRegistrado, onContribuyentePreseleccionado]);
-
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!n.contribuyente_id) return toast.error("Selecciona contribuyente");
-    if (!n.fecha_limite.trim()) return toast.error("Indique la fecha límite");
-    const hasConcepto =
-      n.padron_municipal ||
-      n.permiso_bebidas_alcoholicas ||
-      n.impuestos_patente ||
-      n.bienes_inmuebles ||
-      n.vehiculos;
-    if (!hasConcepto) {
-      return toast.error(
-        `Marque al menos un concepto (${NOTIFICACION_CONCEPTO_OPTS.map((o) => o.label).join(", ")}).`,
-      );
-    }
-    const { data: u } = await supabase.auth.getUser();
-    const payload = notificacionStateToInsert(n, u.user?.id);
-    const { data, error } = await supabase.from("notificaciones").insert(payload).select().single();
-    if (error) return toast.error(error.message);
-    toast.success("Notificación registrada");
-    setN(defaultNotificacionNueva());
+    setLoading(true);
+    setN(null);
     setNaHits([]);
-    onSuccess();
-  };
+
+    void (async () => {
+      try {
+        const [notifRes, cr] = await Promise.all([
+          supabase.from("notificaciones").select("*").eq("id", notificacionId).maybeSingle(),
+          supabase.from("contribuyentes").select("id,ci,nombre_completo").order("nombre_completo"),
+        ]);
+        if (cr.error) toast.error(`Contribuyentes: ${cr.error.message}`);
+        setContribs(cr.data ?? []);
+
+        if (notifRes.error) {
+          toast.error(notifRes.error.message);
+          return;
+        }
+        if (!notifRes.data) {
+          toast.error("Notificación no encontrada");
+          onCancel?.();
+          return;
+        }
+        if (notifRes.data.estado !== "pendiente") {
+          toast.error("Solo se pueden editar notificaciones pendientes");
+          onCancel?.();
+          return;
+        }
+        setN(notificacionRowToState(notifRes.data));
+      } catch {
+        toast.error("No se pudo cargar la notificación");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [notificacionId, onCancel]);
 
   const buscarRazonSocialFormularios = async () => {
+    if (!n) return;
     const q = n.nombre_actividad.trim();
     if (q.length < 2) {
       toast.message(`Escriba al menos 2 caracteres para buscar por razón social en ${FORMULARIO_VERIFICACION_SECCION.toLowerCase()}.`);
@@ -131,6 +113,39 @@ export function NotificacionNuevaForm({
     if (!hits.length) toast.message(`No hay registros en ${FORMULARIO_VERIFICACION_SECCION.toLowerCase()} con esa razón social.`);
   };
 
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!n) return;
+    if (!n.contribuyente_id) return toast.error("Selecciona contribuyente");
+    if (!n.fecha_limite.trim()) return toast.error("Indique la fecha límite");
+    const hasConcepto =
+      n.padron_municipal ||
+      n.permiso_bebidas_alcoholicas ||
+      n.impuestos_patente ||
+      n.bienes_inmuebles ||
+      n.vehiculos;
+    if (!hasConcepto) {
+      return toast.error(
+        `Marque al menos un concepto (${NOTIFICACION_CONCEPTO_OPTS.map((o) => o.label).join(", ")}).`,
+      );
+    }
+
+    setBusy(true);
+    const { error } = await supabase
+      .from("notificaciones")
+      .update(notificacionStateToUpdate(n))
+      .eq("id", notificacionId);
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success("Notificación actualizada");
+    onSuccess();
+  };
+
+  if (loading) {
+    return <p className="text-sm text-muted-foreground py-4">Cargando…</p>;
+  }
+  if (!n) return null;
+
   return (
     <form onSubmit={submit} className="space-y-4">
       <Card className="p-5 space-y-4 border-0 shadow-none sm:border sm:shadow-sm">
@@ -142,23 +157,12 @@ export function NotificacionNuevaForm({
             onValueChange={(v) => setN({ ...n, contribuyente_id: v })}
             placeholder="Seleccionar contribuyente"
           />
-          {onPedirAltaContribuyente ? (
-            <Button
-              type="button"
-              variant="link"
-              size="sm"
-              className="px-0 h-auto mt-1"
-              onClick={onPedirAltaContribuyente}
-            >
-              + Registrar nuevo contribuyente
-            </Button>
-          ) : null}
         </div>
         <div>
-          <Label htmlFor="notif-nombre-actividad">Nombre de la actividad (opcional)</Label>
+          <Label htmlFor="notif-edit-nombre-actividad">Nombre de la actividad (opcional)</Label>
           <div className="relative">
             <Input
-              id="notif-nombre-actividad"
+              id="notif-edit-nombre-actividad"
               className="pr-10"
               value={n.nombre_actividad}
               onChange={(e) => {
@@ -193,7 +197,7 @@ export function NotificacionNuevaForm({
                     type="button"
                     className="w-full text-left px-3 py-2 hover:bg-muted/80 transition-colors"
                     onClick={() => {
-                      setN((prev) => ({ ...prev, nombre_actividad: h.razon_social }));
+                      setN((prev) => (prev ? { ...prev, nombre_actividad: h.razon_social } : prev));
                       setNaHits([]);
                     }}
                   >
@@ -208,9 +212,9 @@ export function NotificacionNuevaForm({
           ) : null}
         </div>
         <div>
-          <Label htmlFor="notif-num-id">N.º de licencia, placa o inmueble (opcional)</Label>
+          <Label htmlFor="notif-edit-num-id">N.º de licencia, placa o inmueble (opcional)</Label>
           <Input
-            id="notif-num-id"
+            id="notif-edit-num-id"
             value={n.numero_identificacion}
             onChange={(e) => setN({ ...n, numero_identificacion: e.target.value })}
             placeholder="N.º de licencia, placa o inmueble (opcional)"
@@ -222,9 +226,9 @@ export function NotificacionNuevaForm({
           <Input value={n.direccion} onChange={(e) => setN({ ...n, direccion: e.target.value })} required />
         </div>
         <div>
-          <Label htmlFor="notif-fecha-limite">Fecha límite *</Label>
+          <Label htmlFor="notif-edit-fecha-limite">Fecha límite *</Label>
           <DatePickerField
-            id="notif-fecha-limite"
+            id="notif-edit-fecha-limite"
             value={n.fecha_limite}
             onChange={(fecha_limite) => setN({ ...n, fecha_limite })}
             required
@@ -236,20 +240,20 @@ export function NotificacionNuevaForm({
           {NOTIFICACION_CONCEPTO_OPTS.map(({ key, label }) => (
             <div key={key} className="flex items-center gap-2">
               <Checkbox
-                id={`notif-concept-${key}`}
+                id={`notif-edit-concept-${key}`}
                 checked={n[key]}
-                onCheckedChange={(v) => setN((prev) => ({ ...prev, [key]: !!v }))}
+                onCheckedChange={(v) => setN((prev) => (prev ? { ...prev, [key]: !!v } : prev))}
               />
-              <Label htmlFor={`notif-concept-${key}`} className="cursor-pointer font-normal">
+              <Label htmlFor={`notif-edit-concept-${key}`} className="cursor-pointer font-normal">
                 {label}
               </Label>
             </div>
           ))}
         </fieldset>
         <div>
-          <Label htmlFor="notif-gestiones">Observaciones o gestiones adeudadas, si corresponde</Label>
+          <Label htmlFor="notif-edit-gestiones">Observaciones o gestiones adeudadas, si corresponde</Label>
           <Textarea
-            id="notif-gestiones"
+            id="notif-edit-gestiones"
             rows={3}
             value={n.gestiones_adeudadas}
             onChange={(e) => setN({ ...n, gestiones_adeudadas: e.target.value })}
@@ -257,9 +261,20 @@ export function NotificacionNuevaForm({
           />
         </div>
       </Card>
-      <Button type="submit" className="w-full h-11 bg-gradient-gold text-gold-foreground">
-        Emitir notificación
-      </Button>
+      <div className="flex gap-2">
+        {onCancel ? (
+          <Button type="button" variant="outline" className="flex-1" onClick={onCancel} disabled={busy}>
+            Cancelar
+          </Button>
+        ) : null}
+        <Button
+          type="submit"
+          className={`h-11 bg-gradient-gold text-gold-foreground ${onCancel ? "flex-1" : "w-full"}`}
+          disabled={busy}
+        >
+          {busy ? "Guardando…" : "Guardar cambios"}
+        </Button>
+      </div>
     </form>
   );
 }

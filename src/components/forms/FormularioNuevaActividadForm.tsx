@@ -30,6 +30,8 @@ export type FormularioNuevaActividadFormProps = {
   onPedirAltaContribuyente?: () => void;
   /** Incrementar desde el padre para forzar recarga de catálogo de contribuyentes */
   catalogRefreshKey?: number;
+  contribuyenteRecienRegistrado?: ContribuyenteCatalogRow | null;
+  onContribuyentePreseleccionado?: () => void;
 };
 
 function ClientOnly({ children }: { children: ReactNode }) {
@@ -54,6 +56,8 @@ export function FormularioNuevaActividadForm({
   onSuccess,
   onPedirAltaContribuyente,
   catalogRefreshKey = 0,
+  contribuyenteRecienRegistrado = null,
+  onContribuyentePreseleccionado,
 }: FormularioNuevaActividadFormProps) {
   const [contribs, setContribs] = useState<ContribuyenteCatalogRow[]>([]);
   const [busy, setBusy] = useState(false);
@@ -89,6 +93,18 @@ export function FormularioNuevaActividadForm({
       }
     })();
   }, [catalogRefreshKey]);
+
+  useEffect(() => {
+    if (!contribuyenteRecienRegistrado) return;
+    setF((prev) => ({ ...prev, contribuyente_id: contribuyenteRecienRegistrado.id }));
+    setContribs((prev) => {
+      if (prev.some((c) => c.id === contribuyenteRecienRegistrado.id)) return prev;
+      return [...prev, contribuyenteRecienRegistrado].sort((a, b) =>
+        a.nombre_completo.localeCompare(b.nombre_completo, "es"),
+      );
+    });
+    onContribuyentePreseleccionado?.();
+  }, [contribuyenteRecienRegistrado, onContribuyentePreseleccionado]);
 
   const addPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);

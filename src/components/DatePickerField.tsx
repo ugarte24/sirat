@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { CalendarIcon } from "lucide-react";
@@ -26,13 +27,14 @@ export function DatePickerField({
   placeholder = "Seleccione día, mes y año",
   className,
 }: DatePickerFieldProps) {
+  const [open, setOpen] = useState(false);
   const selected = value ? parseIsoDateLocal(value) : undefined;
   const label = selected
     ? format(selected, "dd/MM/yyyy", { locale: es })
     : placeholder;
 
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           id={id}
@@ -58,7 +60,14 @@ export function DatePickerField({
           fromYear={2020}
           toYear={2036}
           selected={selected}
-          onSelect={(d) => onChange(d ? toIsoDateLocal(d) : "")}
+          onSelect={(d) => {
+            if (d) {
+              onChange(toIsoDateLocal(d));
+              setOpen(false);
+            } else {
+              onChange("");
+            }
+          }}
           defaultMonth={selected}
         />
       </PopoverContent>

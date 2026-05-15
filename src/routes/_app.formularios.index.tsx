@@ -37,6 +37,7 @@ import {
   FORMULARIO_VERIFICACION_TITULO_EDITAR,
   FORMULARIO_VERIFICACION_TITULO_NUEVO,
 } from "@/lib/sirat-brand";
+import type { ContribuyenteCatalogRow } from "@/lib/sirat-forms";
 import { formatDateEsBo } from "@/lib/date";
 
 type FormSearch = { nuevo?: boolean; editar?: string };
@@ -84,6 +85,7 @@ function Lista() {
   const [subvista, setSubvista] = useState<"formulario" | "contrib">("formulario");
   const [formKey, setFormKey] = useState(0);
   const [catalogRefreshKey, setCatalogRefreshKey] = useState(0);
+  const [contribRecien, setContribRecien] = useState<ContribuyenteCatalogRow | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => setQDeb(qInput), 400);
@@ -140,6 +142,7 @@ function Lista() {
 
   const openCreate = () => {
     setSubvista("formulario");
+    setContribRecien(null);
     setFormKey((k) => k + 1);
     setEditId(null);
     setDialogMode("create");
@@ -155,6 +158,7 @@ function Lista() {
     setDialogMode(null);
     setEditId(null);
     setSubvista("formulario");
+    setContribRecien(null);
   };
 
   useEffect(() => {
@@ -240,7 +244,8 @@ function Lista() {
             />
           ) : subvista === "contrib" ? (
             <ContribuyenteAltaForm
-              onSuccess={() => {
+              onSuccess={(contribuyente) => {
+                setContribRecien(contribuyente);
                 setCatalogRefreshKey((k) => k + 1);
                 setSubvista("formulario");
               }}
@@ -249,6 +254,8 @@ function Lista() {
             <FormularioNuevaActividadForm
               key={formKey}
               catalogRefreshKey={catalogRefreshKey}
+              contribuyenteRecienRegistrado={contribRecien}
+              onContribuyentePreseleccionado={() => setContribRecien(null)}
               onSuccess={() => {
                 closeDialog();
                 void load();
