@@ -5,8 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ContribuyenteCombobox } from "@/components/ContribuyenteCombobox";
 import { toast } from "sonner";
 import { Search } from "lucide-react";
 import type { ContribuyenteCatalogRow, NotificacionNuevaState } from "@/lib/sirat-forms";
@@ -119,23 +119,12 @@ export function NotificacionNuevaForm({
       <Card className="p-5 space-y-4 border-0 shadow-none sm:border sm:shadow-sm">
         <div>
           <Label>Contribuyente *</Label>
-          <Select
-            value={n.contribuyente_id || undefined}
-            onValueChange={(v) => {
-              setN({ ...n, contribuyente_id: v });
-            }}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Seleccionar" />
-            </SelectTrigger>
-            <SelectContent>
-              {contribs.map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  {c.nombre_completo}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <ContribuyenteCombobox
+            contribs={contribs}
+            value={n.contribuyente_id}
+            onValueChange={(v) => setN({ ...n, contribuyente_id: v })}
+            placeholder="Seleccionar contribuyente"
+          />
           {onPedirAltaContribuyente ? (
             <Button
               type="button"

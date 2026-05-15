@@ -24,6 +24,10 @@ function escHtml(s: string) {
     .replaceAll('"', "&quot;");
 }
 
+function googleMapsDirectionsUrl(lat: number, lng: number) {
+  return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+}
+
 function Mapa() {
   const [rows, setRows] = useState<FormularioMapaRow[]>([]);
   const [search, setSearch] = useState("");
@@ -52,17 +56,23 @@ function Mapa() {
 
   const markers = useMemo(
     () =>
-      filtered.map((f) => ({
-        lat: Number(f.latitud),
-        lng: Number(f.longitud),
-        popup: [
-          `<strong>N° ${f.numero}</strong>`,
-          f.razon_social ? escHtml(String(f.razon_social)) : "",
-          f.contribuyente?.nombre_completo ? `Contribuyente: ${escHtml(f.contribuyente.nombre_completo)}` : "",
-        ]
-          .filter(Boolean)
-          .join("<br/>"),
-      })),
+      filtered.map((f) => {
+        const la = Number(f.latitud);
+        const ln = Number(f.longitud);
+        const gmaps = googleMapsDirectionsUrl(la, ln);
+        return {
+          lat: la,
+          lng: ln,
+          popup: [
+            `<strong>N° ${f.numero}</strong>`,
+            f.razon_social ? escHtml(String(f.razon_social)) : "",
+            f.contribuyente?.nombre_completo ? `Contribuyente: ${escHtml(f.contribuyente.nombre_completo)}` : "",
+            `<p style="margin:8px 0 0"><a href="${gmaps}" target="_blank" rel="noopener noreferrer">Abrir en Google Maps — cómo llegar</a></p>`,
+          ]
+            .filter(Boolean)
+            .join("<br/>"),
+        };
+      }),
     [filtered],
   );
 

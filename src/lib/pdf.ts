@@ -139,3 +139,116 @@ export function generateNotificacionPDF(d: NotificacionData) {
 
   doc.save(`notificacion-${d.codigo}.pdf`);
 }
+
+export interface FormularioFotosPdfOpts {
+  numero: number;
+  codigo_actividad?: string;
+  razon_social?: string;
+  /** URLs firmadas o públicas de las imágenes */
+  imageUrls: string[];
+}
+
+async function imageUrlToJpegDataUrl(url: string): Promise<{ dataUrl: string; w: number; h: number }> {
+  const res = await fetch(url, { mode: "cors", credentials: "omit" });
+  if (!res.ok) throw new Error(`Descarga de imagen: ${res.status}`);
+  const blob = await res.blob();
+  if (typeof createImageBitmap === "function") {
+    try {
+      const bmp = await createImageBitmap(blob);
+      const canvas = document.createElement("canvas");
+      canvas.width = bmp.width;
+      canvas.height = bmp.height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("Canvas no disponible");
+      ctx.drawImage(bmp, 0, 0);
+      bmp.close();
+      return { dataUrl: canvas.toDataURL("image/jpeg", 0.9), w: canvas.width, h: canvas.height };
+    } catch {
+      /* continuar con Image + object URL */
+    }
+  }
+  const objectUrl = URL.createObjectURL(blob);
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const el = new Image();
+      el.onload = () => resolve(el);
+      el.onerror = () => reject(new Error("No se pudo decodificar la imagen"));
+      el.src = objectUrl;
+    });
+    const canvas = document.createElement("canvas");
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Canvas no disponible");
+    ctx.drawImage(img, 0, 0);
+    return { dataUrl: canvas.toDataURL("image/jpeg", 0.9), w: canvas.width, h: canvas.height };
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
+/** PDF solo con las fotos del formulario (A4, listo para imprimir). */
+export async function generateFormularioFotosPDF(opts: FormularioFotosPdfOpts): Promise<void> {
+  const urls = opts.imageUrls.filter(Boolean);
+  if (!urls.length) throw new Error("Sin fotos");
+
+  const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const margin = 12;
+  const headerH = opts.razon_social ? 26 : 22;
+  const maxW = pageW - 2 * margin;
+
+  const drawHeader = () => {
+    doc.setFillColor(45, 55, 120);
+    doc.rect(0, 0, pageW, headerH, "F");
+    doc.setTextColor(255);
+    doc.setFont("helvetica", "bold").setFontSize(12);
+    doc.text("SIRAT — Fotos del formulario", margin, 9);
+    doc.setFontSize(7).setFont("helvetica", "normal");
+    doc.text(
+      `N° ${opts.numero}${opts.codigo_actividad ? ` • ${opts.codigo_actividad}` : ""}`,
+      pageW - margin,
+      9,
+      { align: "right" },
+    );
+    if (opts.razon_social) {
+      doc.setFontSize(8);
+      const lines = doc.splitTextToSize(opts.razon_social, pageW - 2 * margin);
+      doc.text(lines, margin, 15);
+    }
+    doc.setTextColor(0);
+  };
+
+  drawHeader();
+  let y = headerH + 4;
+  const captionGap = 6;
+
+  for (let i = 0; i < urls.length; i++) {
+    const { dataUrl, w: iw, h: ih } = await imageUrlToJpegDataUrl(urls[i]);
+    const aspect = iw / ih;
+
+    let room = pageH - margin - y - captionGap;
+    if (room < 22) {
+      doc.addPage();
+      drawHeader();
+      y = headerH + 4;
+      room = pageH - margin - y - captionGap;
+    }
+
+    let dispW = maxW;
+    let dispH = dispW / aspect;
+    if (dispH > room) {
+      dispH = room;
+      dispW = dispH * aspect;
+    }
+
+    doc.addImage(dataUrl, "JPEG", margin, y, dispW, dispH);
+    doc.setFontSize(7).setTextColor(90);
+    doc.text(`Foto ${i + 1} de ${urls.length}`, margin, y + dispH + 5);
+    doc.setTextColor(0);
+    y += dispH + captionGap + 4;
+  }
+
+  doc.save(`formulario-${opts.numero}-fotos.pdf`);
+}

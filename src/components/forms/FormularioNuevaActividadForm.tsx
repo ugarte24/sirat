@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { ContribuyenteCombobox } from "@/components/ContribuyenteCombobox";
 import { toast } from "sonner";
 import { Camera, Images, X } from "lucide-react";
 import type { ContribuyenteCatalogRow, FormularioNuevoState, TipoActividadCatalogRow } from "@/lib/sirat-forms";
@@ -156,25 +157,13 @@ export function FormularioNuevaActividadForm({
       <Card className="p-5 space-y-4 border-0 shadow-none sm:border sm:shadow-sm">
         <div>
           <Label>Contribuyente *</Label>
-          <Select
-            value={f.contribuyente_id || undefined}
-            onValueChange={(v) => {
-              const c = contribs.find((x) => x.id === v);
-              setF({ ...f, contribuyente_id: v, razon_social: f.razon_social || c?.nombre_completo || "" });
-            }}
+          <ContribuyenteCombobox
+            contribs={contribs}
+            value={f.contribuyente_id}
+            onValueChange={(v) => setF({ ...f, contribuyente_id: v })}
             disabled={!catalogLoaded}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder={catalogLoaded ? "Seleccionar contribuyente" : "Cargando…"} />
-            </SelectTrigger>
-            <SelectContent>
-              {contribs.map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  {c.nombre_completo} — {c.ci}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            placeholder={catalogLoaded ? "Seleccionar contribuyente" : "Cargando…"}
+          />
           {onPedirAltaContribuyente ? (
             <Button
               type="button"
@@ -235,7 +224,7 @@ export function FormularioNuevaActividadForm({
         <div>
           <Label>Tipo de actividad *</Label>
           <Select
-            value={f.tipo_actividad_id || undefined}
+            value={f.tipo_actividad_id}
             onValueChange={(v) => setF({ ...f, tipo_actividad_id: v })}
             disabled={!catalogLoaded}
           >

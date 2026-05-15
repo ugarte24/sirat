@@ -4,10 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Ban, FileDown } from "lucide-react";
+import { ArrowLeft, Ban, FileDown, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { MapPicker } from "@/components/MapPicker";
-import { generateFormularioPDF } from "@/lib/pdf";
+import { generateFormularioPDF, generateFormularioFotosPDF } from "@/lib/pdf";
 import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/_app/formularios/$id")({ component: Detalle });
@@ -17,6 +17,7 @@ function Detalle() {
   const { role } = useAuth();
   const [f, setF] = useState<any>(null);
   const [photos, setPhotos] = useState<{ url: string }[]>([]);
+  const [fotosPdfBusy, setFotosPdfBusy] = useState(false);
 
   useEffect(() => { (async () => {
     const { data } = await supabase.from("formularios").select(
@@ -59,6 +60,31 @@ function Detalle() {
     bebidas_alcoholicas: f.bebidas_alcoholicas,
     observacion: f.observacion, estado: f.estado,
   });
+
+  const pdfFotos = async () => {
+    const urls = photos.map((p) => p.url).filter(Boolean);
+    if (!urls.length) {
+      toast.error("No hay fotos para exportar.");
+      return;
+    }
+    setFotosPdfBusy(true);
+    try {
+      await generateFormularioFotosPDF({
+        numero: f.numero,
+        codigo_actividad: f.codigo_actividad,
+        razon_social: f.razon_social,
+        imageUrls: urls,
+      });
+      toast.success("PDF de fotos generado. Puede abrirlo e imprimir desde el visor.");
+    } catch (e) {
+      console.error(e);
+      toast.error(
+        e instanceof Error ? e.message : "No se pudo generar el PDF de fotos. Compruebe la conexión.",
+      );
+    } finally {
+      setFotosPdfBusy(false);
+    }
+  };
 
   const cambiarEstado = async (estado: any) => {
     const { error } = await supabase.from("formularios").update({ estado }).eq("id", id);
@@ -107,9 +133,26 @@ function Detalle() {
       )}
 
       {photos.length > 0 && (
-        <Card className="p-3"><div className="grid grid-cols-2 gap-2">
-          {photos.map((p, i) => <img key={i} src={p.url} className="rounded-md object-cover h-40 w-full" alt="" />)}
-        </div></Card>
+        <Card className="p-3 space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm font-medium text-foreground">Fotos del formulario</p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={fotosPdfBusy}
+              onClick={() => void pdfFotos()}
+            >
+              <Printer className="h-4 w-4 mr-1.5" />
+              {fotosPdfBusy ? "Generando…" : "PDF para imprimir"}
+            </Button>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {photos.map((p, i) => (
+              <img key={i} src={p.url} className="rounded-md object-cover h-40 w-full" alt={`Foto ${i + 1}`} />
+            ))}
+          </div>
+        </Card>
       )}
     </div>
   );
