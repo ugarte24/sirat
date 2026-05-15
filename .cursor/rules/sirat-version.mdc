@@ -1,0 +1,11 @@
+---
+description: Incrementar versión de SIRAT al modificar el sistema
+alwaysApply: true
+---
+
+# Versión de SIRAT
+
+- La versión visible en login y menú sale de `package.json` vía `src/lib/sirat-brand.ts` (`SIRAT_APP_VERSION`). No dupliques el número en otros archivos.
+- En cada **commit** con cambios de código, el hook `pre-commit` ejecuta `scripts/bump-version.mjs` y sube el patch automáticamente (p. ej. `1.0.3` → `1.0.4`).
+- No edites la versión a mano salvo cambio mayor/menor acordado con el usuario (`npm version minor` / `major`).
+- Si entregas cambios sin commit y el usuario pide versión actualizada, ejecuta una sola vez: `npm run version:bump` y deja `package.json` y `package-lock.json` en el commit.

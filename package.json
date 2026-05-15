@@ -1,6 +1,6 @@
 {
   "name": "tanstack_start_ts",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "private": true,
   "sideEffects": false,
   "type": "module",
@@ -10,7 +10,12 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "version:bump": "node scripts/bump-version.mjs",
+    "prepare": "simple-git-hooks"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "node scripts/bump-version.mjs && git add package.json package-lock.json"
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.25.5",
@@ -89,6 +94,7 @@
     "globals": "^15.15.0",
     "nitro": "^3.0.260429-beta",
     "prettier": "^3.7.3",
+    "simple-git-hooks": "^2.13.1",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.56.1",
     "vite": "^7.3.1"

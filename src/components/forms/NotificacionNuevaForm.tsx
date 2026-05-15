@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { Search } from "lucide-react";
 import type { ContribuyenteCatalogRow, NotificacionNuevaState } from "@/lib/sirat-forms";
 import { defaultNotificacionNueva, notificacionStateToInsert } from "@/lib/sirat-forms";
+import { FORMULARIO_VERIFICACION_SECCION } from "@/lib/sirat-brand";
 
 const CONCEPT_OPTS: Array<{
   key: keyof Pick<
@@ -80,7 +81,7 @@ export function NotificacionNuevaForm({
   const buscarRazonSocialFormularios = async () => {
     const q = n.nombre_actividad.trim();
     if (q.length < 2) {
-      toast.message("Escriba al menos 2 caracteres para buscar por razón social en formularios de actividad.");
+      toast.message(`Escriba al menos 2 caracteres para buscar por razón social en ${FORMULARIO_VERIFICACION_SECCION.toLowerCase()}.`);
       setNaHits([]);
       return;
     }
@@ -111,7 +112,7 @@ export function NotificacionNuevaForm({
       if (hits.length >= 15) break;
     }
     setNaHits(hits);
-    if (!hits.length) toast.message("No hay formularios de actividad con esa razón social.");
+    if (!hits.length) toast.message(`No hay registros en ${FORMULARIO_VERIFICACION_SECCION.toLowerCase()} con esa razón social.`);
   };
 
   return (
@@ -148,14 +149,14 @@ export function NotificacionNuevaForm({
                 setN({ ...n, nombre_actividad: e.target.value });
                 setNaHits([]);
               }}
-              placeholder="Escriba o pulse la lupa: busca razón social en formularios de actividad"
+              placeholder={`Escriba o pulse la lupa: busca razón social en ${FORMULARIO_VERIFICACION_SECCION.toLowerCase()}`}
             />
             <Button
               type="button"
               variant="ghost"
               size="icon"
               className="absolute right-0.5 top-1/2 h-8 w-8 -translate-y-1/2 shrink-0 text-muted-foreground hover:text-foreground"
-              aria-label="Buscar por razón social en formularios de actividad"
+              aria-label={`Buscar por razón social en ${FORMULARIO_VERIFICACION_SECCION.toLowerCase()}`}
               disabled={naBuscando}
               onClick={() => void buscarRazonSocialFormularios()}
             >
@@ -163,7 +164,7 @@ export function NotificacionNuevaForm({
             </Button>
           </div>
           {naBuscando ? (
-            <p className="text-xs text-muted-foreground mt-1.5">Buscando en formularios…</p>
+            <p className="text-xs text-muted-foreground mt-1.5">Buscando verificaciones…</p>
           ) : null}
           {naHits.length > 0 ? (
             <ul

@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { FormularioNuevaActividadForm } from "@/components/forms/FormularioNuevaActividadForm";
+import { FormularioEditarForm } from "@/components/forms/FormularioEditarForm";
 import { ContribuyenteAltaForm } from "@/components/forms/ContribuyenteAltaForm";
 import {
   DataListCard,
@@ -27,11 +28,17 @@ import {
   TablePaginationFooter,
 } from "@/components/data-list";
 import { TableRow } from "@/components/ui/table";
-import { ChevronRight, Plus, Search } from "lucide-react";
+import { ChevronRight, Pencil, Plus, Search } from "lucide-react";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
+import {
+  FORMULARIO_VERIFICACION_NOMBRE,
+  FORMULARIO_VERIFICACION_SECCION,
+  FORMULARIO_VERIFICACION_TITULO_EDITAR,
+  FORMULARIO_VERIFICACION_TITULO_NUEVO,
+} from "@/lib/sirat-brand";
 
-type FormSearch = { nuevo?: boolean };
+type FormSearch = { nuevo?: boolean; editar?: string };
 
 type FormRow = Pick<
   Database["public"]["Tables"]["formularios"]["Row"],
@@ -47,6 +54,7 @@ export const Route = createFileRoute("/_app/formularios/")({
       raw.nuevo === 1 ||
       raw.nuevo === "1" ||
       raw.nuevo === "true",
+    editar: typeof raw.editar === "string" && raw.editar.length > 0 ? raw.editar : undefined,
   }),
   component: Lista,
 });
@@ -75,14 +83,15 @@ function FormEstadoPill({ estado }: { estado: Database["public"]["Enums"]["formu
 
 function Lista() {
   const navigate = useNavigate();
-  const { nuevo } = Route.useSearch();
+  const { nuevo, editar } = Route.useSearch();
   const [list, setList] = useState<FormRow[]>([]);
   const [total, setTotal] = useState<number | null>(null);
   const [page, setPage] = useState(0);
   const [qInput, setQInput] = useState("");
   const [qDeb, setQDeb] = useState("");
   const [loading, setLoading] = useState(true);
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogMode, setDialogMode] = useState<"create" | "edit" | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
   const [subvista, setSubvista] = useState<"formulario" | "contrib">("formulario");
   const [formKey, setFormKey] = useState(0);
   const [catalogRefreshKey, setCatalogRefreshKey] = useState(0);
@@ -140,11 +149,28 @@ function Lista() {
     void load();
   }, [load]);
 
+  const openCreate = () => {
+    setSubvista("formulario");
+    setFormKey((k) => k + 1);
+    setEditId(null);
+    setDialogMode("create");
+  };
+
+  const openEdit = (id: string) => {
+    setSubvista("formulario");
+    setEditId(id);
+    setDialogMode("edit");
+  };
+
+  const closeDialog = () => {
+    setDialogMode(null);
+    setEditId(null);
+    setSubvista("formulario");
+  };
+
   useEffect(() => {
     if (nuevo) {
-      setSubvista("formulario");
-      setFormKey((k) => k + 1);
-      setDialogOpen(true);
+      openCreate();
       void navigate({
         search: (prev) => {
           const next = { ...(prev as Record<string, unknown>) };
@@ -156,19 +182,29 @@ function Lista() {
     }
   }, [nuevo, navigate]);
 
+  useEffect(() => {
+    if (editar) {
+      openEdit(editar);
+      void navigate({
+        search: (prev) => {
+          const next = { ...(prev as Record<string, unknown>) };
+          delete next.editar;
+          return next as FormSearch;
+        },
+        replace: true,
+      });
+    }
+  }, [editar, navigate]);
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="font-display text-2xl font-bold">Formularios</h1>
+        <h1 className="font-display text-2xl font-bold">{FORMULARIO_VERIFICACION_SECCION}</h1>
         <Button
           type="button"
           size="sm"
           className="bg-gradient-primary"
-          onClick={() => {
-            setSubvista("formulario");
-            setFormKey((k) => k + 1);
-            setDialogOpen(true);
-          }}
+          onClick={openCreate}
         >
           <Plus className="h-4 w-4 mr-1" />
           Nuevo
@@ -176,29 +212,44 @@ function Lista() {
       </div>
 
       <Dialog
-        open={dialogOpen}
+        open={dialogMode !== null}
         onOpenChange={(open) => {
-          if (!open && subvista === "contrib") {
+          if (!open && dialogMode === "create" && subvista === "contrib") {
             setSubvista("formulario");
             return;
           }
-          setDialogOpen(open);
-          if (!open) setSubvista("formulario");
+          if (!open) closeDialog();
         }}
       >
         <DialogContent className="max-w-[min(100%,40rem)] w-full max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {subvista === "contrib" ? "Nuevo contribuyente" : "Nuevo formulario de verificación"}
+              {dialogMode === "edit"
+                ? FORMULARIO_VERIFICACION_TITULO_EDITAR
+                : subvista === "contrib"
+                  ? "Nuevo contribuyente"
+                  : FORMULARIO_VERIFICACION_TITULO_NUEVO}
             </DialogTitle>
             <DialogDescription>
-              {subvista === "contrib"
-                ? "Registre el contribuyente y continúe con el formulario de actividad."
-                : "Complete los datos, ubicación en mapa y fotos si aplica."}
+              {dialogMode === "edit"
+                ? "Modifique los datos, ubicación o fotos del registro activo."
+                : subvista === "contrib"
+                  ? `Registre el contribuyente y continúe con el ${FORMULARIO_VERIFICACION_NOMBRE.toLowerCase()}.`
+                  : "Complete los datos, ubicación en mapa y fotos si aplica."}
             </DialogDescription>
           </DialogHeader>
 
-          {subvista === "contrib" ? (
+          {dialogMode === "edit" && editId ? (
+            <FormularioEditarForm
+              key={editId}
+              formularioId={editId}
+              onSuccess={() => {
+                closeDialog();
+                void load();
+              }}
+              onCancel={closeDialog}
+            />
+          ) : subvista === "contrib" ? (
             <ContribuyenteAltaForm
               onSuccess={() => {
                 setCatalogRefreshKey((k) => k + 1);
@@ -210,7 +261,7 @@ function Lista() {
               key={formKey}
               catalogRefreshKey={catalogRefreshKey}
               onSuccess={() => {
-                setDialogOpen(false);
+                closeDialog();
                 void load();
               }}
               onPedirAltaContribuyente={() => setSubvista("contrib")}
@@ -250,7 +301,7 @@ function Lista() {
               {!loading && list.length === 0 && (
                 <TableRow>
                   <DataListTd className="py-10 text-center text-muted-foreground" colSpan={5}>
-                    Sin formularios
+                    Sin registros
                   </DataListTd>
                 </TableRow>
               )}
@@ -280,11 +331,29 @@ function Lista() {
                       <FormEstadoPill estado={f.estado} />
                     </DataListTd>
                     <DataListTd align="center" onClick={(e) => e.stopPropagation()}>
-                      <Button type="button" variant="ghost" size="icon" asChild aria-label="Ver formulario">
-                        <Link to="/formularios/$id" params={{ id: f.id }}>
-                          <ChevronRight className="h-4 w-4" />
-                        </Link>
-                      </Button>
+                      <div className="flex items-center justify-center gap-0.5">
+                        {f.estado === "activo" && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            aria-label={`Editar ${FORMULARIO_VERIFICACION_NOMBRE.toLowerCase()}`}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              openEdit(f.id);
+                            }}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        )}
+                        <Button type="button" variant="ghost" size="icon" asChild aria-label={`Ver ${FORMULARIO_VERIFICACION_NOMBRE.toLowerCase()}`}>
+                          <Link to="/formularios/$id" params={{ id: f.id }}>
+                            <ChevronRight className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                      </div>
                     </DataListTd>
                   </TableRow>
                 ))}

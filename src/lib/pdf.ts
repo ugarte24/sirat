@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { FORMULARIO_VERIFICACION_PDF_TITULO } from "@/lib/sirat-brand";
 
 interface FormularioData {
   numero: number;
@@ -41,7 +42,7 @@ export function generateFormularioPDF(d: FormularioData) {
 
   doc.setTextColor(0);
   doc.setFontSize(13).setFont("helvetica", "bold");
-  doc.text("VERIFICACIÓN DE ACTIVIDAD ECONÓMICA", w / 2, 38, { align: "center" });
+  doc.text(FORMULARIO_VERIFICACION_PDF_TITULO, w / 2, 38, { align: "center" });
 
   autoTable(doc, {
     startY: 44,
@@ -203,7 +204,7 @@ export async function generateFormularioFotosPDF(opts: FormularioFotosPdfOpts): 
     doc.rect(0, 0, pageW, headerH, "F");
     doc.setTextColor(255);
     doc.setFont("helvetica", "bold").setFontSize(12);
-    doc.text("SIRAT — Fotos del formulario", margin, 9);
+    doc.text("SIRAT — Fotos de la verificación", margin, 9);
     doc.setFontSize(7).setFont("helvetica", "normal");
     doc.text(
       `N° ${opts.numero}${opts.codigo_actividad ? ` • ${opts.codigo_actividad}` : ""}`,

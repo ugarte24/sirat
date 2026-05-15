@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { FORMULARIO_VERIFICACION_SECCION } from "@/lib/sirat-brand";
 
 export const Route = createFileRoute("/_app/contribuyentes/$id")({ component: Detalle });
 
@@ -92,7 +93,7 @@ function Detalle() {
             title={
               puedeDarDeBaja
                 ? undefined
-                : "Solo se puede dar de baja si no hay formularios de actividad ni notificaciones"
+                : `Solo se puede dar de baja si no hay ${FORMULARIO_VERIFICACION_SECCION.toLowerCase()} ni notificaciones`
             }
             onClick={() => void darDeBaja()}
           >
@@ -101,7 +102,7 @@ function Detalle() {
         </div>
       </Card>
       <Card className="p-5 space-y-3">
-        <h2 className="font-semibold">Formularios de actividad ({forms.length})</h2>
+        <h2 className="font-semibold">{FORMULARIO_VERIFICACION_SECCION} ({forms.length})</h2>
         {forms.length === 0 && <p className="text-sm text-muted-foreground">Ninguno</p>}
         <ul className="space-y-1">
           {forms.map((f) => (

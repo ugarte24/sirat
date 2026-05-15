@@ -15,7 +15,7 @@ import autoTable from "jspdf-autotable";
 export const Route = createFileRoute("/_app/reportes")({ component: Reportes });
 
 const REPORTES = [
-  { key: "formularios", label: "Formularios de verificación" },
+  { key: "formularios", label: "Verificación actividades económicas" },
   { key: "notificaciones", label: "Notificaciones" },
   { key: "contribuyentes", label: "Contribuyentes" },
 ];

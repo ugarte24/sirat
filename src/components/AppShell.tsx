@@ -30,7 +30,7 @@ type Role = "admin" | "operador";
 const NAV: { to: string; label: string; icon: any; roles: Role[] }[] = [
   { to: "/", label: "Inicio", icon: LayoutDashboard, roles: ["admin", "operador"] },
   { to: "/contribuyentes", label: "Contribuyentes", icon: Users, roles: ["admin", "operador"] },
-  { to: "/formularios", label: "Formularios", icon: ClipboardList, roles: ["admin", "operador"] },
+  { to: "/formularios", label: "Verificación", icon: ClipboardList, roles: ["admin", "operador"] },
   { to: "/notificaciones", label: "Notificaciones", icon: Bell, roles: ["admin", "operador"] },
   { to: "/mapa", label: "Mapa", icon: MapIcon, roles: ["admin", "operador"] },
   { to: "/reportes", label: "Reportes", icon: FileBarChart, roles: ["admin"] },

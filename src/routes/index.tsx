@@ -5,6 +5,7 @@ import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { ClipboardList, Bell, Users, AlertCircle, Loader2, Plus } from "lucide-react";
+import { FORMULARIO_VERIFICACION_TITULO_NUEVO } from "@/lib/sirat-brand";
 
 export const Route = createFileRoute("/")({ component: Home });
 
@@ -38,8 +39,8 @@ function Dashboard() {
 
   const cards = [
     { label: "Contribuyentes", value: stats.contrib, icon: Users, to: "/contribuyentes", color: "text-primary" },
-    { label: "Actividades activas", value: stats.formActivos, icon: ClipboardList, to: "/formularios", color: "text-success" },
-    { label: "Actividades en baja", value: stats.formBaja, icon: AlertCircle, to: "/formularios", color: "text-warning" },
+    { label: "Verificaciones activas", value: stats.formActivos, icon: ClipboardList, to: "/formularios", color: "text-success" },
+    { label: "Verificaciones en baja", value: stats.formBaja, icon: AlertCircle, to: "/formularios", color: "text-warning" },
     { label: "Notif. pendientes", value: stats.notifPend, icon: Bell, to: "/notificaciones", color: "text-destructive" },
   ];
 
@@ -67,8 +68,8 @@ function Dashboard() {
         <Link to="/formularios" search={{ nuevo: 1 }}>
           <Card className="p-5 bg-gradient-primary text-primary-foreground hover:shadow-elegant transition-shadow cursor-pointer">
             <Plus className="h-6 w-6 mb-2" />
-            <div className="font-display text-xl font-semibold">Nueva verificación</div>
-            <p className="text-xs opacity-90 mt-1">Registrar actividad económica</p>
+            <div className="font-display text-lg font-semibold leading-snug">{FORMULARIO_VERIFICACION_TITULO_NUEVO}</div>
+            <p className="text-xs opacity-90 mt-1">Registrar datos en campo</p>
           </Card>
         </Link>
         <Link to="/notificaciones" search={{ nueva: 1 }}>

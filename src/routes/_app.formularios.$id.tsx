@@ -4,11 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Ban, FileDown, Printer } from "lucide-react";
+import { ArrowLeft, Ban, FileDown, Pencil, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { MapPicker } from "@/components/MapPicker";
 import { generateFormularioPDF, generateFormularioFotosPDF } from "@/lib/pdf";
 import { useAuth } from "@/lib/auth";
+import { FORMULARIO_VERIFICACION_NOMBRE, FORMULARIO_VERIFICACION_SECCION } from "@/lib/sirat-brand";
 
 export const Route = createFileRoute("/_app/formularios/$id")({ component: Detalle });
 
@@ -40,7 +41,7 @@ function Detalle() {
         <Button variant="ghost" size="sm" className="-ml-2 gap-1.5 px-2 text-muted-foreground hover:text-foreground" asChild>
           <Link to="/formularios">
             <ArrowLeft className="h-4 w-4 shrink-0" />
-            Volver a formularios
+            Volver a {FORMULARIO_VERIFICACION_SECCION.toLowerCase()}
           </Link>
         </Button>
         <p className="text-sm text-muted-foreground">Cargando…</p>
@@ -96,7 +97,7 @@ function Detalle() {
       <Button variant="ghost" size="sm" className="-ml-2 gap-1.5 px-2 text-muted-foreground hover:text-foreground" asChild>
         <Link to="/formularios">
           <ArrowLeft className="h-4 w-4 shrink-0" />
-          Volver a formularios
+          Volver a {FORMULARIO_VERIFICACION_SECCION.toLowerCase()}
         </Link>
       </Button>
 
@@ -110,6 +111,14 @@ function Detalle() {
 
       <div className="flex gap-2 flex-wrap">
         <Button onClick={pdf} className="bg-gradient-primary"><FileDown className="h-4 w-4 mr-1" />PDF</Button>
+        {f.estado === "activo" && (
+          <Button variant="outline" asChild>
+            <Link to="/formularios" search={{ editar: id }}>
+              <Pencil className="h-4 w-4 mr-1" />
+              Editar
+            </Link>
+          </Button>
+        )}
         {role === "admin" && f.estado === "activo" && <>
           <Button variant="outline" onClick={() => cambiarEstado("baja")}>Dar de baja</Button>
           <Button variant="destructive" onClick={() => cambiarEstado("anulado")}><Ban className="h-4 w-4 mr-1" />Anular</Button>
@@ -134,7 +143,7 @@ function Detalle() {
       {photos.length > 0 && (
         <Card className="p-3 space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-sm font-medium text-foreground">Fotos del formulario</p>
+            <p className="text-sm font-medium text-foreground">Fotos de la verificación</p>
             <Button
               type="button"
               variant="outline"

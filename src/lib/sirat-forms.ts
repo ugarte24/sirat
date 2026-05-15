@@ -103,6 +103,63 @@ export function formularioStateToInsert(
   };
 }
 
+/** Payload hacia `formularios.update` */
+export type FormularioUpdatePayload = Pick<
+  Db["formularios"]["Update"],
+  | "contribuyente_id"
+  | "razon_social"
+  | "nit"
+  | "zona"
+  | "superficie"
+  | "direccion"
+  | "celular"
+  | "referencia"
+  | "latitud"
+  | "longitud"
+  | "procedente"
+  | "padron"
+  | "bebidas_alcoholicas"
+  | "observacion"
+>;
+
+export function formularioStateToUpdate(f: FormularioNuevoState): FormularioUpdatePayload {
+  return {
+    contribuyente_id: f.contribuyente_id,
+    razon_social: f.razon_social.trim(),
+    nit: f.nit.trim() || null,
+    zona: f.zona,
+    superficie: Number.parseFloat(f.superficie),
+    direccion: f.direccion.trim(),
+    celular: f.celular.trim(),
+    referencia: f.referencia.trim(),
+    latitud: f.latitud,
+    longitud: f.longitud,
+    procedente: f.procedente,
+    padron: f.padron,
+    bebidas_alcoholicas: f.bebidas_alcoholicas,
+    observacion: f.observacion.trim() || null,
+  };
+}
+
+export function formularioRowToState(row: FormRow): FormularioNuevoState {
+  return {
+    contribuyente_id: row.contribuyente_id,
+    razon_social: row.razon_social,
+    nit: row.nit ?? "",
+    zona: row.zona,
+    superficie: String(row.superficie),
+    direccion: row.direccion,
+    celular: row.celular,
+    referencia: row.referencia,
+    latitud: row.latitud,
+    longitud: row.longitud,
+    procedente: row.procedente,
+    padron: row.padron,
+    bebidas_alcoholicas: row.bebidas_alcoholicas,
+    observacion: row.observacion ?? "",
+  };
+}
+
 /** Estado del formulario “nueva notificación” */
 export interface NotificacionNuevaState {
   contribuyente_id: string;

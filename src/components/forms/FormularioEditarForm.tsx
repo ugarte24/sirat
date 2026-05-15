@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState, useRef, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,23 +12,22 @@ import { ContribuyenteCombobox } from "@/components/ContribuyenteCombobox";
 import { toast } from "sonner";
 import { Camera, Images, X } from "lucide-react";
 import type { ContribuyenteCatalogRow, FormularioNuevoState } from "@/lib/sirat-forms";
-import { emptyFormularioNuevo, formularioStateToInsert } from "@/lib/sirat-forms";
+import { formularioRowToState, formularioStateToUpdate } from "@/lib/sirat-forms";
 import { FORMULARIO_VERIFICACION_NOMBRE } from "@/lib/sirat-brand";
 
 const MapPicker = lazy(() => import("@/components/MapPicker").then((m) => ({ default: m.MapPicker })));
 
 type LocalPhoto = { file: File; previewUrl: string };
+type ExistingPhoto = { id: string; storage_path: string; previewUrl: string };
 
-function revokePhotos(items: LocalPhoto[]) {
+function revokeLocalPhotos(items: LocalPhoto[]) {
   for (const p of items) URL.revokeObjectURL(p.previewUrl);
 }
 
-export type FormularioNuevaActividadFormProps = {
+export type FormularioEditarFormProps = {
+  formularioId: string;
   onSuccess: () => void;
-  /** Abre el flujo de alta de contribuyente (p. ej. segundo paso en el mismo diálogo) */
-  onPedirAltaContribuyente?: () => void;
-  /** Incrementar desde el padre para forzar recarga de catálogo de contribuyentes */
-  catalogRefreshKey?: number;
+  onCancel?: () => void;
 };
 
 function ClientOnly({ children }: { children: ReactNode }) {
@@ -39,7 +38,7 @@ function ClientOnly({ children }: { children: ReactNode }) {
   if (!mounted) {
     return (
       <div
-        className="h-[300px] rounded-lg border bg-muted/30 text-sm text-muted-foreground flex items-center justify-center px-4 text-center"
+        className="h-[300px] rounded-lg border bg-muted/30 text-sm text-muted-foreground flex items-center justify-center"
         aria-busy="true"
       >
         Preparando mapa…
@@ -49,53 +48,97 @@ function ClientOnly({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
-export function FormularioNuevaActividadForm({
-  onSuccess,
-  onPedirAltaContribuyente,
-  catalogRefreshKey = 0,
-}: FormularioNuevaActividadFormProps) {
+export function FormularioEditarForm({ formularioId, onSuccess, onCancel }: FormularioEditarFormProps) {
+  const [meta, setMeta] = useState<{ numero: number; codigo_actividad: string } | null>(null);
   const [contribs, setContribs] = useState<ContribuyenteCatalogRow[]>([]);
+  const [f, setF] = useState<FormularioNuevoState | null>(null);
+  const [existingPhotos, setExistingPhotos] = useState<ExistingPhoto[]>([]);
+  const [removedPhotoIds, setRemovedPhotoIds] = useState<string[]>([]);
+  const [newPhotos, setNewPhotos] = useState<LocalPhoto[]>([]);
+  const newPhotosRef = useRef<LocalPhoto[]>([]);
+  newPhotosRef.current = newPhotos;
+  const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
-  const [photos, setPhotos] = useState<LocalPhoto[]>([]);
-  const photosRef = useRef<LocalPhoto[]>([]);
-  photosRef.current = photos;
-  const [f, setF] = useState<FormularioNuevoState>(() => emptyFormularioNuevo());
   const [catalogLoaded, setCatalogLoaded] = useState(false);
 
   useEffect(() => {
-    return () => revokePhotos(photosRef.current);
+    return () => revokeLocalPhotos(newPhotosRef.current);
   }, []);
 
   useEffect(() => {
-    setCatalogLoaded(false);
+    setLoading(true);
+    setF(null);
+    setExistingPhotos([]);
+    setRemovedPhotoIds([]);
+    revokeLocalPhotos(newPhotosRef.current);
+    setNewPhotos([]);
+
     void (async () => {
       try {
-        const { data, error } = await supabase
-          .from("contribuyentes")
-          .select("id,ci,nombre_completo")
-          .order("nombre_completo");
-        if (error) toast.error(`Contribuyentes: ${error.message}`);
-        setContribs(data ?? []);
-        if (!(data?.length) && !error) {
-          toast.message("No hay contribuyentes. Registre uno antes o use el enlace de abajo.");
+        const [formRes, cr] = await Promise.all([
+          supabase.from("formularios").select("*").eq("id", formularioId).maybeSingle(),
+          supabase.from("contribuyentes").select("id,ci,nombre_completo").order("nombre_completo"),
+        ]);
+        if (cr.error) toast.error(`Contribuyentes: ${cr.error.message}`);
+        setContribs(cr.data ?? []);
+        setCatalogLoaded(true);
+
+        if (formRes.error) {
+          toast.error(formRes.error.message);
+          return;
+        }
+        if (!formRes.data) {
+          toast.error("Formulario no encontrado");
+          return;
+        }
+        if (formRes.data.estado !== "activo") {
+          toast.error(`Solo se pueden editar registros activos del ${FORMULARIO_VERIFICACION_NOMBRE.toLowerCase()}`);
+          onCancel?.();
+          return;
+        }
+
+        setMeta({ numero: formRes.data.numero, codigo_actividad: formRes.data.codigo_actividad });
+        setF(formularioRowToState(formRes.data));
+
+        const { data: fotos } = await supabase
+          .from("formulario_fotos")
+          .select("id, storage_path")
+          .eq("formulario_id", formularioId);
+        if (fotos?.length) {
+          const withUrls = await Promise.all(
+            fotos.map(async (p) => {
+              const { data: signed } = await supabase.storage
+                .from("formulario-fotos")
+                .createSignedUrl(p.storage_path, 3600);
+              return {
+                id: p.id,
+                storage_path: p.storage_path,
+                previewUrl: signed?.signedUrl ?? "",
+              };
+            }),
+          );
+          setExistingPhotos(withUrls);
         }
       } catch (e) {
         console.error(e);
-        toast.error("No se pudieron cargar los contribuyentes. Revise la conexión y las variables de Supabase.");
+        toast.error("No se pudo cargar el formulario");
       } finally {
-        setCatalogLoaded(true);
+        setLoading(false);
       }
     })();
-  }, [catalogRefreshKey]);
+  }, [formularioId, onCancel]);
+
+  const visibleExisting = existingPhotos.filter((p) => !removedPhotoIds.includes(p.id));
+  const totalPhotos = visibleExisting.length + newPhotos.length;
 
   const addPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     e.target.value = "";
     if (!files.length) return;
-    setPhotos((prev) => {
+    setNewPhotos((prev) => {
       const next = [...prev];
       for (const file of files) {
-        if (next.length >= 2) break;
+        if (visibleExisting.length + next.length >= 2) break;
         next.push({ file, previewUrl: URL.createObjectURL(file) });
       }
       return next;
@@ -104,6 +147,7 @@ export function FormularioNuevaActividadForm({
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!f) return;
     if (!f.contribuyente_id) return toast.error("Selecciona un contribuyente");
     const sup = Number.parseFloat(f.superficie);
     if (!Number.isFinite(sup) || sup <= 0) {
@@ -120,29 +164,53 @@ export function FormularioNuevaActividadForm({
     ) {
       return toast.error("Marque la ubicación en el mapa o use «Mi ubicación».");
     }
+
     setBusy(true);
-    const { data: u } = await supabase.auth.getUser();
-    const row = formularioStateToInsert(f, u.user?.id);
-    const { data: created, error } = await supabase.from("formularios").insert(row).select().single();
+    const { error } = await supabase
+      .from("formularios")
+      .update(formularioStateToUpdate(f))
+      .eq("id", formularioId);
     if (error) {
       setBusy(false);
       return toast.error(error.message);
     }
-    for (const { file } of photos) {
-      const path = `${created.id}/${Date.now()}-${file.name}`;
-      const { error: upErr } = await supabase.storage.from("formulario-fotos").upload(path, file);
-      if (!upErr) await supabase.from("formulario_fotos").insert({ formulario_id: created.id, storage_path: path });
+
+    for (const photoId of removedPhotoIds) {
+      const row = existingPhotos.find((p) => p.id === photoId);
+      if (row) {
+        await supabase.storage.from("formulario-fotos").remove([row.storage_path]);
+        await supabase.from("formulario_fotos").delete().eq("id", photoId);
+      }
     }
-    toast.success(`${FORMULARIO_VERIFICACION_NOMBRE} N° ${created.numero} registrado`);
-    revokePhotos(photos);
-    setPhotos([]);
-    setF(emptyFormularioNuevo());
+
+    for (const { file } of newPhotos) {
+      const path = `${formularioId}/${Date.now()}-${file.name}`;
+      const { error: upErr } = await supabase.storage.from("formulario-fotos").upload(path, file);
+      if (!upErr) await supabase.from("formulario_fotos").insert({ formulario_id: formularioId, storage_path: path });
+    }
+
+    revokeLocalPhotos(newPhotos);
+    setNewPhotos([]);
     setBusy(false);
+    toast.success(
+      meta
+        ? `${FORMULARIO_VERIFICACION_NOMBRE} N° ${meta.numero} actualizado`
+        : `${FORMULARIO_VERIFICACION_NOMBRE} actualizado`,
+    );
     onSuccess();
   };
 
+  if (loading || !f) {
+    return <p className="text-sm text-muted-foreground py-6 text-center">Cargando formulario…</p>;
+  }
+
   return (
     <form onSubmit={submit} className="space-y-4">
+      {meta && (
+        <p className="text-xs text-muted-foreground font-mono">
+          N° {meta.numero} · {meta.codigo_actividad}
+        </p>
+      )}
       <Card className="p-5 space-y-4 border-0 shadow-none sm:border sm:shadow-sm">
         <div>
           <Label>Contribuyente *</Label>
@@ -153,17 +221,6 @@ export function FormularioNuevaActividadForm({
             disabled={!catalogLoaded}
             placeholder={catalogLoaded ? "Seleccionar contribuyente" : "Cargando…"}
           />
-          {onPedirAltaContribuyente ? (
-            <Button
-              type="button"
-              variant="link"
-              size="sm"
-              className="px-0 h-auto mt-1"
-              onClick={onPedirAltaContribuyente}
-            >
-              + Registrar nuevo contribuyente
-            </Button>
-          ) : null}
         </div>
         <div className="grid sm:grid-cols-2 gap-3">
           <div>
@@ -222,9 +279,6 @@ export function FormularioNuevaActividadForm({
 
       <Card className="p-5 space-y-3 border-0 shadow-none sm:border sm:shadow-sm">
         <Label>Ubicación geográfica *</Label>
-        <p className="text-xs text-muted-foreground">
-          Es obligatorio tocar el mapa o usar «Mi ubicación» para marcar el punto donde se realiza la verificación.
-        </p>
         <ClientOnly>
           <Suspense
             fallback={
@@ -234,6 +288,7 @@ export function FormularioNuevaActividadForm({
             }
           >
             <MapPicker
+              key={`${f.latitud}-${f.longitud}`}
               lat={f.latitud}
               lng={f.longitud}
               onChange={(la, ln) => setF({ ...f, latitud: la, longitud: ln })}
@@ -257,14 +312,14 @@ export function FormularioNuevaActividadForm({
             className="flex flex-col gap-2"
           >
             <div className="flex items-center gap-2">
-              <RadioGroupItem value="procedente" id="form-proc-si" />
-              <Label htmlFor="form-proc-si" className="cursor-pointer font-normal leading-none">
+              <RadioGroupItem value="procedente" id="edit-form-proc-si" />
+              <Label htmlFor="edit-form-proc-si" className="cursor-pointer font-normal leading-none">
                 Procedente
               </Label>
             </div>
             <div className="flex items-center gap-2">
-              <RadioGroupItem value="no_procedente" id="form-proc-no" />
-              <Label htmlFor="form-proc-no" className="cursor-pointer font-normal leading-none">
+              <RadioGroupItem value="no_procedente" id="edit-form-proc-no" />
+              <Label htmlFor="edit-form-proc-no" className="cursor-pointer font-normal leading-none">
                 No procedente
               </Label>
             </div>
@@ -273,24 +328,19 @@ export function FormularioNuevaActividadForm({
 
         <fieldset className="space-y-2 min-w-0">
           <legend className="text-sm font-medium text-foreground">Padrón y bebidas *</legend>
-          <p className="text-xs text-muted-foreground">Debe marcar al menos una de las dos opciones.</p>
           <div className="flex items-center gap-2">
-            <Checkbox
-              id="form-padron"
-              checked={f.padron}
-              onCheckedChange={(v) => setF({ ...f, padron: !!v })}
-            />
-            <Label htmlFor="form-padron" className="cursor-pointer font-normal leading-none">
+            <Checkbox id="edit-form-padron" checked={f.padron} onCheckedChange={(v) => setF({ ...f, padron: !!v })} />
+            <Label htmlFor="edit-form-padron" className="cursor-pointer font-normal leading-none">
               Padrón
             </Label>
           </div>
           <div className="flex items-center gap-2">
             <Checkbox
-              id="form-bebidas"
+              id="edit-form-bebidas"
               checked={f.bebidas_alcoholicas}
               onCheckedChange={(v) => setF({ ...f, bebidas_alcoholicas: !!v })}
             />
-            <Label htmlFor="form-bebidas" className="cursor-pointer font-normal leading-none">
+            <Label htmlFor="edit-form-bebidas" className="cursor-pointer font-normal leading-none">
               Bebidas alcohólicas
             </Label>
           </div>
@@ -303,18 +353,28 @@ export function FormularioNuevaActividadForm({
       </Card>
 
       <Card className="p-5 space-y-3 border-0 shadow-none sm:border sm:shadow-sm">
-        <div>
-          <Label>Fotografías (máximo 2)</Label>
-        </div>
+        <Label>Fotografías (máximo 2)</Label>
         <div className="flex gap-2 flex-wrap">
-          {photos.map((p, i) => (
+          {visibleExisting.map((p) => (
+            <div key={p.id} className="relative h-24 w-24 rounded-lg overflow-hidden border">
+              <img src={p.previewUrl} alt="" className="h-full w-full object-cover" />
+              <button
+                type="button"
+                onClick={() => setRemovedPhotoIds((ids) => [...ids, p.id])}
+                className="absolute top-1 right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          ))}
+          {newPhotos.map((p, i) => (
             <div key={`${p.previewUrl}-${i}`} className="relative h-24 w-24 rounded-lg overflow-hidden border">
               <img src={p.previewUrl} alt="" className="h-full w-full object-cover" />
               <button
                 type="button"
                 onClick={() => {
                   URL.revokeObjectURL(p.previewUrl);
-                  setPhotos((ph) => ph.filter((_, idx) => idx !== i));
+                  setNewPhotos((ph) => ph.filter((_, idx) => idx !== i));
                 }}
                 className="absolute top-1 right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center"
               >
@@ -322,22 +382,16 @@ export function FormularioNuevaActividadForm({
               </button>
             </div>
           ))}
-          {photos.length < 2 && (
+          {totalPhotos < 2 && (
             <div className="flex gap-2 flex-wrap">
               <label className="h-24 w-24 rounded-lg border-2 border-dashed flex flex-col items-center justify-center text-muted-foreground cursor-pointer hover:bg-muted shrink-0">
                 <Camera className="h-5 w-5" aria-hidden />
-                <span className="text-[10px] mt-1 text-center px-0.5 leading-tight">Cámara</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  className="hidden"
-                  onChange={addPhoto}
-                />
+                <span className="text-[10px] mt-1">Cámara</span>
+                <input type="file" accept="image/*" capture="environment" className="hidden" onChange={addPhoto} />
               </label>
               <label className="h-24 w-24 rounded-lg border-2 border-dashed flex flex-col items-center justify-center text-muted-foreground cursor-pointer hover:bg-muted shrink-0">
                 <Images className="h-5 w-5" aria-hidden />
-                <span className="text-[10px] mt-1 text-center px-0.5 leading-tight">Galería</span>
+                <span className="text-[10px] mt-1">Galería</span>
                 <input type="file" accept="image/*" className="hidden" onChange={addPhoto} />
               </label>
             </div>
@@ -345,9 +399,16 @@ export function FormularioNuevaActividadForm({
         </div>
       </Card>
 
-      <Button type="submit" disabled={busy} className="w-full h-11 bg-gradient-primary">
-        Registrar verificación
-      </Button>
+      <div className="flex gap-2">
+        {onCancel ? (
+          <Button type="button" variant="outline" className="flex-1" onClick={onCancel} disabled={busy}>
+            Cancelar
+          </Button>
+        ) : null}
+        <Button type="submit" disabled={busy} className="flex-1 h-11 bg-gradient-primary">
+          {busy ? "Guardando…" : "Guardar cambios"}
+        </Button>
+      </div>
     </form>
   );
 }

@@ -38,7 +38,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { title: "SIRAT — Sistema Integrado de Registro y Administración Tributaria" },
-      { name: "description", content: "Gestión tributaria municipal: contribuyentes, formularios de verificación, notificaciones y mapas." },
+      { name: "description", content: "Gestión tributaria municipal: contribuyentes, formularios de verificación para actividades económicas, notificaciones y mapas." },
       { name: "theme-color", content: "#002d56" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "default" },
