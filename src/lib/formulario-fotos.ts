@@ -1,6 +1,25 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 /** Tamaño máximo por foto de verificación (500 KB). */
 export const FORMULARIO_FOTO_MAX_BYTES = 500 * 1024;
 export const FORMULARIO_FOTO_MAX_LABEL = "500 KB";
+
+const FORMULARIO_FOTOS_BUCKET = "formulario-fotos";
+
+export type FormularioFotoUploadSummary = {
+  attempted: number;
+  uploaded: number;
+  failed: number;
+};
+
+/** Mensaje para avisar al usuario cuando fallan subidas tras guardar el formulario. */
+export function formularioFotoUploadWarning(summary: FormularioFotoUploadSummary): string | null {
+  if (summary.failed === 0 || summary.attempted === 0) return null;
+  if (summary.uploaded === 0) {
+    return `No se pudieron subir ${summary.failed} foto(s). Los datos de la verificación se guardaron sin fotografías.`;
+  }
+  return `Se guardó la verificación, pero ${summary.failed} de ${summary.attempted} foto(s) no se subieron.`;
+}
 
 const MAX_EDGE_PX = 1920;
 /** Lado máximo al redimensionar cuando hace falta comprimir (px). */
@@ -139,4 +158,45 @@ export async function prepareFormularioFotoFile(
 export async function ensureFormularioFotoFile(file: File): Promise<File> {
   const { file: ready } = await prepareFormularioFotoFile(file);
   return ready;
+}
+
+/**
+ * Sube fotos a Storage y registra filas en formulario_fotos.
+ * No lanza: los fallos se devuelven en el resumen para no bloquear el guardado del formulario.
+ */
+export async function uploadFormularioFotos(
+  supabase: SupabaseClient,
+  formularioId: string,
+  files: File[],
+): Promise<FormularioFotoUploadSummary> {
+  const summary: FormularioFotoUploadSummary = {
+    attempted: files.length,
+    uploaded: 0,
+    failed: 0,
+  };
+
+  for (const raw of files) {
+    try {
+      const { file } = await prepareFormularioFotoFile(raw);
+      const path = `${formularioId}/${Date.now()}-${file.name}`;
+      const { error: upErr } = await supabase.storage.from(FORMULARIO_FOTOS_BUCKET).upload(path, file);
+      if (upErr) {
+        summary.failed += 1;
+        continue;
+      }
+      const { error: dbErr } = await supabase
+        .from("formulario_fotos")
+        .insert({ formulario_id: formularioId, storage_path: path });
+      if (dbErr) {
+        await supabase.storage.from(FORMULARIO_FOTOS_BUCKET).remove([path]);
+        summary.failed += 1;
+        continue;
+      }
+      summary.uploaded += 1;
+    } catch {
+      summary.failed += 1;
+    }
+  }
+
+  return summary;
 }

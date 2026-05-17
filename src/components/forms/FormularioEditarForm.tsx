@@ -17,7 +17,9 @@ import { FORMULARIO_VERIFICACION_NOMBRE } from "@/lib/sirat-brand";
 import {
   FORMULARIO_FOTO_MAX_LABEL,
   formatFileSize,
+  formularioFotoUploadWarning,
   prepareFormularioFotoFile,
+  uploadFormularioFotos,
 } from "@/lib/formulario-fotos";
 
 const MapPicker = lazy(() => import("@/components/MapPicker").then((m) => ({ default: m.MapPicker })));
@@ -213,17 +215,18 @@ export function FormularioEditarForm({ formularioId, onSuccess, onCancel }: Form
       }
     }
 
-    for (const { file: raw } of newPhotos) {
-      const file = await prepareFormularioFotoFile(raw).then((r) => r.file);
-      const path = `${formularioId}/${Date.now()}-${file.name}`;
-      const { error: upErr } = await supabase.storage.from("formulario-fotos").upload(path, file);
-      if (!upErr) await supabase.from("formulario_fotos").insert({ formulario_id: formularioId, storage_path: path });
-    }
+    const photoSummary = await uploadFormularioFotos(
+      supabase,
+      formularioId,
+      newPhotos.map((p) => p.file),
+    );
 
     revokeLocalPhotos(newPhotos);
     setNewPhotos([]);
     setBusy(false);
     toast.success(`${FORMULARIO_VERIFICACION_NOMBRE} actualizado`);
+    const photoWarn = formularioFotoUploadWarning(photoSummary);
+    if (photoWarn) toast.warning(photoWarn);
     onSuccess();
   };
 
