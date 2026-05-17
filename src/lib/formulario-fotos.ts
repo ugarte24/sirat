@@ -1,9 +1,20 @@
-/** Tamaño máximo por foto de verificación (1 MB). */
-export const FORMULARIO_FOTO_MAX_BYTES = 1 * 1024 * 1024;
+/** Tamaño máximo por foto de verificación (500 KB). */
+export const FORMULARIO_FOTO_MAX_BYTES = 500 * 1024;
+export const FORMULARIO_FOTO_MAX_LABEL = "500 KB";
 
 const MAX_EDGE_PX = 1920;
-const MIN_EDGE_PX = 720;
-const MIN_JPEG_QUALITY = 0.32;
+/** Lado máximo al redimensionar cuando hace falta comprimir (px). */
+const MIN_EDGE_PX = 640;
+/** Calidad JPEG mínima al comprimir (25 %). */
+const MIN_JPEG_QUALITY = 0.25;
+const JPEG_QUALITY_STEP = 0.07;
+
+function jpegQualitiesToTry(): number[] {
+  const out: number[] = [];
+  for (let q = 0.92; q > MIN_JPEG_QUALITY; q -= JPEG_QUALITY_STEP) out.push(q);
+  out.push(MIN_JPEG_QUALITY);
+  return out;
+}
 
 export function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -76,7 +87,7 @@ function toJpegFile(blob: Blob, originalName: string): File {
 }
 
 /**
- * Devuelve un archivo listo para subir. Si supera 1 MB, lo comprime automáticamente.
+ * Devuelve un archivo listo para subir. Si supera el tope, lo comprime automáticamente.
  */
 export async function prepareFormularioFotoFile(
   file: File,
@@ -102,7 +113,7 @@ export async function prepareFormularioFotoFile(
       if (!ctx) throw new Error("No se pudo procesar la imagen");
       ctx.drawImage(source, 0, 0, w, h);
 
-      for (let q = 0.92; q >= MIN_JPEG_QUALITY; q -= 0.07) {
+      for (const q of jpegQualitiesToTry()) {
         const blob = await canvasToJpegBlob(canvas, q);
         if (blob.size <= FORMULARIO_FOTO_MAX_BYTES && blob.size < bestUnderSize) {
           bestUnder = blob;
@@ -114,7 +125,7 @@ export async function prepareFormularioFotoFile(
 
     if (!bestUnder) {
       throw new Error(
-        `No se pudo comprimir la foto por debajo de 1 MB (original: ${formatFileSize(originalSize)}). Use otra imagen.`,
+        `No se pudo comprimir la foto por debajo de ${FORMULARIO_FOTO_MAX_LABEL} (original: ${formatFileSize(originalSize)}). Use otra imagen.`,
       );
     }
 

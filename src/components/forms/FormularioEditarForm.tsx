@@ -14,7 +14,11 @@ import { Camera, Images, X } from "lucide-react";
 import type { ContribuyenteCatalogRow, FormularioNuevoState } from "@/lib/sirat-forms";
 import { formularioRowToState, formularioStateToUpdate } from "@/lib/sirat-forms";
 import { FORMULARIO_VERIFICACION_NOMBRE } from "@/lib/sirat-brand";
-import { formatFileSize, prepareFormularioFotoFile } from "@/lib/formulario-fotos";
+import {
+  FORMULARIO_FOTO_MAX_LABEL,
+  formatFileSize,
+  prepareFormularioFotoFile,
+} from "@/lib/formulario-fotos";
 
 const MapPicker = lazy(() => import("@/components/MapPicker").then((m) => ({ default: m.MapPicker })));
 
@@ -373,7 +377,7 @@ export function FormularioEditarForm({ formularioId, onSuccess, onCancel }: Form
       <Card className="p-5 space-y-3 border-0 shadow-none sm:border sm:shadow-sm">
         <Label>Fotografías (máximo 2)</Label>
         <p className="text-xs text-muted-foreground">
-          Máximo 2 fotos; si superan 1 MB se comprimen automáticamente.
+          Máximo 2 fotos; si superan {FORMULARIO_FOTO_MAX_LABEL} se comprimen automáticamente.
           {photoBusy ? " Comprimiendo…" : ""}
         </p>
         <div className="flex gap-2 flex-wrap">
