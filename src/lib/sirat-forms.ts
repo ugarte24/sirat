@@ -35,7 +35,10 @@ export interface FormularioNuevoState {
   referencia: string;
   latitud: number | null;
   longitud: number | null;
-  procedente: boolean;
+  /** Zoom Leaflet guardado con la ubicación (1–19) */
+  mapa_zoom: number | null;
+  /** null = sin elegir (etapa verificación); true/false tras selección */
+  procedente: boolean | null;
   padron: boolean;
   bebidas_alcoholicas: boolean;
   observacion: string;
@@ -53,7 +56,8 @@ export function emptyFormularioNuevo(): FormularioNuevoState {
     referencia: "",
     latitud: null,
     longitud: null,
-    procedente: true,
+    mapa_zoom: null,
+    procedente: null,
     padron: false,
     bebidas_alcoholicas: false,
     observacion: "",
@@ -95,7 +99,7 @@ export function formularioStateToInsert(
     referencia: f.referencia.trim(),
     latitud: f.latitud,
     longitud: f.longitud,
-    procedente: f.procedente,
+    procedente: f.procedente ?? true,
     padron: f.padron,
     bebidas_alcoholicas: f.bebidas_alcoholicas,
     observacion: f.observacion.trim() || null,
@@ -115,6 +119,7 @@ export type FormularioRegistroPayload = Pick<
   | "referencia"
   | "latitud"
   | "longitud"
+  | "mapa_zoom"
   | "created_by"
 >;
 
@@ -132,6 +137,7 @@ export function formularioRegistroToInsert(
     referencia: f.referencia.trim(),
     latitud: f.latitud,
     longitud: f.longitud,
+    mapa_zoom: f.mapa_zoom,
     created_by: createdBy ?? null,
     estado: "pendiente_verificacion",
     superficie: null,
@@ -149,6 +155,7 @@ export type FormularioRegistroUpdatePayload = Pick<
   | "referencia"
   | "latitud"
   | "longitud"
+  | "mapa_zoom"
 >;
 
 export function formularioRegistroToUpdate(f: FormularioNuevoState): FormularioRegistroUpdatePayload {
@@ -162,6 +169,7 @@ export function formularioRegistroToUpdate(f: FormularioNuevoState): FormularioR
     referencia: f.referencia.trim(),
     latitud: f.latitud,
     longitud: f.longitud,
+    mapa_zoom: f.mapa_zoom,
   };
 }
 
@@ -183,7 +191,7 @@ export function formularioVerificacionToUpdate(
 ): FormularioVerificacionUpdatePayload {
   const base: FormularioVerificacionUpdatePayload = {
     superficie: Number.parseFloat(f.superficie),
-    procedente: f.procedente,
+    procedente: f.procedente as boolean,
     padron: f.padron,
     bebidas_alcoholicas: f.bebidas_alcoholicas,
     observacion: f.observacion.trim() || null,
@@ -219,6 +227,7 @@ export function validateFormularioRegistro(f: FormularioNuevoState): string | nu
 export function validateFormularioVerificacion(f: FormularioNuevoState): string | null {
   const sup = Number.parseFloat(f.superficie);
   if (!Number.isFinite(sup) || sup <= 0) return "Indica una superficie válida (m²)";
+  if (f.procedente === null) return "Seleccione Procedente o No procedente";
   if (!f.padron && !f.bebidas_alcoholicas) {
     return "Marque al menos una opción: Padrón o Bebidas alcohólicas";
   }
@@ -256,7 +265,7 @@ export function formularioStateToUpdate(f: FormularioNuevoState): FormularioUpda
     referencia: f.referencia.trim(),
     latitud: f.latitud,
     longitud: f.longitud,
-    procedente: f.procedente,
+    procedente: f.procedente ?? true,
     padron: f.padron,
     bebidas_alcoholicas: f.bebidas_alcoholicas,
     observacion: f.observacion.trim() || null,
@@ -264,6 +273,8 @@ export function formularioStateToUpdate(f: FormularioNuevoState): FormularioUpda
 }
 
 export function formularioRowToState(row: FormRow): FormularioNuevoState {
+  const verificacionSinCompletar =
+    row.estado === "pendiente_verificacion" && row.superficie == null;
   return {
     contribuyente_id: row.contribuyente_id,
     razon_social: row.razon_social,
@@ -275,7 +286,8 @@ export function formularioRowToState(row: FormRow): FormularioNuevoState {
     referencia: row.referencia,
     latitud: row.latitud,
     longitud: row.longitud,
-    procedente: row.procedente,
+    mapa_zoom: row.mapa_zoom ?? null,
+    procedente: verificacionSinCompletar ? null : row.procedente,
     padron: row.padron,
     bebidas_alcoholicas: row.bebidas_alcoholicas,
     observacion: row.observacion ?? "",

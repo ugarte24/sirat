@@ -1,12 +1,36 @@
+import { lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Camera, Images, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Camera, ExternalLink, Images, X } from "lucide-react";
+import type { Database } from "@/integrations/supabase/types";
 import type { FormularioNuevoState } from "@/lib/sirat-forms";
 import { FORMULARIO_FOTO_MAX_LABEL } from "@/lib/formulario-fotos";
+import {
+  formularioStateToMapMarker,
+  googleMapsDirectionsUrl,
+} from "@/lib/mapa-actividades";
+
+const MapPicker = lazy(() => import("@/components/MapPicker").then((m) => ({ default: m.MapPicker })));
+
+type FormularioEstado = Database["public"]["Enums"]["formulario_estado"];
+
+function ClientOnly({ children }: { children: ReactNode }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) {
+    return (
+      <div className="h-[220px] rounded-lg border bg-muted/30 text-sm text-muted-foreground flex items-center justify-center">
+        Preparando mapa…
+      </div>
+    );
+  }
+  return <>{children}</>;
+}
 
 export type VerificacionPhotoExisting = { id: string; storage_path: string; previewUrl: string };
 export type VerificacionPhotoLocal = { file: File; previewUrl: string };
@@ -15,6 +39,8 @@ export type FormularioVerificacionEtapaFieldsProps = {
   f: FormularioNuevoState;
   setF: React.Dispatch<React.SetStateAction<FormularioNuevoState>>;
   idPrefix?: string;
+  estadoFormulario?: FormularioEstado;
+  contribuyenteNombre?: string | null;
   existingPhotos?: VerificacionPhotoExisting[];
   removedPhotoIds?: string[];
   onRemoveExisting?: (id: string) => void;
@@ -29,6 +55,8 @@ export function FormularioVerificacionEtapaFields({
   f,
   setF,
   idPrefix = "ver",
+  estadoFormulario = "pendiente_verificacion",
+  contribuyenteNombre = null,
   existingPhotos = [],
   removedPhotoIds = [],
   onRemoveExisting,
@@ -38,12 +66,61 @@ export function FormularioVerificacionEtapaFields({
   photoBusy = false,
   maxPhotos = 2,
 }: FormularioVerificacionEtapaFieldsProps) {
+  const marker = useMemo(
+    () => formularioStateToMapMarker(f, estadoFormulario, { contribuyenteNombre }),
+    [f, estadoFormulario, contribuyenteNombre],
+  );
   const visibleExisting = existingPhotos.filter((p) => !removedPhotoIds.includes(p.id));
   const totalPhotos = visibleExisting.length + localPhotos.length;
   const canAdd = totalPhotos < maxPhotos && onAddPhotos;
 
+  const gmapsUrl =
+    marker != null ? googleMapsDirectionsUrl(marker.lat, marker.lng) : null;
+
   return (
     <>
+      <Card className="p-4 space-y-3 border-0 shadow-none sm:border sm:shadow-sm">
+        <Label>Ubicación registrada</Label>
+        {marker ? (
+          <>
+            <p className="text-xs text-muted-foreground">
+              Pulse el pin para ver el nombre de la actividad y el enlace «Cómo llegar».
+            </p>
+            <ClientOnly>
+              <Suspense
+                fallback={
+                  <div className="h-[220px] rounded-lg border bg-muted/30 flex items-center justify-center text-sm text-muted-foreground">
+                    Cargando mapa…
+                  </div>
+                }
+              >
+                <MapPicker
+                  readOnly
+                  markers={[marker]}
+                  height="220px"
+                  openPopupOnLoad
+                />
+              </Suspense>
+            </ClientOnly>
+            <p className="text-xs text-muted-foreground">
+              Lat: {marker.lat.toFixed(6)} • Lng: {marker.lng.toFixed(6)}
+            </p>
+            {gmapsUrl ? (
+              <Button type="button" variant="outline" size="sm" className="w-full gap-2" asChild>
+                <a href={gmapsUrl} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="h-4 w-4 shrink-0" aria-hidden />
+                  Cómo llegar en Google Maps
+                </a>
+              </Button>
+            ) : null}
+          </>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Sin ubicación en el registro. Marque la ubicación en la pestaña Registro para verla aquí.
+          </p>
+        )}
+      </Card>
+
       <Card className="p-5 space-y-4 border-0 shadow-none sm:border sm:shadow-sm">
         <div>
           <Label>Superficie (m²) *</Label>
@@ -56,9 +133,16 @@ export function FormularioVerificacionEtapaFields({
           />
         </div>
         <fieldset className="space-y-2 min-w-0">
-          <legend className="text-sm font-medium text-foreground">Procedencia</legend>
+          <legend className="text-sm font-medium text-foreground">Procedencia *</legend>
+          <p className="text-xs text-muted-foreground">Debe seleccionar una de las dos opciones.</p>
           <RadioGroup
-            value={f.procedente ? "procedente" : "no_procedente"}
+            value={
+              f.procedente === null
+                ? undefined
+                : f.procedente
+                  ? "procedente"
+                  : "no_procedente"
+            }
             onValueChange={(v) => setF({ ...f, procedente: v === "procedente" })}
             className="flex flex-col gap-2"
           >

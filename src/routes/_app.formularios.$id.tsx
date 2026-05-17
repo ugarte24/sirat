@@ -161,7 +161,9 @@ function Detalle() {
       </Card>
 
       {f.latitud && (
-        <Card className="p-3"><MapPicker lat={f.latitud} lng={f.longitud} readOnly /></Card>
+        <Card className="p-3">
+          <MapPicker lat={f.latitud} lng={f.longitud} mapZoom={f.mapa_zoom} readOnly />
+        </Card>
       )}
 
       {photos.length > 0 && (

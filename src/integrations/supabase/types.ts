@@ -85,6 +85,7 @@ export type Database = {
           id: string
           latitud: number | null
           longitud: number | null
+          mapa_zoom: number | null
           nit: string | null
           observacion: string | null
           padron: boolean
@@ -109,6 +110,7 @@ export type Database = {
           id?: string
           latitud?: number | null
           longitud?: number | null
+          mapa_zoom?: number | null
           nit?: string | null
           observacion?: string | null
           padron?: boolean
@@ -133,6 +135,7 @@ export type Database = {
           id?: string
           latitud?: number | null
           longitud?: number | null
+          mapa_zoom?: number | null
           nit?: string | null
           observacion?: string | null
           padron?: boolean

@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -40,6 +40,7 @@ import {
 } from "@/lib/sirat-brand";
 import type { ContribuyenteCatalogRow } from "@/lib/sirat-forms";
 import { formatDateEsBo } from "@/lib/date";
+import { REOPEN_VERIFICAR_STORAGE_KEY } from "@/lib/formulario-navigation";
 
 type FormSearch = { nuevo?: boolean; editar?: string; verificar?: string };
 type ListFiltro = "todos" | "pendientes" | "activos";
@@ -99,6 +100,26 @@ function Lista() {
   const [formKey, setFormKey] = useState(0);
   const [catalogRefreshKey, setCatalogRefreshKey] = useState(0);
   const [contribRecien, setContribRecien] = useState<ContribuyenteCatalogRow | null>(null);
+  const dialogModeRef = useRef(dialogMode);
+  const editIdRef = useRef(editId);
+  const gestionTabRef = useRef(gestionTab);
+  dialogModeRef.current = dialogMode;
+  editIdRef.current = editId;
+  gestionTabRef.current = gestionTab;
+
+  const clearSearchParam = useCallback(
+    (key: keyof FormSearch) => {
+      void navigate({
+        search: (prev) => {
+          const next = { ...(prev as Record<string, unknown>) };
+          delete next[key];
+          return next as FormSearch;
+        },
+        replace: true,
+      });
+    },
+    [navigate],
+  );
 
   useEffect(() => {
     const t = setTimeout(() => setQDeb(qInput), 400);
@@ -159,6 +180,13 @@ function Lista() {
     void load();
   }, [load]);
 
+  useEffect(() => {
+    const pending = sessionStorage.getItem(REOPEN_VERIFICAR_STORAGE_KEY);
+    if (!pending) return;
+    sessionStorage.removeItem(REOPEN_VERIFICAR_STORAGE_KEY);
+    openEdit(pending, "verificacion");
+  }, []);
+
   const openCreate = () => {
     setSubvista("formulario");
     setContribRecien(null);
@@ -184,46 +212,30 @@ function Lista() {
   };
 
   useEffect(() => {
-    if (nuevo) {
-      openCreate();
-      void navigate({
-        search: (prev) => {
-          const next = { ...(prev as Record<string, unknown>) };
-          delete next.nuevo;
-          return next as FormSearch;
-        },
-        replace: true,
-      });
-    }
-  }, [nuevo, navigate]);
+    if (!nuevo) return;
+    if (dialogModeRef.current !== "create") openCreate();
+    clearSearchParam("nuevo");
+  }, [nuevo, clearSearchParam]);
 
   useEffect(() => {
-    if (editar) {
-      openEdit(editar, "registro");
-      void navigate({
-        search: (prev) => {
-          const next = { ...(prev as Record<string, unknown>) };
-          delete next.editar;
-          return next as FormSearch;
-        },
-        replace: true,
-      });
-    }
-  }, [editar, navigate]);
+    if (!editar) return;
+    const needsOpen =
+      dialogModeRef.current !== "edit" ||
+      editIdRef.current !== editar ||
+      gestionTabRef.current !== "registro";
+    if (needsOpen) openEdit(editar, "registro");
+    clearSearchParam("editar");
+  }, [editar, clearSearchParam]);
 
   useEffect(() => {
-    if (verificar) {
-      openEdit(verificar, "verificacion");
-      void navigate({
-        search: (prev) => {
-          const next = { ...(prev as Record<string, unknown>) };
-          delete next.verificar;
-          return next as FormSearch;
-        },
-        replace: true,
-      });
-    }
-  }, [verificar, navigate]);
+    if (!verificar) return;
+    const needsOpen =
+      dialogModeRef.current !== "edit" ||
+      editIdRef.current !== verificar ||
+      gestionTabRef.current !== "verificacion";
+    if (needsOpen) openEdit(verificar, "verificacion");
+    clearSearchParam("verificar");
+  }, [verificar, clearSearchParam]);
 
   const dialogTitle =
     dialogMode === "edit"
@@ -268,40 +280,58 @@ function Lista() {
           </DialogHeader>
 
           {dialogMode === "edit" && editId ? (
-            <FormularioGestionForm
-              key={`${editId}-${gestionTab}`}
-              formularioId={editId}
-              initialTab={gestionTab}
-              catalogRefreshKey={catalogRefreshKey}
-              onPedirAltaContribuyente={() => setSubvista("contrib")}
-              onSuccess={() => {
-                closeDialog();
-                void load();
-              }}
-              onCancel={closeDialog}
-            />
-          ) : subvista === "contrib" ? (
-            <ContribuyenteAltaForm
-              onSuccess={(contribuyente) => {
-                setContribRecien(contribuyente);
-                setCatalogRefreshKey((k) => k + 1);
-                setSubvista("formulario");
-              }}
-            />
+            <>
+              <div className={subvista === "contrib" ? "hidden" : undefined}>
+                <FormularioGestionForm
+                  key={editId}
+                  formularioId={editId}
+                  initialTab={gestionTab}
+                  catalogRefreshKey={catalogRefreshKey}
+                  contribuyenteRecienRegistrado={contribRecien}
+                  onContribuyentePreseleccionado={() => setContribRecien(null)}
+                  onPedirAltaContribuyente={() => setSubvista("contrib")}
+                  onSuccess={() => {
+                    closeDialog();
+                    void load();
+                  }}
+                  onCancel={closeDialog}
+                />
+              </div>
+              <div className={subvista !== "contrib" ? "hidden" : undefined}>
+                <ContribuyenteAltaForm
+                  onSuccess={(contribuyente) => {
+                    setContribRecien(contribuyente);
+                    setCatalogRefreshKey((k) => k + 1);
+                    setSubvista("formulario");
+                  }}
+                />
+              </div>
+            </>
           ) : (
-            <FormularioRegistroCreateForm
-              key={formKey}
-              catalogRefreshKey={catalogRefreshKey}
-              contribuyenteRecienRegistrado={contribRecien}
-              onContribuyentePreseleccionado={() => setContribRecien(null)}
-              onPedirAltaContribuyente={() => setSubvista("contrib")}
-              onSuccess={(id) => {
-                setEditId(id);
-                setGestionTab("verificacion");
-                setDialogMode("edit");
-                void load();
-              }}
-            />
+            <>
+              <div className={subvista === "contrib" ? "hidden" : undefined}>
+                <FormularioRegistroCreateForm
+                  key={formKey}
+                  catalogRefreshKey={catalogRefreshKey}
+                  contribuyenteRecienRegistrado={contribRecien}
+                  onContribuyentePreseleccionado={() => setContribRecien(null)}
+                  onPedirAltaContribuyente={() => setSubvista("contrib")}
+                  onSuccess={() => {
+                    closeDialog();
+                    void load();
+                  }}
+                />
+              </div>
+              <div className={subvista !== "contrib" ? "hidden" : undefined}>
+                <ContribuyenteAltaForm
+                  onSuccess={(contribuyente) => {
+                    setContribRecien(contribuyente);
+                    setCatalogRefreshKey((k) => k + 1);
+                    setSubvista("formulario");
+                  }}
+                />
+              </div>
+            </>
           )}
         </DialogContent>
       </Dialog>

@@ -58,7 +58,7 @@ export function FormularioRegistroEtapaFields({
           toast.error(result.message);
           return;
         }
-        setF({ ...f, latitud: result.lat, longitud: result.lng });
+        setF({ ...f, latitud: result.lat, longitud: result.lng, mapa_zoom: 17 });
         setCenterMapToken((t) => t + 1);
         if (!isLikelyBoliviaBounds(result.lat, result.lng)) {
           toast.warning("Las coordenadas quedan fuera de Bolivia; verifique que sean correctas.");
@@ -189,8 +189,10 @@ export function FormularioRegistroEtapaFields({
             <MapPicker
               lat={f.latitud}
               lng={f.longitud}
+              mapZoom={f.mapa_zoom}
               centerToCoordsToken={centerMapToken}
               onChange={(la, ln) => setF({ ...f, latitud: la, longitud: ln })}
+              onZoomChange={(z) => setF((prev) => ({ ...prev, mapa_zoom: z }))}
               onLocateError={onLocateError}
             />
           </Suspense>

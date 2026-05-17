@@ -12,19 +12,69 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
 
+export type MapMarkerVariant = "verificado" | "pendiente";
+
+export type MapPickerMarker = {
+  lat: number;
+  lng: number;
+  popup?: string;
+  /** Color del pin en mapas de actividades (por defecto verificado/azul). */
+  variant?: MapMarkerVariant;
+  /** Zoom guardado de la actividad (solo útil con un marcador). */
+  mapZoom?: number | null;
+};
+
 interface Props {
   lat?: number | null;
   lng?: number | null;
   onChange?: (lat: number, lng: number) => void;
   readOnly?: boolean;
   height?: string;
-  markers?: { lat: number; lng: number; popup?: string }[];
+  markers?: MapPickerMarker[];
   /** Si falla la geolocalización (permiso denegado, timeout, etc.) */
   onLocateError?: (message: string) => void;
   /** Incrementar tras pegar enlace/coords para centrar el mapa con zoom de calle (sin afectar clics en el mapa). */
   centerToCoordsToken?: number;
+  /** Zoom guardado (p. ej. desde BD); si null, vista por defecto. */
+  mapZoom?: number | null;
+  onZoomChange?: (zoom: number) => void;
+  /** Abre el popup del único marcador al cargar (vista de una actividad). */
+  openPopupOnLoad?: boolean;
 }
 
+/** Zoom por defecto al abrir el mapa sin valor guardado. */
+const DEFAULT_MAP_ZOOM = 13;
+
+const MARKER_ICON_CACHE: Partial<Record<MapMarkerVariant, L.DivIcon>> = {};
+
+const PIN_COLORS: Record<MapMarkerVariant, string> = {
+  verificado: "#2563eb",
+  pendiente: "#ea580c",
+};
+
+/** Pin tipo gota; viewBox con margen superior para que no se corte la punta redonda. */
+export function mapMarkerPinSvg(variant: MapMarkerVariant, width = 32): string {
+  const fill = PIN_COLORS[variant];
+  const height = Math.round((width * 44) / 32);
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 44" width="${width}" height="${height}" aria-hidden="true" style="display:block;overflow:visible">
+  <path fill="${fill}" stroke="#ffffff" stroke-width="2.25" stroke-linejoin="round" style="filter:drop-shadow(0 1.5px 2px rgba(15,23,42,0.35))" d="M16 4C9.4 4 4 9.4 4 16c0 7.2 12 24 12 24s12-16.8 12-24c0-6.6-5.4-12-12-12z"/>
+  <circle cx="16" cy="16" r="5" fill="#ffffff" fill-opacity="0.95"/>
+</svg>`;
+}
+
+function getMarkerIcon(variant: MapMarkerVariant): L.DivIcon {
+  const cached = MARKER_ICON_CACHE[variant];
+  if (cached) return cached;
+  const icon = L.divIcon({
+    className: "sirat-map-marker-wrap",
+    html: mapMarkerPinSvg(variant, 32),
+    iconSize: [32, 44],
+    iconAnchor: [16, 42],
+    popupAnchor: [0, -38],
+  });
+  MARKER_ICON_CACHE[variant] = icon;
+  return icon;
+}
 /** Zoom al centrar ubicación (Mi ubicación o Usar ubicación). */
 const UBICACION_MAP_ZOOM = 17;
 
@@ -45,6 +95,9 @@ export function MapPicker({
   markers,
   onLocateError,
   centerToCoordsToken = 0,
+  mapZoom,
+  onZoomChange,
+  openPopupOnLoad = false,
 }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -53,7 +106,10 @@ export function MapPicker({
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
+  const onZoomChangeRef = useRef(onZoomChange);
+  onZoomChangeRef.current = onZoomChange;
   const prevCenterTokenRef = useRef(centerToCoordsToken);
+  const appliedSavedZoomRef = useRef(false);
 
   useEffect(() => {
     const el = ref.current;
@@ -86,6 +142,9 @@ export function MapPicker({
             /* clic con mapa en estado inconsistente */
           }
         });
+        map.on("zoomend", () => {
+          onZoomChangeRef.current?.(map.getZoom());
+        });
       }
 
       requestAnimationFrame(() => safeInvalidate(map));
@@ -96,7 +155,8 @@ export function MapPicker({
     const tryCreate = (): boolean => {
       if (!el.isConnected || mapRef.current) return false;
       if (el.clientWidth <= 0 || el.clientHeight <= 0) return false;
-      const map = L.map(el).setView([initialLat, initialLng], 13);
+      const initialZoom = mapZoom ?? DEFAULT_MAP_ZOOM;
+      const map = L.map(el).setView([initialLat, initialLng], initialZoom);
       attachMap(map);
       return true;
     };
@@ -149,13 +209,25 @@ export function MapPicker({
     if (!map || !layer) return;
     layer.clearLayers();
     if (!markers?.length) return;
-    markers.forEach((m) => {
-      const mk = L.marker([m.lat, m.lng]).addTo(layer);
+    markers.forEach((m, i) => {
+      const mk = L.marker([m.lat, m.lng], {
+        icon: getMarkerIcon(m.variant ?? "verificado"),
+      }).addTo(layer);
       if (m.popup) mk.bindPopup(m.popup);
+      if (openPopupOnLoad && markers.length === 1 && i === 0) {
+        window.setTimeout(() => {
+          try {
+            mk.openPopup();
+          } catch {
+            /* */
+          }
+        }, 350);
+      }
     });
     try {
       if (markers.length === 1) {
-        map.setView([markers[0].lat, markers[0].lng], Math.max(map.getZoom(), 15));
+        const z = markers[0].mapZoom ?? Math.max(map.getZoom(), 15);
+        map.setView([markers[0].lat, markers[0].lng], z);
       } else {
         const bounds = L.latLngBounds(markers.map((m) => [m.lat, m.lng] as [number, number]));
         map.fitBounds(bounds, { padding: [36, 36], maxZoom: 16 });
@@ -164,7 +236,7 @@ export function MapPicker({
     } catch {
       /* coordenadas inválidas */
     }
-  }, [markers]);
+  }, [markers, openPopupOnLoad]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -186,6 +258,20 @@ export function MapPicker({
   }, [lat, lng]);
 
   useEffect(() => {
+    const map = mapRef.current;
+    if (!map || appliedSavedZoomRef.current) return;
+    if (lat == null || lng == null) return;
+    try {
+      const z = mapZoom ?? DEFAULT_MAP_ZOOM;
+      map.setView([lat, lng], z);
+      appliedSavedZoomRef.current = true;
+      requestAnimationFrame(() => safeInvalidate(map));
+    } catch {
+      /* */
+    }
+  }, [lat, lng, mapZoom]);
+
+  useEffect(() => {
     if (centerToCoordsToken === prevCenterTokenRef.current) return;
     prevCenterTokenRef.current = centerToCoordsToken;
     if (!centerToCoordsToken) return;
@@ -195,6 +281,7 @@ export function MapPicker({
       if (markerRef.current) markerRef.current.setLatLng([lat, lng]);
       else markerRef.current = L.marker([lat, lng]).addTo(map);
       map.setView([lat, lng], UBICACION_MAP_ZOOM);
+      onZoomChangeRef.current?.(UBICACION_MAP_ZOOM);
       requestAnimationFrame(() => safeInvalidate(map));
     } catch {
       /* */
@@ -220,6 +307,7 @@ export function MapPicker({
         if (markerRef.current) markerRef.current.setLatLng([la, ln]);
         else markerRef.current = L.marker([la, ln]).addTo(map);
         onChangeRef.current?.(la, ln);
+        onZoomChangeRef.current?.(z);
         requestAnimationFrame(() => safeInvalidate(map));
       },
       (err) => {

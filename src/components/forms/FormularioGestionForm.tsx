@@ -40,6 +40,8 @@ export type FormularioGestionFormProps = {
   onCancel?: () => void;
   onPedirAltaContribuyente?: () => void;
   catalogRefreshKey?: number;
+  contribuyenteRecienRegistrado?: ContribuyenteCatalogRow | null;
+  onContribuyentePreseleccionado?: () => void;
 };
 
 export function FormularioGestionForm({
@@ -49,8 +51,10 @@ export function FormularioGestionForm({
   onCancel,
   onPedirAltaContribuyente,
   catalogRefreshKey = 0,
+  contribuyenteRecienRegistrado = null,
+  onContribuyentePreseleccionado,
 }: FormularioGestionFormProps) {
-  const { contribs, catalogLoaded } = useContribuyentesCatalog(catalogRefreshKey);
+  const { contribs, catalogLoaded, mergeContrib } = useContribuyentesCatalog(catalogRefreshKey);
   const [tab, setTab] = useState(initialTab);
   const [f, setF] = useState<FormularioNuevoState | null>(null);
   const [estado, setEstado] = useState<FormEstado | null>(null);
@@ -65,6 +69,13 @@ export function FormularioGestionForm({
   const [photoBusy, setPhotoBusy] = useState(false);
 
   useEffect(() => setTab(initialTab), [initialTab, formularioId]);
+
+  useEffect(() => {
+    if (!contribuyenteRecienRegistrado) return;
+    setF((prev) => (prev ? { ...prev, contribuyente_id: contribuyenteRecienRegistrado.id } : prev));
+    mergeContrib(contribuyenteRecienRegistrado);
+    onContribuyentePreseleccionado?.();
+  }, [contribuyenteRecienRegistrado, mergeContrib, onContribuyentePreseleccionado]);
 
   useEffect(() => {
     return () => revokeLocalPhotos(newPhotosRef.current);
@@ -295,6 +306,10 @@ export function FormularioGestionForm({
         <FormularioVerificacionEtapaFields
           f={f}
           setF={setF}
+          estadoFormulario={estado}
+          contribuyenteNombre={
+            contribs.find((c) => c.id === f.contribuyente_id)?.nombre_completo ?? null
+          }
           idPrefix={`gest-ver-${formularioId}`}
           existingPhotos={existingPhotos}
           removedPhotoIds={removedPhotoIds}
