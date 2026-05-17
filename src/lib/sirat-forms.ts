@@ -103,6 +103,128 @@ export function formularioStateToInsert(
   };
 }
 
+/** Campos de etapa 1 (registro) hacia formularios */
+export type FormularioRegistroPayload = Pick<
+  FormularioInsertPayload,
+  | "contribuyente_id"
+  | "razon_social"
+  | "nit"
+  | "zona"
+  | "direccion"
+  | "celular"
+  | "referencia"
+  | "latitud"
+  | "longitud"
+  | "created_by"
+>;
+
+export function formularioRegistroToInsert(
+  f: FormularioNuevoState,
+  createdBy: string | null | undefined,
+): FormularioRegistroPayload & { estado: "pendiente_verificacion"; superficie: null } {
+  return {
+    contribuyente_id: f.contribuyente_id,
+    razon_social: f.razon_social.trim(),
+    nit: f.nit.trim() || null,
+    zona: f.zona,
+    direccion: f.direccion.trim(),
+    celular: f.celular.trim(),
+    referencia: f.referencia.trim(),
+    latitud: f.latitud,
+    longitud: f.longitud,
+    created_by: createdBy ?? null,
+    estado: "pendiente_verificacion",
+    superficie: null,
+  };
+}
+
+export type FormularioRegistroUpdatePayload = Pick<
+  FormularioUpdatePayload,
+  | "contribuyente_id"
+  | "razon_social"
+  | "nit"
+  | "zona"
+  | "direccion"
+  | "celular"
+  | "referencia"
+  | "latitud"
+  | "longitud"
+>;
+
+export function formularioRegistroToUpdate(f: FormularioNuevoState): FormularioRegistroUpdatePayload {
+  return {
+    contribuyente_id: f.contribuyente_id,
+    razon_social: f.razon_social.trim(),
+    nit: f.nit.trim() || null,
+    zona: f.zona,
+    direccion: f.direccion.trim(),
+    celular: f.celular.trim(),
+    referencia: f.referencia.trim(),
+    latitud: f.latitud,
+    longitud: f.longitud,
+  };
+}
+
+export type FormularioVerificacionUpdatePayload = Pick<
+  FormularioUpdatePayload,
+  | "superficie"
+  | "procedente"
+  | "padron"
+  | "bebidas_alcoholicas"
+  | "observacion"
+  | "estado"
+  | "verificado_por"
+  | "verificado_at"
+>;
+
+export function formularioVerificacionToUpdate(
+  f: FormularioNuevoState,
+  opts: { completar: boolean; userId: string | null | undefined },
+): FormularioVerificacionUpdatePayload {
+  const base: FormularioVerificacionUpdatePayload = {
+    superficie: Number.parseFloat(f.superficie),
+    procedente: f.procedente,
+    padron: f.padron,
+    bebidas_alcoholicas: f.bebidas_alcoholicas,
+    observacion: f.observacion.trim() || null,
+  };
+  if (opts.completar) {
+    return {
+      ...base,
+      estado: "activo",
+      verificado_por: opts.userId ?? null,
+      verificado_at: new Date().toISOString(),
+    };
+  }
+  return base;
+}
+
+export function validateFormularioRegistro(f: FormularioNuevoState): string | null {
+  if (!f.contribuyente_id) return "Selecciona un contribuyente";
+  if (!f.razon_social.trim()) return "Indica la razón social";
+  if (!f.celular.trim()) return "Indica el celular";
+  if (!f.direccion.trim()) return "Indica la dirección";
+  if (!f.referencia.trim()) return "Indica la referencia";
+  if (
+    f.latitud == null ||
+    f.longitud == null ||
+    !Number.isFinite(f.latitud) ||
+    !Number.isFinite(f.longitud)
+  ) {
+    return "Marque la ubicación en el mapa o use «Mi ubicación»";
+  }
+  return null;
+}
+
+export function validateFormularioVerificacion(f: FormularioNuevoState): string | null {
+  const sup = Number.parseFloat(f.superficie);
+  if (!Number.isFinite(sup) || sup <= 0) return "Indica una superficie válida (m²)";
+  if (!f.padron && !f.bebidas_alcoholicas) {
+    return "Marque al menos una opción: Padrón o Bebidas alcohólicas";
+  }
+  return null;
+}
+
 /** Payload hacia `formularios.update` */
 export type FormularioUpdatePayload = Pick<
   Db["formularios"]["Update"],
@@ -147,7 +269,7 @@ export function formularioRowToState(row: FormRow): FormularioNuevoState {
     razon_social: row.razon_social,
     nit: row.nit ?? "",
     zona: row.zona,
-    superficie: String(row.superficie),
+    superficie: row.superficie != null ? String(row.superficie) : "",
     direccion: row.direccion,
     celular: row.celular,
     referencia: row.referencia,

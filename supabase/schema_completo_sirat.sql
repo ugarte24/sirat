@@ -6,7 +6,7 @@
 
 -- Roles enum y tabla
 CREATE TYPE public.app_role AS ENUM ('admin', 'operador');
-CREATE TYPE public.formulario_estado AS ENUM ('activo', 'baja', 'anulado');
+CREATE TYPE public.formulario_estado AS ENUM ('activo', 'baja', 'anulado', 'pendiente_verificacion');
 CREATE TYPE public.notificacion_estado AS ENUM ('pendiente', 'cumplido', 'anulado');
 CREATE TYPE public.zona_tipo AS ENUM ('A', 'B', 'C', 'D', 'E');
 
@@ -111,7 +111,9 @@ CREATE TABLE public.formularios (
   nit TEXT,
   fecha DATE NOT NULL DEFAULT CURRENT_DATE,
   zona public.zona_tipo NOT NULL,
-  superficie NUMERIC(10,2) NOT NULL,
+  superficie NUMERIC(10,2),
+  verificado_por UUID REFERENCES auth.users(id),
+  verificado_at TIMESTAMPTZ,
   direccion TEXT NOT NULL,
   celular TEXT NOT NULL,
   referencia TEXT NOT NULL,

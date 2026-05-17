@@ -21,20 +21,22 @@ export const SIRAT_APP_VERSION = pkg.version;
 
 /** Nombre del documento / formulario de actividades económicas */
 export const FORMULARIO_VERIFICACION_NOMBRE =
-  "Formulario de verificación para las actividades económicas";
+  "Formulario de registro y verificación de actividades económicas";
 
-export const FORMULARIO_VERIFICACION_TITULO_NUEVO =
-  "Nuevo formulario de verificación para las actividades económicas";
+export const FORMULARIO_VERIFICACION_TITULO_NUEVO = FORMULARIO_VERIFICACION_NOMBRE;
 
 export const FORMULARIO_VERIFICACION_TITULO_EDITAR =
-  "Editar formulario de verificación para las actividades económicas";
+  "Editar formulario de registro y verificación de actividades económicas";
+
+export const FORMULARIO_ETAPA_REGISTRO_TITULO = "Etapa 1 — Registro";
+export const FORMULARIO_ETAPA_VERIFICACION_TITULO = "Etapa 2 — Verificación";
 
 /** Encabezado de sección y menú (lista de formularios) */
-export const FORMULARIO_VERIFICACION_SECCION = "Formularios de verificación";
+export const FORMULARIO_VERIFICACION_SECCION = "Formularios de registro y verificación";
 
 /** Título en PDF impreso */
 export const FORMULARIO_VERIFICACION_PDF_TITULO =
-  "FORMULARIO DE VERIFICACIÓN PARA LAS ACTIVIDADES ECONÓMICAS";
+  "FORMULARIO DE REGISTRO Y VERIFICACIÓN DE ACTIVIDADES ECONÓMICAS";
 
 /** Título en PDF de notificación tributaria */
 export const NOTIFICACION_TRIBUTARIA_PDF_TITULO = "NOTIFICACIÓN TRIBUTARIA";

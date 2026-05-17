@@ -103,12 +103,37 @@ function Detalle() {
         <div>
           <h1 className="font-display text-2xl font-bold">{f.razon_social}</h1>
         </div>
-        <Badge variant={f.estado === "activo" ? "default" : f.estado === "baja" ? "secondary" : "destructive"}>{f.estado}</Badge>
+        <Badge
+          variant={
+            f.estado === "activo"
+              ? "default"
+              : f.estado === "pendiente_verificacion"
+                ? "outline"
+                : f.estado === "baja"
+                  ? "secondary"
+                  : "destructive"
+          }
+        >
+          {f.estado === "pendiente_verificacion" ? "Pendiente verificación" : f.estado}
+        </Badge>
       </div>
 
       <div className="flex gap-2 flex-wrap">
-        <Button onClick={pdf} className="bg-gradient-primary"><FileDown className="h-4 w-4 mr-1" />PDF</Button>
-        {f.estado === "activo" && (
+        {f.estado === "activo" && f.superficie != null && (
+          <Button onClick={pdf} className="bg-gradient-primary">
+            <FileDown className="h-4 w-4 mr-1" />
+            PDF
+          </Button>
+        )}
+        {f.estado === "pendiente_verificacion" && (
+          <Button variant="default" className="bg-gradient-primary" asChild>
+            <Link to="/formularios" search={{ verificar: id }}>
+              <Pencil className="h-4 w-4 mr-1" />
+              Completar verificación
+            </Link>
+          </Button>
+        )}
+        {(f.estado === "activo" || f.estado === "pendiente_verificacion") && (
           <Button variant="outline" asChild>
             <Link to="/formularios" search={{ editar: id }}>
               <Pencil className="h-4 w-4 mr-1" />
@@ -125,7 +150,8 @@ function Detalle() {
       <Card className="p-5 grid sm:grid-cols-2 gap-3 text-sm">
         <Info l="Fecha" v={formatDateEsBo(f.fecha)} />
         <Info l="Contribuyente" v={`${f.contribuyente.nombre_completo} (${f.contribuyente.ci})`} />
-        <Info l="Zona" v={f.zona} /><Info l="Superficie" v={`${f.superficie} m²`} />
+        <Info l="Zona" v={f.zona} />
+        <Info l="Superficie" v={f.superficie != null ? `${f.superficie} m²` : "Pendiente de verificación"} />
         <Info l="NIT" v={f.nit ?? "—"} /><Info l="Celular" v={f.celular} />
         <Info l="Dirección" v={f.direccion} /><Info l="Referencia" v={f.referencia} />
         <Info l="Procedente" v={f.procedente ? "Sí" : "No"} />

@@ -92,8 +92,10 @@ export type Database = {
           procedente: boolean
           razon_social: string
           referencia: string
-          superficie: number
+          superficie: number | null
           updated_at: string
+          verificado_at: string | null
+          verificado_por: string | null
           zona: Database["public"]["Enums"]["zona_tipo"]
         }
         Insert: {
@@ -114,8 +116,10 @@ export type Database = {
           procedente?: boolean
           razon_social: string
           referencia: string
-          superficie: number
+          superficie?: number | null
           updated_at?: string
+          verificado_at?: string | null
+          verificado_por?: string | null
           zona: Database["public"]["Enums"]["zona_tipo"]
         }
         Update: {
@@ -136,8 +140,10 @@ export type Database = {
           procedente?: boolean
           razon_social?: string
           referencia?: string
-          superficie?: number
+          superficie?: number | null
           updated_at?: string
+          verificado_at?: string | null
+          verificado_por?: string | null
           zona?: Database["public"]["Enums"]["zona_tipo"]
         }
         Relationships: [
@@ -290,7 +296,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "operador"
-      formulario_estado: "activo" | "baja" | "anulado"
+      formulario_estado: "activo" | "baja" | "anulado" | "pendiente_verificacion"
       notificacion_estado: "pendiente" | "cumplido" | "anulado"
       zona_tipo: "A" | "B" | "C" | "D" | "E"
     }
@@ -421,7 +427,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "operador"],
-      formulario_estado: ["activo", "baja", "anulado"],
+      formulario_estado: ["activo", "baja", "anulado", "pendiente_verificacion"],
       notificacion_estado: ["pendiente", "cumplido", "anulado"],
       zona_tipo: ["A", "B", "C", "D", "E"],
     },
