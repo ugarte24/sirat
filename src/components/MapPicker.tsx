@@ -25,8 +25,8 @@ interface Props {
   centerOnCoordsChange?: boolean;
 }
 
-/** Zoom al usar «Mi ubicación» (nombres de calles legibles en OpenStreetMap). */
-const MI_UBICACION_ZOOM = 18;
+/** Zoom al usar «Mi ubicación» (calles con nombre visibles, vista un poco más amplia). */
+const MI_UBICACION_ZOOM = 17;
 
 function safeInvalidate(map: L.Map) {
   try {
