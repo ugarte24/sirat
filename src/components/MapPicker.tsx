@@ -21,12 +21,12 @@ interface Props {
   markers?: { lat: number; lng: number; popup?: string }[];
   /** Si falla la geolocalización (permiso denegado, timeout, etc.) */
   onLocateError?: (message: string) => void;
-  /** Si true, al cambiar lat/lng desde fuera del mapa centra la vista (p. ej. pegar enlace). Por defecto solo mueve el marcador. */
-  centerOnCoordsChange?: boolean;
+  /** Incrementar tras pegar enlace/coords para centrar el mapa con zoom de calle (sin afectar clics en el mapa). */
+  centerToCoordsToken?: number;
 }
 
-/** Zoom al usar «Mi ubicación» (calles con nombre visibles, vista un poco más amplia). */
-const MI_UBICACION_ZOOM = 17;
+/** Zoom al centrar ubicación (Mi ubicación o Usar ubicación). */
+const UBICACION_MAP_ZOOM = 17;
 
 function safeInvalidate(map: L.Map) {
   try {
@@ -44,7 +44,7 @@ export function MapPicker({
   height = "300px",
   markers,
   onLocateError,
-  centerOnCoordsChange = false,
+  centerToCoordsToken = 0,
 }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -53,6 +53,7 @@ export function MapPicker({
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
+  const prevCenterTokenRef = useRef(centerToCoordsToken);
 
   useEffect(() => {
     const el = ref.current;
@@ -178,14 +179,29 @@ export function MapPicker({
       if (lat != null && lng != null) {
         if (markerRef.current) markerRef.current.setLatLng([lat, lng]);
         else markerRef.current = L.marker([lat, lng]).addTo(map);
-        if (centerOnCoordsChange) {
-          map.panTo([lat, lng], { animate: false });
-        }
       }
     } catch {
       /* */
     }
-  }, [lat, lng, centerOnCoordsChange]);
+  }, [lat, lng]);
+
+  useEffect(() => {
+    if (centerToCoordsToken === prevCenterTokenRef.current) return;
+    prevCenterTokenRef.current = centerToCoordsToken;
+    if (!centerToCoordsToken) return;
+    const map = mapRef.current;
+    if (!map || lat == null || lng == null) return;
+    try {
+      if (markerRef.current) markerRef.current.setLatLng([lat, lng]);
+      else markerRef.current = L.marker([lat, lng]).addTo(map);
+      map.setView([lat, lng], UBICACION_MAP_ZOOM);
+      requestAnimationFrame(() => safeInvalidate(map));
+    } catch {
+      /* */
+    }
+    // Solo al incrementar centerToCoordsToken (Usar ubicación), no en cada clic del mapa.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [centerToCoordsToken]);
 
   const handleLocate = () => {
     if (readOnly) return;
@@ -199,7 +215,7 @@ export function MapPicker({
         const ln = pos.coords.longitude;
         const map = mapRef.current;
         if (!map) return;
-        const z = Math.max(map.getZoom(), MI_UBICACION_ZOOM);
+        const z = Math.max(map.getZoom(), UBICACION_MAP_ZOOM);
         map.setView([la, ln], z);
         if (markerRef.current) markerRef.current.setLatLng([la, ln]);
         else markerRef.current = L.marker([la, ln]).addTo(map);

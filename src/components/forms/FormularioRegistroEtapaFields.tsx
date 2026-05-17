@@ -47,6 +47,7 @@ export function FormularioRegistroEtapaFields({
 }: FormularioRegistroEtapaFieldsProps) {
   const [ubicacionPegada, setUbicacionPegada] = useState("");
   const [resolviendoUbicacion, setResolviendoUbicacion] = useState(false);
+  const [centerMapToken, setCenterMapToken] = useState(0);
 
   const aplicarUbicacionPegada = () => {
     void (async () => {
@@ -58,6 +59,7 @@ export function FormularioRegistroEtapaFields({
           return;
         }
         setF({ ...f, latitud: result.lat, longitud: result.lng });
+        setCenterMapToken((t) => t + 1);
         if (!isLikelyBoliviaBounds(result.lat, result.lng)) {
           toast.warning("Las coordenadas quedan fuera de Bolivia; verifique que sean correctas.");
         } else {
@@ -187,6 +189,7 @@ export function FormularioRegistroEtapaFields({
             <MapPicker
               lat={f.latitud}
               lng={f.longitud}
+              centerToCoordsToken={centerMapToken}
               onChange={(la, ln) => setF({ ...f, latitud: la, longitud: ln })}
               onLocateError={onLocateError}
             />
