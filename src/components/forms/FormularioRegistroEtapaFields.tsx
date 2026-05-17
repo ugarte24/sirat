@@ -8,11 +8,8 @@ import { ContribuyenteCombobox } from "@/components/ContribuyenteCombobox";
 import { toast } from "sonner";
 import { ClipboardPaste } from "lucide-react";
 import type { ContribuyenteCatalogRow, FormularioNuevoState } from "@/lib/sirat-forms";
-import {
-  isLikelyBoliviaBounds,
-  isShortMapLink,
-  parseMapLocationInput,
-} from "@/lib/parse-map-location";
+import { isLikelyBoliviaBounds } from "@/lib/parse-map-location";
+import { resolveMapLocationFromText } from "@/lib/resolve-map-location-client";
 
 const MapPicker = lazy(() => import("@/components/MapPicker").then((m) => ({ default: m.MapPicker })));
 
@@ -49,30 +46,30 @@ export function FormularioRegistroEtapaFields({
   idPrefix = "reg",
 }: FormularioRegistroEtapaFieldsProps) {
   const [ubicacionPegada, setUbicacionPegada] = useState("");
+  const [resolviendoUbicacion, setResolviendoUbicacion] = useState(false);
 
   const aplicarUbicacionPegada = () => {
-    const texto = ubicacionPegada.trim();
-    if (!texto) {
-      toast.error("Pegue un enlace de Google Maps o las coordenadas enviadas por WhatsApp.");
-      return;
-    }
-    if (isShortMapLink(texto)) {
-      toast.error(
-        "Enlace corto (maps.app.goo.gl): ábralo en el navegador, copie la URL completa o las coordenadas y vuelva a pegar aquí.",
-      );
-      return;
-    }
-    const coords = parseMapLocationInput(texto);
-    if (!coords) {
-      toast.error("No se reconoció la ubicación. Use un enlace de Google Maps o el formato latitud, longitud.");
-      return;
-    }
-    setF({ ...f, latitud: coords.lat, longitud: coords.lng });
-    if (!isLikelyBoliviaBounds(coords.lat, coords.lng)) {
-      toast.warning("Las coordenadas quedan fuera de Bolivia; verifique que sean correctas.");
-    } else {
-      toast.success(`Ubicación aplicada: ${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`);
-    }
+    void (async () => {
+      setResolviendoUbicacion(true);
+      try {
+        const result = await resolveMapLocationFromText(ubicacionPegada);
+        if (!result.ok) {
+          toast.error(result.message);
+          return;
+        }
+        setF({ ...f, latitud: result.lat, longitud: result.lng });
+        if (!isLikelyBoliviaBounds(result.lat, result.lng)) {
+          toast.warning("Las coordenadas quedan fuera de Bolivia; verifique que sean correctas.");
+        } else {
+          toast.success(`Ubicación aplicada: ${result.lat.toFixed(6)}, ${result.lng.toFixed(6)}`);
+        }
+      } catch (e) {
+        console.error(e);
+        toast.error("Error al resolver la ubicación. Intente de nuevo.");
+      } finally {
+        setResolviendoUbicacion(false);
+      }
+    })();
   };
 
   return (
@@ -147,18 +144,18 @@ export function FormularioRegistroEtapaFields({
       <Card className="p-5 space-y-3 border-0 shadow-none sm:border sm:shadow-sm">
         <Label>Ubicación geográfica *</Label>
         <p className="text-xs text-muted-foreground">
-          Marque en el mapa, use «Mi ubicación» o pegue el enlace / coordenadas que envió el contribuyente por WhatsApp.
+          Marque en el mapa, use «Mi ubicación» o pegue el enlace de ubicación (también maps.app.goo.gl).
         </p>
         <div className="space-y-2">
           <Label htmlFor={`${idPrefix}-ubicacion-pegada`} className="text-xs font-normal text-muted-foreground">
-            Pegar ubicación de WhatsApp
+            Pegar enlace de ubicación
           </Label>
           <div className="flex flex-col gap-2 sm:flex-row">
             <Input
               id={`${idPrefix}-ubicacion-pegada`}
               value={ubicacionPegada}
               onChange={(e) => setUbicacionPegada(e.target.value)}
-              placeholder="https://maps.google.com/... o -10.996, -66.062"
+              placeholder="https://maps.app.goo.gl/... o coordenadas"
               className="flex-1"
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
@@ -167,9 +164,15 @@ export function FormularioRegistroEtapaFields({
                 }
               }}
             />
-            <Button type="button" variant="secondary" className="shrink-0" onClick={aplicarUbicacionPegada}>
+            <Button
+              type="button"
+              variant="secondary"
+              className="shrink-0"
+              disabled={resolviendoUbicacion}
+              onClick={aplicarUbicacionPegada}
+            >
               <ClipboardPaste className="h-4 w-4 mr-1.5" />
-              Usar ubicación
+              {resolviendoUbicacion ? "Resolviendo…" : "Usar ubicación"}
             </Button>
           </div>
         </div>
