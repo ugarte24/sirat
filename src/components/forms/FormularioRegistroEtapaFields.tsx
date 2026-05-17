@@ -185,7 +185,6 @@ export function FormularioRegistroEtapaFields({
             }
           >
             <MapPicker
-              key={`${idPrefix}-${f.latitud}-${f.longitud}`}
               lat={f.latitud}
               lng={f.longitud}
               onChange={(la, ln) => setF({ ...f, latitud: la, longitud: ln })}

@@ -21,7 +21,12 @@ interface Props {
   markers?: { lat: number; lng: number; popup?: string }[];
   /** Si falla la geolocalización (permiso denegado, timeout, etc.) */
   onLocateError?: (message: string) => void;
+  /** Si true, al cambiar lat/lng desde fuera del mapa centra la vista (p. ej. pegar enlace). Por defecto solo mueve el marcador. */
+  centerOnCoordsChange?: boolean;
 }
+
+/** Zoom al usar «Mi ubicación» (nombres de calles legibles en OpenStreetMap). */
+const MI_UBICACION_ZOOM = 18;
 
 function safeInvalidate(map: L.Map) {
   try {
@@ -31,7 +36,16 @@ function safeInvalidate(map: L.Map) {
   }
 }
 
-export function MapPicker({ lat, lng, onChange, readOnly, height = "300px", markers, onLocateError }: Props) {
+export function MapPicker({
+  lat,
+  lng,
+  onChange,
+  readOnly,
+  height = "300px",
+  markers,
+  onLocateError,
+  centerOnCoordsChange = false,
+}: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
@@ -164,12 +178,14 @@ export function MapPicker({ lat, lng, onChange, readOnly, height = "300px", mark
       if (lat != null && lng != null) {
         if (markerRef.current) markerRef.current.setLatLng([lat, lng]);
         else markerRef.current = L.marker([lat, lng]).addTo(map);
-        map.setView([lat, lng], map.getZoom());
+        if (centerOnCoordsChange) {
+          map.panTo([lat, lng], { animate: false });
+        }
       }
     } catch {
       /* */
     }
-  }, [lat, lng]);
+  }, [lat, lng, centerOnCoordsChange]);
 
   const handleLocate = () => {
     if (readOnly) return;
@@ -183,7 +199,7 @@ export function MapPicker({ lat, lng, onChange, readOnly, height = "300px", mark
         const ln = pos.coords.longitude;
         const map = mapRef.current;
         if (!map) return;
-        const z = Math.max(map.getZoom(), 17);
+        const z = Math.max(map.getZoom(), MI_UBICACION_ZOOM);
         map.setView([la, ln], z);
         if (markerRef.current) markerRef.current.setLatLng([la, ln]);
         else markerRef.current = L.marker([la, ln]).addTo(map);
