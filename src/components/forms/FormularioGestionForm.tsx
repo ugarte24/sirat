@@ -332,25 +332,14 @@ export function FormularioGestionForm({
             </Button>
           ) : null}
           {pendiente ? (
-            <>
-              <Button
-                type="button"
-                variant="secondary"
-                className="flex-1"
-                disabled={busyVerificacion}
-                onClick={() => void saveVerificacion(false)}
-              >
-                Guardar avance
-              </Button>
-              <Button
-                type="button"
-                className="flex-1 h-11 bg-gradient-primary"
-                disabled={busyVerificacion}
-                onClick={() => void saveVerificacion(true)}
-              >
-                {busyVerificacion ? "Guardando…" : "Completar verificación"}
-              </Button>
-            </>
+            <Button
+              type="button"
+              className="flex-1 h-11 bg-gradient-primary"
+              disabled={busyVerificacion}
+              onClick={() => void saveVerificacion(true)}
+            >
+              {busyVerificacion ? "Guardando…" : "Completar verificación"}
+            </Button>
           ) : (
             <Button
               type="button"
