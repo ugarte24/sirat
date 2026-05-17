@@ -57,23 +57,20 @@ export function formularioStateToMapMarker(
   const variant: MapMarkerVariant =
     estado === "pendiente_verificacion" ? "pendiente" : "verificado";
 
+  const lines = [
+    f.razon_social ? `<strong>${escHtml(String(f.razon_social))}</strong>` : "",
+    opts?.contribuyenteNombre ? `Contribuyente: ${escHtml(opts.contribuyenteNombre)}` : "",
+    f.direccion ? `Dirección: ${escHtml(f.direccion)}` : "",
+    f.referencia ? `Referencia: ${escHtml(f.referencia)}` : "",
+    `<p class="sirat-map-popup__link"><a href="${gmaps}" target="_blank" rel="noopener noreferrer">Abrir en Google Maps — cómo llegar</a></p>`,
+  ].filter(Boolean);
+
   return {
     lat: la,
     lng: ln,
     variant,
     mapZoom: f.mapa_zoom,
-    popup: [
-      f.razon_social ? `<strong>${escHtml(String(f.razon_social))}</strong>` : "",
-      `<span style="font-size:12px;color:#666">${escHtml(estadoEtiquetaMapa(estado))}</span>`,
-      opts?.contribuyenteNombre
-        ? `Contribuyente: ${escHtml(opts.contribuyenteNombre)}`
-        : "",
-      f.direccion ? `Dirección: ${escHtml(f.direccion)}` : "",
-      f.referencia ? `Referencia: ${escHtml(f.referencia)}` : "",
-      `<p style="margin:8px 0 0"><a href="${gmaps}" target="_blank" rel="noopener noreferrer">Abrir en Google Maps — cómo llegar</a></p>`,
-    ]
-      .filter(Boolean)
-      .join("<br/>"),
+    popup: `<div class="sirat-map-popup">${lines.join("<br/>")}</div>`,
   };
 }
 
@@ -84,22 +81,22 @@ export function formularioRowToMapMarker(f: FormularioMapaRow): MapPickerMarker 
   const variant: MapMarkerVariant =
     f.estado === "pendiente_verificacion" ? "pendiente" : "verificado";
 
+  const lines = [
+    f.razon_social ? `<strong>${escHtml(String(f.razon_social))}</strong>` : "",
+    `<span class="sirat-map-popup__estado">${escHtml(estadoEtiquetaMapa(f.estado))}</span>`,
+    f.contribuyente?.nombre_completo
+      ? `Contribuyente: ${escHtml(f.contribuyente.nombre_completo)}`
+      : "",
+    f.direccion ? `Dirección: ${escHtml(f.direccion)}` : "",
+    f.referencia ? `Referencia: ${escHtml(f.referencia)}` : "",
+    `<p class="sirat-map-popup__link"><a href="${gmaps}" target="_blank" rel="noopener noreferrer">Abrir en Google Maps — cómo llegar</a></p>`,
+  ].filter(Boolean);
+
   return {
     lat: la,
     lng: ln,
     variant,
     mapZoom: f.mapa_zoom,
-    popup: [
-      f.razon_social ? `<strong>${escHtml(String(f.razon_social))}</strong>` : "",
-      `<span style="font-size:12px;color:#666">${escHtml(estadoEtiquetaMapa(f.estado))}</span>`,
-      f.contribuyente?.nombre_completo
-        ? `Contribuyente: ${escHtml(f.contribuyente.nombre_completo)}`
-        : "",
-      f.direccion ? `Dirección: ${escHtml(f.direccion)}` : "",
-      f.referencia ? `Referencia: ${escHtml(f.referencia)}` : "",
-      `<p style="margin:8px 0 0"><a href="${gmaps}" target="_blank" rel="noopener noreferrer">Abrir en Google Maps — cómo llegar</a></p>`,
-    ]
-      .filter(Boolean)
-      .join("<br/>"),
+    popup: `<div class="sirat-map-popup">${lines.join("<br/>")}</div>`,
   };
 }

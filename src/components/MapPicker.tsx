@@ -110,6 +110,8 @@ export function MapPicker({
   onZoomChangeRef.current = onZoomChange;
   const prevCenterTokenRef = useRef(centerToCoordsToken);
   const appliedSavedZoomRef = useRef(false);
+  const markersViewSigRef = useRef("");
+  const markersPopupOpenedRef = useRef(false);
 
   useEffect(() => {
     const el = ref.current;
@@ -207,14 +209,41 @@ export function MapPicker({
     const map = mapRef.current;
     const layer = markersLayerRef.current;
     if (!map || !layer) return;
+
+    if (!markers?.length) {
+      layer.clearLayers();
+      markersViewSigRef.current = "";
+      markersPopupOpenedRef.current = false;
+      return;
+    }
+
+    if (markers.length === 1) {
+      const m = markers[0];
+      const viewSig = `${m.lat},${m.lng},${m.mapZoom ?? ""}`;
+      if (markersViewSigRef.current === viewSig && layer.getLayers().length === 1) {
+        const existing = layer.getLayers()[0];
+        if (existing instanceof L.Marker && m.popup) {
+          existing.setPopupContent(m.popup);
+        }
+        return;
+      }
+      if (markersViewSigRef.current !== viewSig) {
+        markersPopupOpenedRef.current = false;
+      }
+      markersViewSigRef.current = viewSig;
+    } else {
+      markersViewSigRef.current = "";
+      markersPopupOpenedRef.current = false;
+    }
+
     layer.clearLayers();
-    if (!markers?.length) return;
     markers.forEach((m, i) => {
       const mk = L.marker([m.lat, m.lng], {
         icon: getMarkerIcon(m.variant ?? "verificado"),
       }).addTo(layer);
       if (m.popup) mk.bindPopup(m.popup);
-      if (openPopupOnLoad && markers.length === 1 && i === 0) {
+      if (openPopupOnLoad && markers.length === 1 && i === 0 && !markersPopupOpenedRef.current) {
+        markersPopupOpenedRef.current = true;
         window.setTimeout(() => {
           try {
             mk.openPopup();

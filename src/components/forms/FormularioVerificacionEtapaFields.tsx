@@ -67,8 +67,29 @@ export function FormularioVerificacionEtapaFields({
   maxPhotos = 2,
 }: FormularioVerificacionEtapaFieldsProps) {
   const marker = useMemo(
-    () => formularioStateToMapMarker(f, estadoFormulario, { contribuyenteNombre }),
-    [f, estadoFormulario, contribuyenteNombre],
+    () =>
+      formularioStateToMapMarker(
+        {
+          latitud: f.latitud,
+          longitud: f.longitud,
+          razon_social: f.razon_social,
+          direccion: f.direccion,
+          referencia: f.referencia,
+          mapa_zoom: f.mapa_zoom,
+        },
+        estadoFormulario,
+        { contribuyenteNombre },
+      ),
+    [
+      f.latitud,
+      f.longitud,
+      f.razon_social,
+      f.direccion,
+      f.referencia,
+      f.mapa_zoom,
+      estadoFormulario,
+      contribuyenteNombre,
+    ],
   );
   const visibleExisting = existingPhotos.filter((p) => !removedPhotoIds.includes(p.id));
   const totalPhotos = visibleExisting.length + localPhotos.length;
