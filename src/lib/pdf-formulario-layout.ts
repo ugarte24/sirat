@@ -74,6 +74,9 @@ export async function drawInstitucionalPdfHeader(
     titleFontSize?: number;
     /** Espacio extra (mm) entre la línea verde y el título */
     titleMarginTop?: number;
+    /** QR opcional alineado a la derecha del primer título */
+    qrDataUrl?: string;
+    qrSizeMm?: number;
   },
 ): Promise<number> {
   const w = doc.internal.pageSize.getWidth();
@@ -107,8 +110,14 @@ export async function drawInstitucionalPdfHeader(
   const titleSize = opts.titleFontSize ?? 11;
   const titleLineGap = titleSize * 0.42;
   doc.setFontSize(titleSize);
-  for (const line of opts.titleLines) {
-    doc.text(line, w / 2, y, { align: "center" });
+  for (let i = 0; i < opts.titleLines.length; i++) {
+    const line = opts.titleLines[i];
+    const lineY = y;
+    doc.text(line, w / 2, lineY, { align: "center" });
+    if (opts.qrDataUrl && i === 0) {
+      const qrSize = opts.qrSizeMm ?? 22;
+      doc.addImage(opts.qrDataUrl, "PNG", w - MARGIN - qrSize, lineY - qrSize * 0.72, qrSize, qrSize);
+    }
     y += titleLineGap;
   }
 

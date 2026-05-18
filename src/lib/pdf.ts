@@ -299,41 +299,22 @@ export function notificacionPdfFilename(nombreActividad: string | null | undefin
   return `${base}.pdf`;
 }
 
-async function drawNotificacionPdfQr(doc: jsPDF, startY: number, notificacionId: string): Promise<number> {
-  const pageW = doc.internal.pageSize.getWidth();
-  const pageH = doc.internal.pageSize.getHeight();
-  const qrSize = 28;
-  const blockH = 38;
-  let y = startY + 6;
-
-  if (y + blockH > pageH - 14) {
-    doc.addPage();
-    y = 24;
-  }
-
-  const qrDataUrl = await QRCode.toDataURL(buildNotificacionVerificacionUrl(notificacionId), {
+export async function buildNotificacionPdfDoc(d: NotificacionPdfData): Promise<jsPDF> {
+  const doc = new jsPDF();
+  const qrDataUrl = await QRCode.toDataURL(buildNotificacionVerificacionUrl(d.id), {
     width: 256,
     margin: 1,
     errorCorrectionLevel: "M",
     color: { dark: "#000000", light: "#ffffff" },
   });
 
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
-  doc.setTextColor(70, 75, 85);
-  doc.text("Escanee el código QR para verificar esta notificación", pageW / 2, y, { align: "center" });
-  y += 6;
-  doc.addImage(qrDataUrl, "PNG", (pageW - qrSize) / 2, y, qrSize, qrSize);
-  return y + qrSize + 4;
-}
-
-export async function buildNotificacionPdfDoc(d: NotificacionPdfData): Promise<jsPDF> {
-  const doc = new jsPDF();
   let y = await drawInstitucionalPdfHeader(doc, {
     usuario: d.usuario,
     titleLines: [NOTIFICACION_TRIBUTARIA_PDF_TITULO],
     titleFontSize: 17,
     titleMarginTop: 12,
+    qrDataUrl,
+    qrSizeMm: 22,
   });
 
   y = drawPdfTablaSection(doc, y, "DATOS DE LA NOTIFICACIÓN", [
@@ -367,8 +348,6 @@ export async function buildNotificacionPdfDoc(d: NotificacionPdfData): Promise<j
       { content: d.numero_identificacion?.trim() || "—", colSpan: 3 },
     ],
   ]);
-
-  await drawNotificacionPdfQr(doc, y, d.id);
 
   return doc;
 }
