@@ -51,6 +51,7 @@ function Reportes() {
       .from(reporteTipo)
       .select(REPORTE_SELECT[reporteTipo])
       .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
       .limit(1000);
     if (from) q = q.gte("created_at", from);
     if (to) q = q.lte("created_at", to + "T23:59:59");

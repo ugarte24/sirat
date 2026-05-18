@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ContribuyenteAltaForm } from "@/components/forms/ContribuyenteAltaForm";
+import { ContribuyenteEditarForm } from "@/components/forms/ContribuyenteEditarForm";
 import {
   DataListCard,
   DataListTable,
@@ -28,6 +29,7 @@ import {
   DataListTh,
   ilikePattern,
   LIST_PAGE_SIZE,
+  ORDER_CREATED_DESC,
   TablePaginationFooter,
   pillSuccess,
   pillWarning,
@@ -76,6 +78,8 @@ function ListaContribuyentes() {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [altaKey, setAltaKey] = useState(0);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editTarget, setEditTarget] = useState<ContribListItem | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => setQDeb(qInput), 400);
@@ -95,7 +99,8 @@ function ListaContribuyentes() {
     let qb = supabase
       .from("contribuyentes")
       .select("id, ci, nombre_completo, telefono, created_at", { count: "exact" })
-      .order("created_at", { ascending: false });
+      .order("created_at", ORDER_CREATED_DESC)
+      .order("id", ORDER_CREATED_DESC);
     if (pat) {
       qb = qb.or(`nombre_completo.ilike.${pat},ci.ilike.${pat}`);
     }
@@ -199,6 +204,37 @@ function ListaContribuyentes() {
         </DialogContent>
       </Dialog>
 
+      <Dialog
+        open={editDialogOpen}
+        onOpenChange={(open) => {
+          setEditDialogOpen(open);
+          if (!open) setEditTarget(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar contribuyente</DialogTitle>
+            <DialogDescription>Modifique C.I., nombre completo o celular.</DialogDescription>
+          </DialogHeader>
+          {editTarget && (
+            <ContribuyenteEditarForm
+              key={editTarget.id}
+              contribuyenteId={editTarget.id}
+              initial={{
+                ci: editTarget.ci,
+                nombre_completo: editTarget.nombre_completo,
+                telefono: editTarget.telefono ?? "",
+              }}
+              onSuccess={() => {
+                setEditDialogOpen(false);
+                setEditTarget(null);
+                void load();
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
@@ -262,10 +298,13 @@ function ListaContribuyentes() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-48">
-                          <DropdownMenuItem asChild>
-                            <Link to="/contribuyentes/$id" params={{ id: c.id }}>
-                              Editar datos
-                            </Link>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setEditTarget(c);
+                              setEditDialogOpen(true);
+                            }}
+                          >
+                            Editar datos
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem

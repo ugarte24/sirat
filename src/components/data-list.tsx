@@ -5,6 +5,9 @@ import { cn } from "@/lib/utils";
 
 export const LIST_PAGE_SIZE = 20;
 
+/** Orden de listas: último registrado primero. */
+export const ORDER_CREATED_DESC = { ascending: false } as const;
+
 /** Patrón seguro para ilike: sin % _ \ que rompan el filtro */
 export function ilikePattern(raw: string): string | null {
   const t = raw.trim().slice(0, 80).replace(/[%_\\,]/g, "");

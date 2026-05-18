@@ -23,6 +23,7 @@ import {
   DataListTh,
   ilikePattern,
   LIST_PAGE_SIZE,
+  ORDER_CREATED_DESC,
   pillMuted,
   pillSuccess,
   TablePaginationFooter,
@@ -102,7 +103,8 @@ function Lista() {
         "id, fecha_limite, estado, nombre_actividad, created_at, contribuyente_id, contribuyente:contribuyentes(nombre_completo, ci)",
         { count: "exact" },
       )
-      .order("created_at", { ascending: false });
+      .order("created_at", ORDER_CREATED_DESC)
+      .order("id", ORDER_CREATED_DESC);
 
     if (pat) {
       const { data: cm } = await supabase

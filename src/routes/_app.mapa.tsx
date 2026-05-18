@@ -65,6 +65,7 @@ function Mapa() {
         .select(MAPA_SELECT)
         .not("latitud", "is", null)
         .in("estado", ["activo", "pendiente_verificacion"])
+        .order("created_at", { ascending: false })
         .limit(500);
       if (error) toast.error(error.message);
       setRows((data ?? []) as FormularioMapaRow[]);

@@ -23,6 +23,7 @@ import {
   DataListTh,
   ilikePattern,
   LIST_PAGE_SIZE,
+  ORDER_CREATED_DESC,
   pillMuted,
   pillSuccess,
   TablePaginationFooter,
@@ -142,7 +143,8 @@ function Lista() {
         "id, fecha, zona, estado, razon_social, contribuyente_id, contribuyente:contribuyentes(nombre_completo, ci)",
         { count: "exact" },
       )
-      .order("fecha", { ascending: false });
+      .order("created_at", ORDER_CREATED_DESC)
+      .order("id", ORDER_CREATED_DESC);
 
     if (listFiltro === "pendientes") {
       qb = qb.eq("estado", "pendiente_verificacion");

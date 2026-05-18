@@ -70,7 +70,10 @@ function Usuarios() {
   const load = async () => {
     setListLoading(true);
     try {
-      const { data: profiles, error: pe } = await supabase.from("profiles").select("*");
+      const { data: profiles, error: pe } = await supabase
+        .from("profiles")
+        .select("*")
+        .order("created_at", { ascending: false });
       const { data: roles, error: re } = await supabase.from("user_roles").select("*");
       if (pe) throw pe;
       if (re) throw re;

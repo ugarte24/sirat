@@ -27,7 +27,11 @@ function Detalle() {
       const { data } = await supabase.from("contribuyentes").select("ci,nombre_completo,telefono").eq("id", id).maybeSingle();
       setC(data);
       const [{ data: f }, { count }] = await Promise.all([
-        supabase.from("formularios").select("id,razon_social,estado").eq("contribuyente_id", id),
+        supabase
+          .from("formularios")
+          .select("id,razon_social,estado")
+          .eq("contribuyente_id", id)
+          .order("created_at", { ascending: false }),
         supabase.from("notificaciones").select("id", { count: "exact", head: true }).eq("contribuyente_id", id),
       ]);
       setForms(f ?? []);
