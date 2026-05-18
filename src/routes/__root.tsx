@@ -1,9 +1,11 @@
+import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet, Link, createRootRouteWithContext, useRouter, HeadContent, Scripts,
 } from "@tanstack/react-router";
 import appCss from "../styles.css?url";
 import { AuthProvider } from "@/lib/auth";
+import { isStaleChunkLoadError, registerStaleChunkRecovery, reloadForStaleChunks } from "@/lib/chunk-reload";
 import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
@@ -21,12 +23,33 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
+  const staleChunk = isStaleChunkLoadError(error.message);
+
+  const retry = () => {
+    if (staleChunk) {
+      reloadForStaleChunks();
+      return;
+    }
+    router.invalidate();
+    reset();
+  };
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold">Algo salió mal</h1>
-        <p className="mt-2 text-sm text-muted-foreground">{error.message}</p>
-        <button onClick={() => { router.invalidate(); reset(); }} className="mt-6 rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground">Reintentar</button>
+        <p className="mt-2 text-sm text-muted-foreground">
+          {staleChunk
+            ? "Hay una versión nueva de SIRAT. Pulse Reintentar para actualizar la página."
+            : error.message}
+        </p>
+        <button
+          type="button"
+          onClick={retry}
+          className="mt-6 rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground"
+        >
+          Reintentar
+        </button>
       </div>
     </div>
   );
@@ -78,6 +101,11 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  useEffect(() => {
+    registerStaleChunkRecovery();
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
