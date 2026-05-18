@@ -42,7 +42,7 @@ interface Props {
   openPopupOnLoad?: boolean;
 }
 
-/** Zoom por defecto al abrir el mapa sin valor guardado. */
+/** Zoom por defecto al abrir el mapa editable sin valor guardado. */
 const DEFAULT_MAP_ZOOM = 13;
 
 const MARKER_ICON_CACHE: Partial<Record<MapMarkerVariant, L.DivIcon>> = {};
@@ -75,8 +75,16 @@ function getMarkerIcon(variant: MapMarkerVariant): L.DivIcon {
   MARKER_ICON_CACHE[variant] = icon;
   return icon;
 }
-/** Zoom al centrar ubicación (Mi ubicación o Usar ubicación). */
+/** Zoom de calle (Mi ubicación, Usar ubicación y mapas de solo lectura). */
 const UBICACION_MAP_ZOOM = 17;
+
+function resolveMapZoom(mapZoom: number | null | undefined, readOnly?: boolean): number {
+  if (mapZoom != null && Number.isFinite(mapZoom)) {
+    if (readOnly && mapZoom < UBICACION_MAP_ZOOM) return UBICACION_MAP_ZOOM;
+    return mapZoom;
+  }
+  return readOnly ? UBICACION_MAP_ZOOM : DEFAULT_MAP_ZOOM;
+}
 
 function safeInvalidate(map: L.Map) {
   try {
@@ -157,7 +165,7 @@ export function MapPicker({
     const tryCreate = (): boolean => {
       if (!el.isConnected || mapRef.current) return false;
       if (el.clientWidth <= 0 || el.clientHeight <= 0) return false;
-      const initialZoom = mapZoom ?? DEFAULT_MAP_ZOOM;
+      const initialZoom = resolveMapZoom(mapZoom, readOnly);
       const map = L.map(el).setView([initialLat, initialLng], initialZoom);
       attachMap(map);
       return true;
@@ -255,7 +263,7 @@ export function MapPicker({
     });
     try {
       if (markers.length === 1) {
-        const z = markers[0].mapZoom ?? Math.max(map.getZoom(), 15);
+        const z = resolveMapZoom(markers[0].mapZoom, readOnly);
         map.setView([markers[0].lat, markers[0].lng], z);
       } else {
         const bounds = L.latLngBounds(markers.map((m) => [m.lat, m.lng] as [number, number]));
@@ -265,7 +273,7 @@ export function MapPicker({
     } catch {
       /* coordenadas inválidas */
     }
-  }, [markers, openPopupOnLoad]);
+  }, [markers, openPopupOnLoad, readOnly]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -291,14 +299,14 @@ export function MapPicker({
     if (!map || appliedSavedZoomRef.current) return;
     if (lat == null || lng == null) return;
     try {
-      const z = mapZoom ?? DEFAULT_MAP_ZOOM;
+      const z = resolveMapZoom(mapZoom, readOnly);
       map.setView([lat, lng], z);
       appliedSavedZoomRef.current = true;
       requestAnimationFrame(() => safeInvalidate(map));
     } catch {
       /* */
     }
-  }, [lat, lng, mapZoom]);
+  }, [lat, lng, mapZoom, readOnly]);
 
   useEffect(() => {
     if (centerToCoordsToken === prevCenterTokenRef.current) return;

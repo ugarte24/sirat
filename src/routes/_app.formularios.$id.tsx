@@ -11,6 +11,13 @@ import { generateFormularioPDF, generateFormularioFotosPDF } from "@/lib/pdf";
 import { useAuth } from "@/lib/auth";
 import { FORMULARIO_VERIFICACION_NOMBRE, FORMULARIO_VERIFICACION_SECCION } from "@/lib/sirat-brand";
 import { formatDateEsBo } from "@/lib/date";
+import {
+  DetailBoolean,
+  DetailField,
+  DetailGrid,
+  DetailSection,
+  DetailTemplate,
+} from "@/components/DetailTemplate";
 
 export const Route = createFileRoute("/_app/formularios/$id")({ component: Detalle });
 
@@ -147,18 +154,56 @@ function Detalle() {
         </>}
       </div>
 
-      <Card className="p-5 grid sm:grid-cols-2 gap-3 text-sm">
-        <Info l="Fecha" v={formatDateEsBo(f.fecha)} />
-        <Info l="Contribuyente" v={`${f.contribuyente.nombre_completo} (${f.contribuyente.ci})`} />
-        <Info l="Zona" v={f.zona} />
-        <Info l="Superficie" v={f.superficie != null ? `${f.superficie} m²` : "Pendiente de verificación"} />
-        <Info l="NIT" v={f.nit ?? "—"} /><Info l="Celular" v={f.celular} />
-        <Info l="Dirección" v={f.direccion} /><Info l="Referencia" v={f.referencia} />
-        <Info l="Procedente" v={f.procedente ? "Sí" : "No"} />
-        <Info l="Padrón" v={f.padron ? "Sí" : "No"} />
-        <Info l="Bebidas alcohólicas" v={f.bebidas_alcoholicas ? "Sí" : "No"} />
-        {f.observacion && <div className="sm:col-span-2"><Info l="Observación" v={f.observacion} /></div>}
-      </Card>
+      <DetailTemplate>
+        <DetailSection title="Registro" showSeparator={false}>
+          <DetailGrid>
+            <DetailField label="Fecha" value={formatDateEsBo(f.fecha)} />
+            <DetailField
+              label="Contribuyente"
+              value={`${f.contribuyente.nombre_completo} (${f.contribuyente.ci})`}
+            />
+          </DetailGrid>
+        </DetailSection>
+        <DetailSection title="Actividad económica">
+          <DetailGrid>
+            <DetailField label="Razón social" value={f.razon_social} />
+            <DetailField label="Zona" value={f.zona} />
+            <DetailField
+              label="Superficie"
+              value={
+                f.superficie != null ? (
+                  `${f.superficie} m²`
+                ) : (
+                  <span className="font-normal italic text-muted-foreground">
+                    Pendiente de verificación
+                  </span>
+                )
+              }
+            />
+            <DetailField label="NIT" value={f.nit?.trim() || "—"} />
+            <DetailField label="Celular" value={f.celular || "—"} />
+          </DetailGrid>
+        </DetailSection>
+        <DetailSection title="Ubicación">
+          <DetailGrid>
+            <DetailField label="Dirección" value={f.direccion} />
+            <DetailField label="Referencia" value={f.referencia || "—"} />
+          </DetailGrid>
+        </DetailSection>
+        <DetailSection title="Verificación">
+          <DetailGrid>
+            <DetailField label="Procedente" value={<DetailBoolean value={f.procedente} />} />
+            <DetailField label="Padrón" value={<DetailBoolean value={f.padron} />} />
+            <DetailField
+              label="Bebidas alcohólicas"
+              value={<DetailBoolean value={f.bebidas_alcoholicas} />}
+            />
+            {f.observacion ? (
+              <DetailField label="Observación" value={f.observacion} />
+            ) : null}
+          </DetailGrid>
+        </DetailSection>
+      </DetailTemplate>
 
       {f.latitud && (
         <Card className="p-3">
@@ -190,8 +235,4 @@ function Detalle() {
       )}
     </div>
   );
-}
-
-function Info({ l, v }: { l: string; v: string }) {
-  return <div><div className="text-[11px] uppercase tracking-wider text-muted-foreground">{l}</div><div className="font-medium">{v}</div></div>;
 }
