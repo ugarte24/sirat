@@ -4,13 +4,14 @@ import type { NotificacionQrPayload } from "@/lib/notificacion-qr";
 import {
   GAM_RIBERALTA_NOMBRE,
   JEFATURA_RECAUDACIONES,
+  NOTIFICACION_GESTIONES_ADEUDADAS_LABEL,
   NOTIFICACION_TRIBUTARIA_PDF_TITULO,
   SIRAT_TAGLINE,
 } from "@/lib/sirat-brand";
 
 function Field({ label, value }: { label: string; value: string }) {
   return (
-    <div className="grid grid-cols-1 gap-0.5 border-b border-border/80 py-2.5 last:border-0 sm:grid-cols-[11rem_1fr] sm:gap-3">
+    <div className="grid grid-cols-1 gap-0.5 border-b border-border/80 py-2.5 last:border-0 sm:grid-cols-[14rem_1fr] sm:gap-3">
       <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</dt>
       <dd className="text-sm font-medium text-foreground">{value}</dd>
     </div>
@@ -46,7 +47,7 @@ export function NotificacionVerificacionView({ data }: { data: NotificacionQrPay
           <Field label="Licencia / placa / inmueble" value={data.numero_identificacion} />
           <Field label="Dirección" value={data.direccion} />
           <Field label="Conceptos" value={data.conceptos.join(", ") || "—"} />
-          <Field label="Gestiones adeudadas" value={data.gestiones_adeudadas} />
+          <Field label={NOTIFICACION_GESTIONES_ADEUDADAS_LABEL} value={data.gestiones_adeudadas} />
         </dl>
       </Card>
 

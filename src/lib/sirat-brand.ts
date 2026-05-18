@@ -49,3 +49,6 @@ export const FORMULARIO_PDF_FIRMA_ENCARGADO_RUAT = "Encargado de Ruat";
 
 /** Título en PDF de notificación */
 export const NOTIFICACION_TRIBUTARIA_PDF_TITULO = "NOTIFICACIÓN";
+
+/** Campo de texto libre en notificación (detalle, PDF, QR, reportes) */
+export const NOTIFICACION_GESTIONES_ADEUDADAS_LABEL = "Observaciones y/o gestiones adeudadas";

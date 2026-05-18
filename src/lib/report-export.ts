@@ -1,5 +1,6 @@
 import { formatDateEsBo } from "@/lib/date";
 import { notificacionConceptosMarcados } from "@/lib/sirat-forms";
+import { NOTIFICACION_GESTIONES_ADEUDADAS_LABEL } from "@/lib/sirat-brand";
 
 export type ReporteTipo = "formularios" | "notificaciones" | "contribuyentes";
 
@@ -38,7 +39,7 @@ export const REPORTE_COLUMNS: Record<ReporteTipo, ReportColumn[]> = {
     { key: "direccion", header: "Dirección" },
     { key: "fecha_limite", header: "Fecha límite" },
     { key: "conceptos", header: "Conceptos" },
-    { key: "gestiones_adeudadas", header: "Gestiones adeudadas" },
+    { key: "gestiones_adeudadas", header: NOTIFICACION_GESTIONES_ADEUDADAS_LABEL },
   ],
   contribuyentes: [
     { key: "fecha_emision", header: "Fecha emisión" },

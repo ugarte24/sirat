@@ -19,7 +19,10 @@ import {
   type FormularioFotoPdfAsset,
 } from "@/lib/formulario-fotos";
 import { captureFormularioMapForPdf } from "@/lib/pdf-map-snapshot";
-import { NOTIFICACION_TRIBUTARIA_PDF_TITULO } from "@/lib/sirat-brand";
+import {
+  NOTIFICACION_GESTIONES_ADEUDADAS_LABEL,
+  NOTIFICACION_TRIBUTARIA_PDF_TITULO,
+} from "@/lib/sirat-brand";
 
 /** Nombre de archivo PDF: solo razón social (caracteres no válidos en Windows eliminados). */
 function formularioPdfFilename(razonSocial: string, extraSuffix?: string): string {
@@ -302,7 +305,7 @@ export async function generateNotificacionPDF(d: NotificacionData) {
       { content: d.conceptos.join(", ") || "—", colSpan: 3 },
     ],
     [
-      { content: "Gestiones adeudadas", styles: PDF_LABEL_CELL },
+      { content: NOTIFICACION_GESTIONES_ADEUDADAS_LABEL, styles: PDF_LABEL_CELL },
       { content: d.gestiones_adeudadas?.trim() || "—", colSpan: 3 },
     ],
   ]);

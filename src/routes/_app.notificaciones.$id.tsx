@@ -25,6 +25,7 @@ import { generateNotificacionPDF } from "@/lib/pdf";
 import { useAuth } from "@/lib/auth";
 import { notificacionConceptosMarcados } from "@/lib/sirat-forms";
 import { formatDateEsBo } from "@/lib/date";
+import { NOTIFICACION_GESTIONES_ADEUDADAS_LABEL } from "@/lib/sirat-brand";
 
 export const Route = createFileRoute("/_app/notificaciones/$id")({ component: Detalle });
 
@@ -183,7 +184,8 @@ function Detalle() {
           <DetailGrid>
             <DetailField label="Conceptos" value={conceptos.join(", ") || "—"} />
             <DetailField
-              label="Gestiones adeudadas"
+              label={NOTIFICACION_GESTIONES_ADEUDADAS_LABEL}
+              className="[&_dt]:w-full sm:[&_dt]:w-52 sm:[&_dt]:leading-snug"
               value={
                 n.gestiones_adeudadas?.trim() ? (
                   <span className="whitespace-pre-wrap font-medium">{n.gestiones_adeudadas.trim()}</span>

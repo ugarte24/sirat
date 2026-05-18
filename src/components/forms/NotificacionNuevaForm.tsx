@@ -16,7 +16,10 @@ import {
   NOTIFICACION_CONCEPTO_OPTS,
   notificacionStateToInsert,
 } from "@/lib/sirat-forms";
-import { FORMULARIO_VERIFICACION_SECCION } from "@/lib/sirat-brand";
+import {
+  FORMULARIO_VERIFICACION_SECCION,
+  NOTIFICACION_GESTIONES_ADEUDADAS_LABEL,
+} from "@/lib/sirat-brand";
 
 type RazonSocialFormHit = {
   razon_social: string;
@@ -247,7 +250,9 @@ export function NotificacionNuevaForm({
           ))}
         </fieldset>
         <div>
-          <Label htmlFor="notif-gestiones">Observaciones o gestiones adeudadas, si corresponde</Label>
+          <Label htmlFor="notif-gestiones">
+            {NOTIFICACION_GESTIONES_ADEUDADAS_LABEL}, si corresponde
+          </Label>
           <Textarea
             id="notif-gestiones"
             rows={3}

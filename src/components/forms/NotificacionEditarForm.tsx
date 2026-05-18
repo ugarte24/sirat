@@ -16,7 +16,10 @@ import {
   notificacionRowToState,
   notificacionStateToUpdate,
 } from "@/lib/sirat-forms";
-import { FORMULARIO_VERIFICACION_SECCION } from "@/lib/sirat-brand";
+import {
+  FORMULARIO_VERIFICACION_SECCION,
+  NOTIFICACION_GESTIONES_ADEUDADAS_LABEL,
+} from "@/lib/sirat-brand";
 
 type RazonSocialFormHit = {
   razon_social: string;
@@ -251,7 +254,9 @@ export function NotificacionEditarForm({ notificacionId, onSuccess, onCancel }: 
           ))}
         </fieldset>
         <div>
-          <Label htmlFor="notif-edit-gestiones">Observaciones o gestiones adeudadas, si corresponde</Label>
+          <Label htmlFor="notif-edit-gestiones">
+            {NOTIFICACION_GESTIONES_ADEUDADAS_LABEL}, si corresponde
+          </Label>
           <Textarea
             id="notif-edit-gestiones"
             rows={3}
