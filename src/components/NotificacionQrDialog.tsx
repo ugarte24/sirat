@@ -28,9 +28,9 @@ export function NotificacionQrDialog({ open, onOpenChange, payload }: Props) {
     }
     const url = buildNotificacionQrUrl(payload);
     void QRCode.toDataURL(url, {
-      width: 280,
+      width: 300,
       margin: 2,
-      errorCorrectionLevel: "M",
+      errorCorrectionLevel: "H",
     })
       .then(setQrSrc)
       .catch(() => setError("No se pudo generar el código QR."));

@@ -3,8 +3,12 @@ import { z } from "zod";
 import { buildNotificacionQrPayload } from "@/lib/notificacion-qr";
 import { notificacionConceptosMarcados } from "@/lib/sirat-forms";
 
+const notificacionIdSchema = z
+  .string()
+  .regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+
 const idSchema = z.object({
-  id: z.string().uuid(),
+  id: notificacionIdSchema,
 });
 
 /** Lectura pública de una notificación para el QR (solo campos del PDF). */
@@ -35,12 +39,19 @@ export const getNotificacionPublicaFn = createServerFn({ method: "POST" })
         .eq("id", data.id)
         .maybeSingle();
 
-      if (error || !row?.contribuyente) {
+      if (error || !row) {
         if (error) console.error("[getNotificacionPublicaFn]", error.message);
         return { ok: false as const };
       }
 
-      const contrib = row.contribuyente as { nombre_completo: string; ci: string };
+      const contribRaw = row.contribuyente;
+      const contrib = (Array.isArray(contribRaw) ? contribRaw[0] : contribRaw) as
+        | { nombre_completo: string; ci: string }
+        | null
+        | undefined;
+      if (!contrib?.nombre_completo || !contrib.ci) {
+        return { ok: false as const };
+      }
       const conceptos = notificacionConceptosMarcados(row);
 
       return {

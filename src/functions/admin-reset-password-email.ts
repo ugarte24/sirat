@@ -15,10 +15,15 @@ const inputSchema = z.object({
 export const adminResetPasswordEmailFn = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => inputSchema.parse(data))
   .handler(async ({ data }) => {
-    const url = process.env.SUPABASE_URL;
-    const anon = process.env.SUPABASE_PUBLISHABLE_KEY;
+    const { serverSupabasePublishableKey, serverSupabaseUrl } = await import(
+      "@/integrations/supabase/server-env"
+    );
+    const url = serverSupabaseUrl();
+    const anon = serverSupabasePublishableKey();
     if (!url || !anon) {
-      throw new Error("Faltan SUPABASE_URL o SUPABASE_PUBLISHABLE_KEY en el servidor.");
+      throw new Error(
+        "Faltan SUPABASE_URL (o VITE_SUPABASE_URL) o SUPABASE_PUBLISHABLE_KEY en el servidor.",
+      );
     }
 
     const userClient = createClient<Database>(url, anon, {

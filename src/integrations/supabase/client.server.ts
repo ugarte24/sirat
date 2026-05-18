@@ -4,21 +4,22 @@
 // For user-authenticated queries (with RLS), use the auth middleware instead.
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
+import { serverSupabaseServiceRoleKey, serverSupabaseUrl } from './server-env';
 
 function createSupabaseAdminClient() {
-  const SUPABASE_URL = process.env.SUPABASE_URL;
-  const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const SUPABASE_URL = serverSupabaseUrl();
+  const SUPABASE_SERVICE_ROLE_KEY = serverSupabaseServiceRoleKey();
 
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
     const missing = [
-      ...(!SUPABASE_URL ? ['SUPABASE_URL'] : []),
+      ...(!SUPABASE_URL ? ['SUPABASE_URL o VITE_SUPABASE_URL'] : []),
       ...(!SUPABASE_SERVICE_ROLE_KEY ? ['SUPABASE_SERVICE_ROLE_KEY'] : []),
     ];
     const message =
       `Faltan variables de entorno en el servidor: ${missing.join(", ")}. ` +
-      `En local, añádelas en .env (sin prefijo VITE_): SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY ` +
+      `En local, añádelas en .env: SUPABASE_URL (o VITE_SUPABASE_URL) y SUPABASE_SERVICE_ROLE_KEY ` +
       `(Project Settings → API en Supabase; la clave service_role es secreta). ` +
-      `En producción (Vercel, Netlify, Lovable Cloud, etc.), define las mismas variables en la configuración del proyecto y vuelve a desplegar. ` +
+      `En Vercel, define SUPABASE_SERVICE_ROLE_KEY y la URL del proyecto (VITE_SUPABASE_URL basta si el código actualizado está desplegado). ` +
       `No uses VITE_ para la service role: solo debe existir en el servidor.`;
     console.error(`[Supabase] ${message}`);
     throw new Error(message);

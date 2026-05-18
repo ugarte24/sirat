@@ -27,17 +27,36 @@ function Detalle() {
   const { role, profile } = useAuth();
   const [f, setF] = useState<any>(null);
   const [photos, setPhotos] = useState<{ url: string; storagePath: string; blob?: Blob }[]>([]);
+  const [photosLoading, setPhotosLoading] = useState(true);
   const [pdfBusy, setPdfBusy] = useState(false);
   const [fotosPdfBusy, setFotosPdfBusy] = useState(false);
   const mapCaptureRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { (async () => {
-    const { data } = await supabase.from("formularios").select(
-      "*, contribuyente:contribuyentes(nombre_completo,ci)"
-    ).eq("id", id).maybeSingle();
-    setF(data);
-    const { data: fotos } = await supabase.from("formulario_fotos").select("storage_path").eq("formulario_id", id);
-    if (fotos) {
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setPhotosLoading(true);
+      setPhotos([]);
+      const { data } = await supabase
+        .from("formularios")
+        .select("*, contribuyente:contribuyentes(nombre_completo,ci)")
+        .eq("id", id)
+        .maybeSingle();
+      if (cancelled) return;
+      setF(data);
+
+      const { data: fotos } = await supabase
+        .from("formulario_fotos")
+        .select("storage_path")
+        .eq("formulario_id", id);
+      if (cancelled) return;
+
+      if (!fotos?.length) {
+        setPhotos([]);
+        setPhotosLoading(false);
+        return;
+      }
+
       const urls = await Promise.all(
         fotos.map(async (p) => {
           const [{ data: signed }, blob] = await Promise.all([
@@ -51,9 +70,14 @@ function Detalle() {
           };
         }),
       );
+      if (cancelled) return;
       setPhotos(urls);
-    }
-  })(); }, [id]);
+      setPhotosLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
 
   if (!f) {
     return (
@@ -79,6 +103,10 @@ function Detalle() {
     );
 
   const pdf = async () => {
+    if (photosLoading) {
+      toast.info("Espere a que terminen de cargar las fotos.");
+      return;
+    }
     setPdfBusy(true);
     try {
       const { fotosIncluidas, fotosSolicitadas } = await generateFormularioPDF({
@@ -120,6 +148,10 @@ function Detalle() {
   };
 
   const pdfFotos = async () => {
+    if (photosLoading) {
+      toast.info("Espere a que terminen de cargar las fotos.");
+      return;
+    }
     const urls = photos.map((p) => p.url).filter(Boolean);
     if (!urls.length) {
       toast.error("No hay fotos para exportar.");
@@ -179,12 +211,12 @@ function Detalle() {
         {f.estado === "activo" && f.superficie != null && (
           <Button
             type="button"
-            disabled={pdfBusy}
+            disabled={pdfBusy || photosLoading}
             onClick={() => void pdf()}
             className="bg-gradient-primary"
           >
             <FileDown className="h-4 w-4 mr-1" />
-            {pdfBusy ? "Generando…" : "PDF"}
+            {pdfBusy ? "Generando…" : photosLoading ? "Cargando fotos…" : "PDF"}
           </Button>
         )}
         {f.estado === "pendiente_verificacion" && (
@@ -268,26 +300,37 @@ function Detalle() {
         </Card>
       )}
 
-      {photos.length > 0 && (
+      {(photosLoading || photos.length > 0) && (
         <Card className="p-3 space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-sm font-medium text-foreground">Fotos de la verificación</p>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={fotosPdfBusy}
-              onClick={() => void pdfFotos()}
-            >
-              <Printer className="h-4 w-4 mr-1.5" />
-              {fotosPdfBusy ? "Generando…" : "PDF para imprimir"}
-            </Button>
+            {!photosLoading && photos.length > 0 && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={fotosPdfBusy}
+                onClick={() => void pdfFotos()}
+              >
+                <Printer className="h-4 w-4 mr-1.5" />
+                {fotosPdfBusy ? "Generando…" : "PDF para imprimir"}
+              </Button>
+            )}
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            {photos.map((p, i) => (
-              <img key={i} src={p.url} className="rounded-md object-cover h-40 w-full" alt={`Foto ${i + 1}`} />
-            ))}
-          </div>
+          {photosLoading ? (
+            <p className="text-sm text-muted-foreground">Cargando fotos…</p>
+          ) : (
+            <div className="grid grid-cols-2 gap-2">
+              {photos.map((p, i) => (
+                <img
+                  key={i}
+                  src={p.url}
+                  className="rounded-md object-cover h-40 w-full"
+                  alt={`Foto ${i + 1}`}
+                />
+              ))}
+            </div>
+          )}
         </Card>
       )}
     </div>

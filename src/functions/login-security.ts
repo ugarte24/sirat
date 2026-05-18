@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { serverSupabaseServiceRoleKey, serverSupabaseUrl } from "@/integrations/supabase/server-env";
 const emailSchema = z.object({
   email: z.string().trim().email(),
 });
@@ -13,7 +14,7 @@ const MAX_INTENTOS = 5;
 
 /** Sin service role el servidor no puede leer perfiles ignorando RLS: el login sigue funcionando sin contador de intentos. */
 function hasSupabaseServiceEnv(): boolean {
-  return !!(process.env.SUPABASE_URL?.trim() && process.env.SUPABASE_SERVICE_ROLE_KEY?.trim());
+  return !!(serverSupabaseUrl() && serverSupabaseServiceRoleKey());
 }
 
 /** Comprueba perfil antes de intentar auth (cuenta activa, bloqueo admin, intentos fallidos). */
