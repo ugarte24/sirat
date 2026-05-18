@@ -40,6 +40,11 @@ interface Props {
   onZoomChange?: (zoom: number) => void;
   /** Abre el popup del único marcador al cargar (vista de una actividad). */
   openPopupOnLoad?: boolean;
+  /**
+   * Mapa fijo en detalle: sin arrastre ni zoom; en móvil el gesto desplaza la página.
+   * Usar solo en vistas de solo lectura (p. ej. detalle de formulario).
+   */
+  staticPreview?: boolean;
 }
 
 /** Zoom por defecto al abrir el mapa editable sin valor guardado. */
@@ -98,6 +103,29 @@ function safeInvalidate(map: L.Map) {
   }
 }
 
+function leafletMapOptions(staticPreview: boolean): L.MapOptions {
+  if (!staticPreview) return {};
+  return {
+    dragging: false,
+    touchZoom: false,
+    scrollWheelZoom: false,
+    doubleClickZoom: false,
+    boxZoom: false,
+    keyboard: false,
+    zoomControl: false,
+  };
+}
+
+function lockMapInteraction(map: L.Map) {
+  map.dragging.disable();
+  map.touchZoom.disable();
+  map.doubleClickZoom.disable();
+  map.scrollWheelZoom.disable();
+  map.boxZoom.disable();
+  map.keyboard.disable();
+  map.zoomControl?.remove();
+}
+
 export function MapPicker({
   lat,
   lng,
@@ -110,6 +138,7 @@ export function MapPicker({
   mapZoom,
   onZoomChange,
   openPopupOnLoad = false,
+  staticPreview = false,
 }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -170,7 +199,8 @@ export function MapPicker({
       if (!el.isConnected || mapRef.current) return false;
       if (el.clientWidth <= 0 || el.clientHeight <= 0) return false;
       const initialZoom = resolveMapZoom(mapZoom, readOnly);
-      const map = L.map(el).setView([initialLat, initialLng], initialZoom);
+      const map = L.map(el, leafletMapOptions(staticPreview)).setView([initialLat, initialLng], initialZoom);
+      if (staticPreview) lockMapInteraction(map);
       attachMap(map);
       return true;
     };
@@ -367,7 +397,10 @@ export function MapPicker({
   };
 
   return (
-    <div className="relative rounded-lg overflow-hidden border" style={{ height }}>
+    <div
+      className={`relative rounded-lg overflow-hidden border${staticPreview ? " sirat-map-static-preview" : ""}`}
+      style={{ height }}
+    >
       <div ref={ref} className="h-full w-full min-h-[200px]" />
       {!readOnly && (
         <Button

@@ -12,6 +12,8 @@ import { generateFormularioPDF, generateFormularioFotosPDF } from "@/lib/pdf";
 import { useAuth } from "@/lib/auth";
 import { FORMULARIO_VERIFICACION_NOMBRE, FORMULARIO_VERIFICACION_SECCION } from "@/lib/sirat-brand";
 import { formatDateEsBo } from "@/lib/date";
+import { appendObservacionCambioEstado, type FormularioEstadoAccion } from "@/lib/sirat-forms";
+import { ObservacionRequeridaDialog } from "@/components/ObservacionRequeridaDialog";
 import {
   DetailBoolean,
   DetailField,
@@ -30,6 +32,7 @@ function Detalle() {
   const [photosLoading, setPhotosLoading] = useState(true);
   const [pdfBusy, setPdfBusy] = useState(false);
   const [fotosPdfBusy, setFotosPdfBusy] = useState(false);
+  const [estadoDialog, setEstadoDialog] = useState<FormularioEstadoAccion | null>(null);
   const mapCaptureRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -174,9 +177,15 @@ function Detalle() {
     }
   };
 
-  const cambiarEstado = async (estado: any) => {
-    const { error } = await supabase.from("formularios").update({ estado }).eq("id", id);
-    if (error) toast.error(error.message); else { toast.success(`Estado: ${estado}`); setF({ ...f, estado }); }
+  const aplicarCambioEstado = async (accion: FormularioEstadoAccion, observacionNueva: string) => {
+    const observacion = appendObservacionCambioEstado(f.observacion, accion, observacionNueva);
+    const { error } = await supabase
+      .from("formularios")
+      .update({ estado: accion, observacion })
+      .eq("id", id);
+    if (error) throw new Error(error.message);
+    setF({ ...f, estado: accion, observacion });
+    toast.success(accion === "baja" ? "Actividad dada de baja" : "Actividad anulada");
   };
 
   return (
@@ -235,11 +244,37 @@ function Detalle() {
             </Link>
           </Button>
         )}
-        {role === "admin" && f.estado === "activo" && <>
-          <Button variant="outline" onClick={() => cambiarEstado("baja")}>Dar de baja</Button>
-          <Button variant="destructive" onClick={() => cambiarEstado("anulado")}><Ban className="h-4 w-4 mr-1" />Anular</Button>
-        </>}
+        {role === "admin" && f.estado === "activo" && (
+          <>
+            <Button variant="outline" type="button" onClick={() => setEstadoDialog("baja")}>
+              Dar de baja
+            </Button>
+            <Button variant="destructive" type="button" onClick={() => setEstadoDialog("anulado")}>
+              <Ban className="h-4 w-4 mr-1" />
+              Anular
+            </Button>
+          </>
+        )}
       </div>
+
+      <ObservacionRequeridaDialog
+        open={estadoDialog === "baja"}
+        onOpenChange={(open) => !open && setEstadoDialog(null)}
+        title="Dar de baja"
+        description="Registre el motivo. La observación se guardará junto con el cambio de estado."
+        confirmLabel="Guardar baja"
+        confirmVariant="outline"
+        onConfirm={(obs) => aplicarCambioEstado("baja", obs)}
+      />
+      <ObservacionRequeridaDialog
+        open={estadoDialog === "anulado"}
+        onOpenChange={(open) => !open && setEstadoDialog(null)}
+        title="Anular actividad"
+        description="Registre el motivo de la anulación. La observación se guardará junto con el cambio de estado."
+        confirmLabel="Guardar anulación"
+        confirmVariant="destructive"
+        onConfirm={(obs) => aplicarCambioEstado("anulado", obs)}
+      />
 
       <DetailTemplate>
         <DetailSection title="Registro" showSeparator={false}>
@@ -292,14 +327,6 @@ function Detalle() {
         </DetailSection>
       </DetailTemplate>
 
-      {f.latitud && (
-        <Card className="p-3">
-          <div ref={mapCaptureRef}>
-            <MapPicker lat={f.latitud} lng={f.longitud} mapZoom={f.mapa_zoom} readOnly />
-          </div>
-        </Card>
-      )}
-
       {(photosLoading || photos.length > 0) && (
         <Card className="p-3 space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -331,6 +358,14 @@ function Detalle() {
               ))}
             </div>
           )}
+        </Card>
+      )}
+
+      {f.latitud && (
+        <Card className="p-3">
+          <div ref={mapCaptureRef}>
+            <MapPicker lat={f.latitud} lng={f.longitud} mapZoom={f.mapa_zoom} readOnly staticPreview />
+          </div>
         </Card>
       )}
     </div>

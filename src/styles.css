@@ -168,6 +168,11 @@
 
 /* Leaflet */
 .leaflet-container { width: 100%; height: 100%; z-index: 0; }
+/* Detalle formulario: no capturar toques; el scroll vertical pasa a la página */
+.sirat-map-static-preview .leaflet-container {
+  touch-action: pan-y;
+  pointer-events: none;
+}
 .leaflet-marker-icon.sirat-map-marker-wrap {
   background: transparent !important;
   border: none !important;

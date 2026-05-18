@@ -1,4 +1,5 @@
 import type { Database } from "@/integrations/supabase/types";
+import { formatDateEsBo, toIsoDateLocal } from "@/lib/date";
 
 type Db = Database["public"]["Tables"];
 type ContribRow = Db["contribuyentes"]["Row"];
@@ -461,3 +462,32 @@ export function notificacionRowToState(row: NotifRow): NotificacionNuevaState {
 /** Tipado útil al leer la fila creada */
 export type FormularioCreadoRow = Pick<FormRow, "id">;
 export type NotificacionCreadaRow = Pick<NotifRow, "id">;
+
+export type FormularioEstadoAccion = "baja" | "anulado";
+
+/** Añade una línea de observación al cambiar estado (baja/anulado) sin borrar la anterior. */
+export function appendObservacionCambioEstado(
+  observacionActual: string | null | undefined,
+  accion: FormularioEstadoAccion,
+  observacionNueva: string,
+): string {
+  const etiqueta = accion === "baja" ? "BAJA" : "ANULADO";
+  const fecha = formatDateEsBo(toIsoDateLocal(new Date()));
+  const nota = trimUpper(observacionNueva);
+  const linea = `[${etiqueta} ${fecha}]: ${nota}`;
+  const prev = observacionActual?.trim();
+  return prev ? `${prev}\n\n${linea}` : linea;
+}
+
+/** Añade seguimiento en notificaciones (p. ej. anulación). */
+export function appendObservacionSeguimiento(
+  actual: string | null | undefined,
+  etiqueta: string,
+  observacionNueva: string,
+): string {
+  const fecha = formatDateEsBo(toIsoDateLocal(new Date()));
+  const nota = trimUpper(observacionNueva);
+  const linea = `[${etiqueta} ${fecha}]: ${nota}`;
+  const prev = actual?.trim();
+  return prev ? `${prev}\n\n${linea}` : linea;
+}

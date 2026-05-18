@@ -26,6 +26,8 @@ import { useAuth } from "@/lib/auth";
 import { notificacionConceptosMarcados } from "@/lib/sirat-forms";
 import { formatDateEsBo } from "@/lib/date";
 import { NOTIFICACION_GESTIONES_ADEUDADAS_LABEL } from "@/lib/sirat-brand";
+import { appendObservacionSeguimiento } from "@/lib/sirat-forms";
+import { ObservacionRequeridaDialog } from "@/components/ObservacionRequeridaDialog";
 
 export const Route = createFileRoute("/_app/notificaciones/$id")({ component: Detalle });
 
@@ -35,6 +37,7 @@ function Detalle() {
   const [n, setN] = useState<any>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
+  const [anularOpen, setAnularOpen] = useState(false);
 
   const reload = useCallback(async () => {
     const { data } = await supabase
@@ -100,13 +103,26 @@ function Detalle() {
     });
   };
 
-  const cambiarEstado = async (estado: any) => {
+  const cambiarEstado = async (estado: "cumplido" | "anulado") => {
     const { error } = await supabase.from("notificaciones").update({ estado }).eq("id", id);
-    if (error) toast.error(error.message);
-    else {
-      setN({ ...n, estado });
-      toast.success(`Estado: ${estado}`);
-    }
+    if (error) throw new Error(error.message);
+    setN({ ...n, estado });
+    toast.success(estado === "cumplido" ? "Notificación marcada como cumplida" : "Notificación anulada");
+  };
+
+  const anularConObservacion = async (observacionNueva: string) => {
+    const observacion_seguimiento = appendObservacionSeguimiento(
+      n.observacion_seguimiento,
+      "ANULADO",
+      observacionNueva,
+    );
+    const { error } = await supabase
+      .from("notificaciones")
+      .update({ estado: "anulado", observacion_seguimiento })
+      .eq("id", id);
+    if (error) throw new Error(error.message);
+    setN({ ...n, estado: "anulado", observacion_seguimiento });
+    toast.success("Notificación anulada");
   };
 
   return (
@@ -150,13 +166,23 @@ function Detalle() {
               <Check className="h-4 w-4 mr-1" />
               Cumplido
             </Button>
-            <Button variant="destructive" onClick={() => void cambiarEstado("anulado")}>
+            <Button variant="destructive" type="button" onClick={() => setAnularOpen(true)}>
               <Ban className="h-4 w-4 mr-1" />
               Anular
             </Button>
           </>
         )}
       </div>
+
+      <ObservacionRequeridaDialog
+        open={anularOpen}
+        onOpenChange={setAnularOpen}
+        title="Anular notificación"
+        description="Registre el motivo. La observación se guardará antes de anular la notificación."
+        confirmLabel="Guardar anulación"
+        confirmVariant="destructive"
+        onConfirm={anularConObservacion}
+      />
 
       <DetailTemplate>
         <DetailSection title="Datos de la notificación" showSeparator={false}>
@@ -178,6 +204,12 @@ function Detalle() {
               }
             />
             <DetailField label="Fecha límite" value={formatDateEsBo(n.fecha_limite)} />
+            {n.observacion_seguimiento ? (
+              <DetailField
+                label="Observación de seguimiento"
+                value={<span className="whitespace-pre-wrap font-medium">{n.observacion_seguimiento}</span>}
+              />
+            ) : null}
             <DetailField label="C.I." value={n.contribuyente.ci} />
             <DetailField
               label="Licencia / placa / inmueble"
