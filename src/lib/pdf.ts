@@ -1,13 +1,13 @@
 import jsPDF from "jspdf";
+import QRCode from "qrcode";
 import { formatDateEsBo } from "@/lib/date";
-import { downloadJsPdf } from "@/lib/download-file";
+import { applySiratPdfPageNumbers, downloadBlob } from "@/lib/download-file";
 import {
   drawFormularioDatosSection,
   drawFormularioFotosPageStart,
   drawFormularioInfoSection,
   drawFormularioPdfFooter,
   drawFormularioPdfHeader,
-  drawFormularioPdfSignatures,
   drawFormularioUbicacionSection,
   drawInstitucionalPdfHeader,
   drawPdfTablaSection,
@@ -23,7 +23,10 @@ import {
   NOTIFICACION_GESTIONES_ADEUDADAS_LABEL,
   NOTIFICACION_TRIBUTARIA_PDF_TITULO,
 } from "@/lib/sirat-brand";
-import type { NotificacionQrPayload } from "@/lib/notificacion-qr";
+import {
+  buildNotificacionVerificacionUrl,
+  type NotificacionQrPayload,
+} from "@/lib/notificacion-qr";
 
 /** Nombre de archivo PDF: solo razón social (caracteres no válidos en Windows eliminados). */
 function formularioPdfFilename(razonSocial: string, extraSuffix?: string): string {
@@ -258,6 +261,7 @@ export async function generateFormularioPDF(
 }
 
 export interface NotificacionPdfData {
+  id: string;
   fecha: string;
   contribuyente_nombre: string;
   contribuyente_ci: string;
@@ -272,6 +276,7 @@ export interface NotificacionPdfData {
 
 export function notificacionQrPayloadToPdfData(payload: NotificacionQrPayload): NotificacionPdfData {
   return {
+    id: payload.id,
     fecha: payload.fecha_emision,
     contribuyente_nombre: payload.contribuyente_nombre,
     contribuyente_ci: payload.contribuyente_ci,
@@ -294,6 +299,34 @@ export function notificacionPdfFilename(nombreActividad: string | null | undefin
   return `${base}.pdf`;
 }
 
+async function drawNotificacionPdfQr(doc: jsPDF, startY: number, notificacionId: string): Promise<number> {
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const qrSize = 28;
+  const blockH = 38;
+  let y = startY + 6;
+
+  if (y + blockH > pageH - 14) {
+    doc.addPage();
+    y = 24;
+  }
+
+  const qrDataUrl = await QRCode.toDataURL(buildNotificacionVerificacionUrl(notificacionId), {
+    width: 256,
+    margin: 1,
+    errorCorrectionLevel: "M",
+    color: { dark: "#000000", light: "#ffffff" },
+  });
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(70, 75, 85);
+  doc.text("Escanee el código QR para verificar esta notificación", pageW / 2, y, { align: "center" });
+  y += 6;
+  doc.addImage(qrDataUrl, "PNG", (pageW - qrSize) / 2, y, qrSize, qrSize);
+  return y + qrSize + 4;
+}
+
 export async function buildNotificacionPdfDoc(d: NotificacionPdfData): Promise<jsPDF> {
   const doc = new jsPDF();
   let y = await drawInstitucionalPdfHeader(doc, {
@@ -304,13 +337,10 @@ export async function buildNotificacionPdfDoc(d: NotificacionPdfData): Promise<j
   });
 
   y = drawPdfTablaSection(doc, y, "DATOS DE LA NOTIFICACIÓN", [
-    ["Fecha emisión", formatDateEsBo(d.fecha), "Fecha límite", formatDateEsBo(d.fecha_limite)],
-    ["Contribuyente", d.contribuyente_nombre, "C.I.", d.contribuyente_ci],
+    ["Fecha emisión", formatDateEsBo(d.fecha), "Contribuyente", d.contribuyente_nombre],
     [
-      "Nombre de la actividad",
-      d.nombre_actividad?.trim() || "—",
-      "Licencia / placa / inmueble",
-      d.numero_identificacion?.trim() || "—",
+      { content: "Nombre de la actividad", styles: PDF_LABEL_CELL },
+      { content: d.nombre_actividad?.trim() || "—", colSpan: 3 },
     ],
     [
       { content: "Dirección", styles: PDF_LABEL_CELL },
@@ -324,20 +354,37 @@ export async function buildNotificacionPdfDoc(d: NotificacionPdfData): Promise<j
       { content: NOTIFICACION_GESTIONES_ADEUDADAS_LABEL, styles: PDF_LABEL_CELL },
       { content: d.gestiones_adeudadas?.trim() || "—", colSpan: 3 },
     ],
+    [
+      { content: "Fecha límite", styles: PDF_LABEL_CELL },
+      { content: formatDateEsBo(d.fecha_limite), colSpan: 3 },
+    ],
+    [
+      { content: "C.I.", styles: PDF_LABEL_CELL },
+      { content: d.contribuyente_ci, colSpan: 3 },
+    ],
+    [
+      { content: "Licencia / placa / inmueble", styles: PDF_LABEL_CELL },
+      { content: d.numero_identificacion?.trim() || "—", colSpan: 3 },
+    ],
   ]);
 
-  drawFormularioPdfSignatures(doc, y, [
-    "Inspector Tributario",
-    "Contribuyente",
-    "Asesor Legal",
-  ]);
+  await drawNotificacionPdfQr(doc, y, d.id);
 
   return doc;
 }
 
-export async function generateNotificacionPDF(d: NotificacionPdfData): Promise<void> {
+export async function buildNotificacionPdfBlob(
+  d: NotificacionPdfData,
+): Promise<{ blob: Blob; filename: string }> {
   const doc = await buildNotificacionPdfDoc(d);
-  downloadJsPdf(doc, notificacionPdfFilename(d.nombre_actividad, d.contribuyente_ci));
+  applySiratPdfPageNumbers(doc);
+  const filename = notificacionPdfFilename(d.nombre_actividad, d.contribuyente_ci);
+  return { blob: doc.output("blob") as Blob, filename };
+}
+
+export async function generateNotificacionPDF(d: NotificacionPdfData): Promise<void> {
+  const { blob, filename } = await buildNotificacionPdfBlob(d);
+  downloadBlob(blob, filename, "pdf");
 }
 
 export interface FormularioFotosPdfOpts {

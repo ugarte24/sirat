@@ -40,14 +40,14 @@ export function NotificacionVerificacionView({ data }: { data: NotificacionQrPay
         </div>
         <dl className="px-4 py-1">
           <Field label="Fecha emisión" value={formatDateEsBo(data.fecha_emision)} />
-          <Field label="Fecha límite" value={formatDateEsBo(data.fecha_limite)} />
           <Field label="Contribuyente" value={data.contribuyente_nombre} />
-          <Field label="C.I." value={data.contribuyente_ci} />
           <Field label="Nombre de la actividad" value={data.nombre_actividad} />
-          <Field label="Licencia / placa / inmueble" value={data.numero_identificacion} />
           <Field label="Dirección" value={data.direccion} />
           <Field label="Conceptos" value={data.conceptos.join(", ") || "—"} />
           <Field label={NOTIFICACION_GESTIONES_ADEUDADAS_LABEL} value={data.gestiones_adeudadas} />
+          <Field label="Fecha límite" value={formatDateEsBo(data.fecha_limite)} />
+          <Field label="C.I." value={data.contribuyente_ci} />
+          <Field label="Licencia / placa / inmueble" value={data.numero_identificacion} />
         </dl>
       </Card>
 

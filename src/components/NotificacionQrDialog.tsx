@@ -43,7 +43,7 @@ export function NotificacionQrDialog({ open, onOpenChange, payload }: Props) {
         <DialogHeader>
           <DialogTitle>Código QR de verificación</DialogTitle>
           <DialogDescription>
-            Al escanearlo se muestra la notificación y se descarga el PDF automáticamente.
+            Al escanearlo se muestra el PDF de la notificación; desde ahí puede descargarlo.
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col items-center gap-3 py-2">

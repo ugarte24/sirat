@@ -86,6 +86,7 @@ function Detalle() {
 
   const pdf = async () => {
     await generateNotificacionPDF({
+      id,
       fecha: n.created_at.slice(0, 10),
       contribuyente_nombre: n.contribuyente.nombre_completo,
       contribuyente_ci: n.contribuyente.ci,
@@ -161,27 +162,9 @@ function Detalle() {
         <DetailSection title="Datos de la notificación" showSeparator={false}>
           <DetailGrid>
             <DetailField label="Fecha emisión" value={formatDateEsBo(n.created_at.slice(0, 10))} />
-            <DetailField label="Fecha límite" value={formatDateEsBo(n.fecha_limite)} />
-          </DetailGrid>
-        </DetailSection>
-        <DetailSection title="Actividad económica">
-          <DetailGrid>
+            <DetailField label="Contribuyente" value={n.contribuyente.nombre_completo} />
             <DetailField label="Nombre de la actividad" value={n.nombre_actividad?.trim() || "—"} />
-            <DetailField
-              label="Licencia / placa / inmueble"
-              value={n.numero_identificacion?.trim() || "—"}
-            />
-          </DetailGrid>
-        </DetailSection>
-        <DetailSection title="Contribuyente">
-          <DetailGrid>
-            <DetailField label="Nombre" value={n.contribuyente.nombre_completo} />
-            <DetailField label="C.I." value={n.contribuyente.ci} />
             <DetailField label="Dirección" value={n.direccion} />
-          </DetailGrid>
-        </DetailSection>
-        <DetailSection title="Conceptos y gestiones">
-          <DetailGrid>
             <DetailField label="Conceptos" value={conceptos.join(", ") || "—"} />
             <DetailField
               label={NOTIFICACION_GESTIONES_ADEUDADAS_LABEL}
@@ -193,6 +176,12 @@ function Detalle() {
                   "—"
                 )
               }
+            />
+            <DetailField label="Fecha límite" value={formatDateEsBo(n.fecha_limite)} />
+            <DetailField label="C.I." value={n.contribuyente.ci} />
+            <DetailField
+              label="Licencia / placa / inmueble"
+              value={n.numero_identificacion?.trim() || "—"}
             />
           </DetailGrid>
         </DetailSection>
