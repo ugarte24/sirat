@@ -31,8 +31,29 @@ export function downloadBlob(blob: Blob, filename: string, kind: DownloadKind): 
   toast.success(SUCCESS[kind], { description: filename });
 }
 
+/** Número de página en la esquina inferior derecha de cada hoja. */
+export function applySiratPdfPageNumbers(doc: jsPDF): void {
+  const total = doc.getNumberOfPages();
+  if (total < 1) return;
+
+  const w = doc.internal.pageSize.getWidth();
+  const h = doc.internal.pageSize.getHeight();
+  const x = w - 12;
+  const y = h - 6;
+
+  for (let n = 1; n <= total; n++) {
+    doc.setPage(n);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(90, 95, 105);
+    const label = total === 1 ? `Pág. ${n}` : `Pág. ${n} de ${total}`;
+    doc.text(label, x, y, { align: "right" });
+  }
+}
+
 export function downloadJsPdf(doc: jsPDF, filename: string): void {
   if (!filename.toLowerCase().endsWith(".pdf")) filename += ".pdf";
+  applySiratPdfPageNumbers(doc);
   downloadBlob(doc.output("blob"), filename, "pdf");
 }
 

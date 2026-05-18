@@ -1,5 +1,10 @@
 import type jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import {
+  loadEscudoRiberaltaDataUrl,
+  loadSiratLogoDataUrl,
+  SIRAT_LOGO_ASPECT,
+} from "@/lib/pdf-assets";
 import { drawSiratPdfTopBar } from "@/lib/report-format";
 import {
   FORMULARIO_PDF_FIRMA_ENCARGADO_RUAT,
@@ -13,24 +18,6 @@ const MARGIN = 12;
 const LABEL_FILL: [number, number, number] = [232, 236, 245];
 const SI_COLOR: [number, number, number] = [22, 163, 74];
 const NO_COLOR: [number, number, number] = [220, 38, 38];
-
-let escudoDataUrlCache: string | null = null;
-
-async function loadEscudoDataUrl(): Promise<string> {
-  if (escudoDataUrlCache) return escudoDataUrlCache;
-  const res = await fetch(`${window.location.origin}/escudo-riberalta.png`, {
-    credentials: "omit",
-  });
-  if (!res.ok) throw new Error("No se pudo cargar el escudo de Riberalta");
-  const blob = await res.blob();
-  escudoDataUrlCache = await new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(new Error("Escudo ilegible"));
-    reader.readAsDataURL(blob);
-  });
-  return escudoDataUrlCache;
-}
 
 const TABLE_BASE = {
   theme: "plain" as const,
@@ -70,18 +57,22 @@ function drawSectionTitle(doc: jsPDF, y: number, title: string): number {
   return lineY + 4;
 }
 
-/** Encabezado institucional con escudo Riberalta (maqueta PDF). */
+/** Encabezado institucional con escudo Riberalta y logo SIRAT (maqueta PDF). */
 export async function drawFormularioPdfHeader(doc: jsPDF, usuario?: string): Promise<number> {
   const w = doc.internal.pageSize.getWidth();
+  const [logo, escudo] = await Promise.all([loadSiratLogoDataUrl(), loadEscudoRiberaltaDataUrl()]);
   let y = drawSiratPdfTopBar(doc, { usuario }) + 5;
 
-  try {
-    const escudo = await loadEscudoDataUrl();
+  if (escudo) {
     const escudoW = 24;
     const escudoH = 28;
     doc.addImage(escudo, "PNG", MARGIN, y, escudoW, escudoH);
-  } catch (e) {
-    console.warn("Escudo no cargado en PDF:", e);
+  }
+
+  if (logo) {
+    const logoH = 26;
+    const logoW = logoH * SIRAT_LOGO_ASPECT;
+    doc.addImage(logo, "PNG", w - MARGIN - logoW, y + 1, logoW, logoH);
   }
 
   doc.setTextColor(C.text.r, C.text.g, C.text.b);
@@ -146,7 +137,10 @@ export function drawFormularioInfoSection(
     },
     body: [
       ["Procedente", procedente, "Padrón", padron],
-      ["Bebidas alcohólicas", bebidas, "", ""],
+      [
+        { content: "Bebidas alcohólicas", styles: { fontStyle: "bold", fillColor: LABEL_FILL } },
+        { content: bebidas, colSpan: 3 },
+      ],
       [
         { content: "Observación", styles: { fontStyle: "bold", fillColor: LABEL_FILL } },
         { content: observacion, colSpan: 3 },
@@ -155,6 +149,11 @@ export function drawFormularioInfoSection(
     didParseCell: styleSiNoCell,
   });
   return (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 6;
+}
+
+export function drawFormularioFotosPageStart(doc: jsPDF, usuario?: string): number {
+  const y = drawSiratPdfTopBar(doc, { usuario }) + 4;
+  return drawSectionTitle(doc, y, "FOTOS DE LA VERIFICACIÓN");
 }
 
 export function drawFormularioUbicacionSection(
@@ -204,9 +203,12 @@ export function drawFormularioPdfSignatures(
   return startY + 24;
 }
 
-export function drawFormularioPdfFooter(doc: jsPDF, startY: number): void {
+/** Pie de declaración jurada siempre al final de la página 1. */
+export function drawFormularioPdfFooter(doc: jsPDF, startY: number, pageNumber = 1): void {
   const w = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
+  const prevPage = doc.getCurrentPageInfo().pageNumber;
+  doc.setPage(pageNumber);
   const y = Math.max(startY + 4, pageH - 16);
 
   doc.setFont("helvetica", "italic").setFontSize(7.5);
@@ -215,4 +217,5 @@ export function drawFormularioPdfFooter(doc: jsPDF, startY: number): void {
     "La información registrada tiene carácter de declaración jurada y está sujeta a su verificación.";
   const lines = doc.splitTextToSize(texto, w - 2 * MARGIN - 10);
   doc.text(lines, w / 2, y, { align: "center" });
+  doc.setPage(prevPage);
 }

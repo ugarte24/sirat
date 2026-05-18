@@ -54,7 +54,8 @@ function Detalle() {
 
   const conceptos = notificacionConceptosMarcados(n);
 
-  const pdf = () => generateNotificacionPDF({
+  const pdf = async () => {
+    await generateNotificacionPDF({
     fecha: n.created_at.slice(0, 10),
     contribuyente_nombre: n.contribuyente.nombre_completo,
     contribuyente_ci: n.contribuyente.ci,
@@ -64,7 +65,8 @@ function Detalle() {
     fecha_limite: n.fecha_limite,
     conceptos,
     gestiones_adeudadas: n.gestiones_adeudadas,
-  });
+    });
+  };
 
   const cambiarEstado = async (estado: any) => {
     const { error } = await supabase.from("notificaciones").update({ estado }).eq("id", id);

@@ -94,7 +94,7 @@ function Reportes() {
     if (!rows.length) return toast.error("Sin datos para exportar");
     const reporteTipo = tipo as ReporteTipo;
     const cols = REPORTE_COLUMNS[reporteTipo];
-    downloadStyledReportPDF(reportMeta(), cols, rows, `reporte-${tipo}-${Date.now()}.pdf`);
+    await downloadStyledReportPDF(reportMeta(), cols, rows, `reporte-${tipo}-${Date.now()}.pdf`);
   };
 
   return (

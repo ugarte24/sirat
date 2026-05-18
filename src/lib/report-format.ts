@@ -1,7 +1,7 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx-js-style";
-import { formatDateEsBo, formatReportDateTimeEsBo } from "@/lib/date";
+import { formatDateEsBo, toIsoDateLocal } from "@/lib/date";
 import { downloadExcelWorkbook, downloadJsPdf } from "@/lib/download-file";
 import { SIRAT_REPORT_COLORS, SIRAT_TAGLINE } from "@/lib/sirat-brand";
 import type { ReportColumn, ReporteFila } from "@/lib/report-export";
@@ -15,19 +15,25 @@ export function drawSiratPdfTopBar(
 ): number {
   const w = doc.internal.pageSize.getWidth();
   const headerH = 20;
-  const fecha = opts.fechaReporte ?? formatReportDateTimeEsBo();
+  const fecha =
+    opts.fechaReporte ?? formatDateEsBo(toIsoDateLocal(new Date()));
 
   doc.setFillColor(C.primary.r, C.primary.g, C.primary.b);
   doc.rect(0, 0, w, headerH, "F");
   doc.setTextColor(255, 255, 255);
+
   doc.setFont("helvetica", "bold").setFontSize(16);
-  doc.text("SIRAT", 10, 9);
+  doc.text("SIRAT", 10, 10);
+
+  doc.setFont("helvetica", "bold").setFontSize(8);
+  doc.text(`FECHA: ${fecha}`, w - 10, 10, { align: "right" });
+
   if (opts.usuario?.trim()) {
     doc.setFont("helvetica", "normal").setFontSize(8);
-    doc.text(`USUARIO CONECTADO: ${opts.usuario.trim().toUpperCase()}`, 10, 15);
+    doc.text(`USUARIO: ${opts.usuario.trim().toUpperCase()}`, w - 10, 16, {
+      align: "right",
+    });
   }
-  doc.setFont("helvetica", "bold").setFontSize(8);
-  doc.text(`FECHA REPORTE: ${fecha}`, w - 10, 12, { align: "right" });
 
   doc.setFillColor(C.gold.r, C.gold.g, C.gold.b);
   doc.rect(0, headerH, w, 1.2, "F");
@@ -74,14 +80,13 @@ function rangoTexto(desde?: string, hasta?: string): string {
 }
 
 /** PDF con encabezado institucional, línea dorada, título y tabla con franjas. */
-export function generateStyledReportPDF(
+export async function generateStyledReportPDF(
   meta: ReportFormatMeta,
   cols: ReportColumn[],
   rows: ReporteFila[],
-): jsPDF {
+): Promise<jsPDF> {
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const w = doc.internal.pageSize.getWidth();
-
   let y = drawSiratPdfTopBar(doc, { usuario: meta.usuario }) + 10;
   doc.setTextColor(C.gold.r, C.gold.g, C.gold.b);
   doc.setFont("helvetica", "bold").setFontSize(18);
@@ -145,7 +150,7 @@ export function buildStyledReportExcel(
   sheetName: string,
 ): XLSX.WorkBook {
   const nCols = cols.length;
-  const fechaReporte = formatReportDateTimeEsBo();
+  const fechaReporte = formatDateEsBo(toIsoDateLocal(new Date()));
   const emptyRow = (): XLSX.CellObject[] =>
     Array.from({ length: nCols }, () => cellStyle(C.white.hex));
 
@@ -153,7 +158,7 @@ export function buildStyledReportExcel(
     [
       textCell("SIRAT", C.primary.hex, { bold: true, color: C.white.hex, size: 14 }),
       ...Array.from({ length: nCols - 2 }, () => cellStyle(C.primary.hex)),
-      textCell(`FECHA REPORTE: ${fechaReporte}`, C.primary.hex, {
+      textCell(`FECHA: ${fechaReporte}`, C.primary.hex, {
         bold: true,
         color: C.white.hex,
         size: 9,
@@ -161,11 +166,12 @@ export function buildStyledReportExcel(
       }),
     ],
     [
-      textCell(`USUARIO CONECTADO: ${meta.usuario.toUpperCase()}`, C.primary.hex, {
+      ...Array.from({ length: nCols - 1 }, () => cellStyle(C.primary.hex)),
+      textCell(`USUARIO: ${meta.usuario.toUpperCase()}`, C.primary.hex, {
         color: C.white.hex,
         size: 9,
+        align: "right",
       }),
-      ...Array.from({ length: nCols - 1 }, () => cellStyle(C.primary.hex)),
     ],
     Array.from({ length: nCols }, () =>
       cellStyle(C.gold.hex, { size: 2 }),
@@ -240,13 +246,13 @@ export function buildStyledReportExcel(
   return wb;
 }
 
-export function downloadStyledReportPDF(
+export async function downloadStyledReportPDF(
   meta: ReportFormatMeta,
   cols: ReportColumn[],
   rows: ReporteFila[],
   filename: string,
-): void {
-  const doc = generateStyledReportPDF(meta, cols, rows);
+): Promise<void> {
+  const doc = await generateStyledReportPDF(meta, cols, rows);
   downloadJsPdf(doc, filename);
 }
 

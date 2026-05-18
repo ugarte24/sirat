@@ -4,6 +4,7 @@ import { formatDateEsBo } from "@/lib/date";
 import { downloadJsPdf } from "@/lib/download-file";
 import {
   drawFormularioDatosSection,
+  drawFormularioFotosPageStart,
   drawFormularioInfoSection,
   drawFormularioPdfFooter,
   drawFormularioPdfHeader,
@@ -21,21 +22,23 @@ import {
 const C = SIRAT_REPORT_COLORS;
 const PDF_PRIMARY = C.primary;
 const LABEL_CELL_FILL: [number, number, number] = [C.zebra.r, C.zebra.g, C.zebra.b];
+
+/** Nombre de archivo PDF: solo razón social (caracteres no válidos en Windows eliminados). */
+function formularioPdfFilename(razonSocial: string, extraSuffix?: string): string {
+  const base = razonSocial
+    .trim()
+    .replace(/[\\/:*?"<>|]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!base) return extraSuffix ? `${extraSuffix}.pdf` : "formulario.pdf";
+  return extraSuffix ? `${base} - ${extraSuffix}.pdf` : `${base}.pdf`;
+}
 const PDF_TABLE_THEME = {
   theme: "grid" as const,
   styles: { fontSize: 9, cellPadding: 2 },
   headStyles: { fillColor: [PDF_PRIMARY.r, PDF_PRIMARY.g, PDF_PRIMARY.b] as [number, number, number] },
 };
 
-function drawSiratPdfBanner(doc: jsPDF, w: number) {
-  doc.setFillColor(PDF_PRIMARY.r, PDF_PRIMARY.g, PDF_PRIMARY.b);
-  doc.rect(0, 0, w, 28, "F");
-  doc.setTextColor(255);
-  doc.setFont("helvetica", "bold").setFontSize(18);
-  doc.text("SIRAT", 14, 14);
-  doc.setFontSize(9).setFont("helvetica", "normal");
-  doc.text(SIRAT_TAGLINE, 14, 21);
-}
 
 function drawSiratPdfSignatures(
   doc: jsPDF,
@@ -72,16 +75,28 @@ interface FormularioData {
   estado: string;
   /** URLs firmadas de fotos de verificación (se añaden en página(s) siguientes). */
   imageUrls?: string[];
+  /** Blobs descargados vía Supabase (evita CORS al rasterizar). Mismo orden que imageUrls. */
+  imageBlobs?: (Blob | undefined)[];
   /** Nombre del usuario que genera el PDF (barra superior). */
   usuario?: string;
   /** Contenedor del MapPicker visible (captura idéntica a la vista de registro). */
   mapCaptureElement?: HTMLElement | null;
 }
 
-async function imageUrlToJpegDataUrl(url: string): Promise<{ dataUrl: string; w: number; h: number }> {
-  const res = await fetch(url, { mode: "cors", credentials: "omit" });
-  if (!res.ok) throw new Error(`Descarga de imagen: ${res.status}`);
-  const blob = await res.blob();
+type PdfImageAsset = { dataUrl: string; w: number; h: number; format: "JPEG" | "PNG" };
+
+async function rasterizeImageElement(img: HTMLImageElement): Promise<PdfImageAsset> {
+  const canvas = document.createElement("canvas");
+  canvas.width = img.naturalWidth || img.width;
+  canvas.height = img.naturalHeight || img.height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas no disponible");
+  ctx.drawImage(img, 0, 0);
+  const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
+  return { dataUrl, w: canvas.width, h: canvas.height, format: "JPEG" };
+}
+
+async function loadPhotoFromBlob(blob: Blob): Promise<PdfImageAsset> {
   if (typeof createImageBitmap === "function") {
     try {
       const bmp = await createImageBitmap(blob);
@@ -92,9 +107,14 @@ async function imageUrlToJpegDataUrl(url: string): Promise<{ dataUrl: string; w:
       if (!ctx) throw new Error("Canvas no disponible");
       ctx.drawImage(bmp, 0, 0);
       bmp.close();
-      return { dataUrl: canvas.toDataURL("image/jpeg", 0.9), w: canvas.width, h: canvas.height };
+      return {
+        dataUrl: canvas.toDataURL("image/jpeg", 0.92),
+        w: canvas.width,
+        h: canvas.height,
+        format: "JPEG",
+      };
     } catch {
-      /* continuar con Image + object URL */
+      /* object URL + Image */
     }
   }
   const objectUrl = URL.createObjectURL(blob);
@@ -102,39 +122,69 @@ async function imageUrlToJpegDataUrl(url: string): Promise<{ dataUrl: string; w:
     const img = await new Promise<HTMLImageElement>((resolve, reject) => {
       const el = new Image();
       el.onload = () => resolve(el);
-      el.onerror = () => reject(new Error("No se pudo decodificar la imagen"));
+      el.onerror = () => reject(new Error("decode"));
       el.src = objectUrl;
     });
-    const canvas = document.createElement("canvas");
-    canvas.width = img.naturalWidth;
-    canvas.height = img.naturalHeight;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) throw new Error("Canvas no disponible");
-    ctx.drawImage(img, 0, 0);
-    return { dataUrl: canvas.toDataURL("image/jpeg", 0.9), w: canvas.width, h: canvas.height };
+    return rasterizeImageElement(img);
   } finally {
     URL.revokeObjectURL(objectUrl);
   }
 }
 
-function drawFormularioFotosSectionHeader(
-  doc: jsPDF,
-  w: number,
-  opts?: { razonSocial?: string; usuario?: string },
-): number {
-  let y = drawSiratPdfTopBar(doc, { usuario: opts?.usuario }) + 10;
-  doc.setTextColor(C.gold.r, C.gold.g, C.gold.b);
-  doc.setFont("helvetica", "bold").setFontSize(14);
-  doc.text("FOTOS DE LA VERIFICACIÓN", w / 2, y, { align: "center" });
-  y += 7;
-  if (opts?.razonSocial?.trim()) {
-    doc.setTextColor(C.text.r, C.text.g, C.text.b);
-    doc.setFont("helvetica", "bold").setFontSize(9);
-    const lines = doc.splitTextToSize(opts.razonSocial.trim().toUpperCase(), w - 24);
-    doc.text(lines, w / 2, y, { align: "center" });
-    y += lines.length * 4 + 2;
+async function loadPhotoForPdf(url: string, blob?: Blob): Promise<PdfImageAsset> {
+  if (blob) return loadPhotoFromBlob(blob);
+  try {
+    const res = await fetch(url, { mode: "cors", credentials: "omit" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const blob = await res.blob();
+    if (typeof createImageBitmap === "function") {
+      try {
+        const bmp = await createImageBitmap(blob);
+        const canvas = document.createElement("canvas");
+        canvas.width = bmp.width;
+        canvas.height = bmp.height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) throw new Error("Canvas no disponible");
+        ctx.drawImage(bmp, 0, 0);
+        bmp.close();
+        return {
+          dataUrl: canvas.toDataURL("image/jpeg", 0.92),
+          w: canvas.width,
+          h: canvas.height,
+          format: "JPEG",
+        };
+      } catch {
+        /* Image + object URL */
+      }
+    }
+    const objectUrl = URL.createObjectURL(blob);
+    try {
+      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const el = new Image();
+        el.crossOrigin = "anonymous";
+        el.onload = () => resolve(el);
+        el.onerror = () => reject(new Error("decode"));
+        el.src = objectUrl;
+      });
+      return await rasterizeImageElement(img);
+    } finally {
+      URL.revokeObjectURL(objectUrl);
+    }
+  } catch {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const el = new Image();
+      el.crossOrigin = "anonymous";
+      el.onload = () => resolve(el);
+      el.onerror = () => reject(new Error("No se pudo cargar la foto"));
+      el.src = url;
+    });
+    return rasterizeImageElement(img);
   }
-  return y + 2;
+}
+
+async function imageUrlToJpegDataUrl(url: string): Promise<{ dataUrl: string; w: number; h: number }> {
+  const asset = await loadPhotoForPdf(url);
+  return { dataUrl: asset.dataUrl, w: asset.w, h: asset.h };
 }
 
 function fitImageInBox(iw: number, ih: number, boxW: number, boxH: number) {
@@ -148,48 +198,65 @@ function fitImageInBox(iw: number, ih: number, boxW: number, boxH: number) {
   return { w, h };
 }
 
-/** Añade una sola hoja con todas las fotos escaladas para caber juntas. */
+/** Añade una hoja con todas las fotos (debe llamarse con la página 2 ya activa si aplica). */
 async function appendFormularioFotosPages(
   doc: jsPDF,
-  opts: { imageUrls: string[]; razon_social?: string; usuario?: string; startWithNewPage?: boolean },
-): Promise<void> {
+  opts: {
+    imageUrls: string[];
+    imageBlobs?: (Blob | undefined)[];
+    usuario?: string;
+    startWithNewPage?: boolean;
+  },
+): Promise<number> {
   const urls = opts.imageUrls.filter(Boolean);
-  if (!urls.length) return;
+  if (!urls.length) return 0;
 
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
-  const margin = 14;
+  const margin = 12;
   const maxW = pageW - 2 * margin;
   const gap = 5;
 
   if (opts.startWithNewPage !== false) doc.addPage();
-  const startY = drawFormularioFotosSectionHeader(doc, pageW, {
-    razonSocial: opts.razon_social,
-    usuario: opts.usuario,
-  });
+  const startY = drawFormularioFotosPageStart(doc, opts.usuario);
 
-  const images = await Promise.all(urls.map((url) => imageUrlToJpegDataUrl(url)));
+  const images: PdfImageAsset[] = [];
+  for (let i = 0; i < urls.length; i++) {
+    try {
+      images.push(await loadPhotoForPdf(urls[i], opts.imageBlobs?.[i]));
+    } catch (e) {
+      console.warn("Foto omitida en PDF:", urls[i], e);
+    }
+  }
+  if (!images.length) {
+    throw new Error("No se pudieron cargar las fotos para el PDF");
+  }
+
   const n = images.length;
   const cols = n <= 1 ? 1 : 2;
   const rows = Math.ceil(n / cols);
-  const availableH = pageH - margin - startY;
+  const availableH = Math.max(40, pageH - margin - startY);
   const cellW = (maxW - (cols - 1) * gap) / cols;
-  const cellH = (availableH - (rows - 1) * gap) / rows;
+  const cellH = Math.max(30, (availableH - (rows - 1) * gap) / rows);
 
   images.forEach((img, i) => {
     const col = i % cols;
     const row = Math.floor(i / cols);
     const { w: dispW, h: dispH } = fitImageInBox(img.w, img.h, cellW, cellH);
+    if (dispW < 1 || dispH < 1) return;
     const cellX = margin + col * (cellW + gap);
     const cellY = startY + row * (cellH + gap);
     const x = cellX + (cellW - dispW) / 2;
     const y = cellY + (cellH - dispH) / 2;
-
-    doc.addImage(img.dataUrl, "JPEG", x, y, dispW, dispH);
+    doc.addImage(img.dataUrl, img.format, x, y, dispW, dispH);
   });
+
+  return images.length;
 }
 
-export async function generateFormularioPDF(d: FormularioData): Promise<void> {
+export async function generateFormularioPDF(
+  d: FormularioData,
+): Promise<{ fotosIncluidas: number; fotosSolicitadas: number }> {
   const doc = new jsPDF();
   let y = await drawFormularioPdfHeader(doc, d.usuario);
 
@@ -227,20 +294,25 @@ export async function generateFormularioPDF(d: FormularioData): Promise<void> {
   }
 
   y = drawFormularioPdfSignatures(doc, y);
-  drawFormularioPdfFooter(doc, y);
+  drawFormularioPdfFooter(doc, y, 1);
 
   const urls = d.imageUrls?.filter(Boolean) ?? [];
+  let fotosIncluidas = 0;
   if (urls.length) {
-    await appendFormularioFotosPages(doc, {
-      imageUrls: urls,
-      razon_social: d.razon_social,
-      usuario: d.usuario,
-      startWithNewPage: true,
-    });
+    try {
+      fotosIncluidas = await appendFormularioFotosPages(doc, {
+        imageUrls: urls,
+        imageBlobs: d.imageBlobs,
+        usuario: d.usuario,
+        startWithNewPage: true,
+      });
+    } catch (e) {
+      console.warn("Fotos no incluidas en PDF:", e);
+    }
   }
 
-  const slug = d.razon_social.replace(/[^\w\s-]/g, "").trim().replace(/\s+/g, "-").slice(0, 40) || "formulario";
-  downloadJsPdf(doc, `verificacion-${slug}.pdf`);
+  downloadJsPdf(doc, formularioPdfFilename(d.razon_social));
+  return { fotosIncluidas, fotosSolicitadas: urls.length };
 }
 
 interface NotificacionData {
@@ -255,17 +327,21 @@ interface NotificacionData {
   gestiones_adeudadas: string | null;
 }
 
-export function generateNotificacionPDF(d: NotificacionData) {
+export async function generateNotificacionPDF(d: NotificacionData) {
   const doc = new jsPDF();
   const w = doc.internal.pageSize.getWidth();
-  drawSiratPdfBanner(doc, w);
+  let y = drawSiratPdfTopBar(doc) + 8;
 
-  doc.setTextColor(0);
+  doc.setTextColor(C.text.r, C.text.g, C.text.b);
+  doc.setFontSize(9).setFont("helvetica", "normal");
+  doc.text(SIRAT_TAGLINE, w / 2, y, { align: "center" });
+  y += 6;
+
   doc.setFontSize(13).setFont("helvetica", "bold");
-  doc.text(NOTIFICACION_TRIBUTARIA_PDF_TITULO, w / 2, 38, { align: "center" });
+  doc.text(NOTIFICACION_TRIBUTARIA_PDF_TITULO, w / 2, y + 4, { align: "center" });
 
   autoTable(doc, {
-    startY: 44,
+    startY: y + 10,
     ...PDF_TABLE_THEME,
     body: [
       ["Fecha emisión", formatDateEsBo(d.fecha), "", ""],
@@ -295,8 +371,10 @@ export function generateNotificacionPDF(d: NotificacionData) {
 
 export interface FormularioFotosPdfOpts {
   razon_social?: string;
+  usuario?: string;
   /** URLs firmadas o públicas de las imágenes */
   imageUrls: string[];
+  imageBlobs?: (Blob | undefined)[];
 }
 
 /** PDF solo con las fotos del formulario (A4, listo para imprimir). */
@@ -307,14 +385,10 @@ export async function generateFormularioFotosPDF(opts: FormularioFotosPdfOpts): 
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
   await appendFormularioFotosPages(doc, {
     imageUrls: urls,
-    razon_social: opts.razon_social,
+    imageBlobs: opts.imageBlobs,
+    usuario: opts.usuario,
     startWithNewPage: false,
   });
 
-  const slug = (opts.razon_social ?? "formulario")
-    .replace(/[^\w\s-]/g, "")
-    .trim()
-    .replace(/\s+/g, "-")
-    .slice(0, 40) || "formulario";
-  downloadJsPdf(doc, `verificacion-${slug}-fotos.pdf`);
+  downloadJsPdf(doc, formularioPdfFilename(opts.razon_social ?? "formulario", "fotos"));
 }

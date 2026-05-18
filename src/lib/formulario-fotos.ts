@@ -4,7 +4,17 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 export const FORMULARIO_FOTO_MAX_BYTES = 500 * 1024;
 export const FORMULARIO_FOTO_MAX_LABEL = "500 KB";
 
-const FORMULARIO_FOTOS_BUCKET = "formulario-fotos";
+export const FORMULARIO_FOTOS_BUCKET = "formulario-fotos";
+
+/** Descarga una foto de verificación con la sesión actual (sin depender de CORS en el navegador). */
+export async function downloadFormularioFoto(
+  supabase: SupabaseClient,
+  storagePath: string,
+): Promise<Blob | null> {
+  const { data, error } = await supabase.storage.from(FORMULARIO_FOTOS_BUCKET).download(storagePath);
+  if (error || !data) return null;
+  return data;
+}
 
 export type FormularioFotoUploadSummary = {
   attempted: number;

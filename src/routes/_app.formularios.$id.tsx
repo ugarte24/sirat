@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Ban, FileDown, Pencil, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { MapPicker } from "@/components/MapPicker";
+import { downloadFormularioFoto } from "@/lib/formulario-fotos";
 import { generateFormularioPDF, generateFormularioFotosPDF } from "@/lib/pdf";
 import { useAuth } from "@/lib/auth";
 import { FORMULARIO_VERIFICACION_NOMBRE, FORMULARIO_VERIFICACION_SECCION } from "@/lib/sirat-brand";
@@ -25,7 +26,7 @@ function Detalle() {
   const { id } = Route.useParams();
   const { role, profile } = useAuth();
   const [f, setF] = useState<any>(null);
-  const [photos, setPhotos] = useState<{ url: string }[]>([]);
+  const [photos, setPhotos] = useState<{ url: string; blob?: Blob }[]>([]);
   const [pdfBusy, setPdfBusy] = useState(false);
   const [fotosPdfBusy, setFotosPdfBusy] = useState(false);
   const mapCaptureRef = useRef<HTMLDivElement>(null);
@@ -37,10 +38,15 @@ function Detalle() {
     setF(data);
     const { data: fotos } = await supabase.from("formulario_fotos").select("storage_path").eq("formulario_id", id);
     if (fotos) {
-      const urls = await Promise.all(fotos.map(async p => {
-        const { data: signed } = await supabase.storage.from("formulario-fotos").createSignedUrl(p.storage_path, 3600);
-        return { url: signed?.signedUrl ?? "" };
-      }));
+      const urls = await Promise.all(
+        fotos.map(async (p) => {
+          const [{ data: signed }, blob] = await Promise.all([
+            supabase.storage.from("formulario-fotos").createSignedUrl(p.storage_path, 3600),
+            downloadFormularioFoto(supabase, p.storage_path),
+          ]);
+          return { url: signed?.signedUrl ?? "", blob: blob ?? undefined };
+        }),
+      );
       setPhotos(urls);
     }
   })(); }, [id]);
@@ -62,7 +68,7 @@ function Detalle() {
   const pdf = async () => {
     setPdfBusy(true);
     try {
-      await generateFormularioPDF({
+      const { fotosIncluidas, fotosSolicitadas } = await generateFormularioPDF({
         fecha: f.fecha,
         razon_social: f.razon_social,
         contribuyente_nombre: f.contribuyente.nombre_completo,
@@ -83,8 +89,14 @@ function Detalle() {
         observacion: f.observacion,
         estado: f.estado,
         imageUrls: photos.map((p) => p.url).filter(Boolean),
+        imageBlobs: photos.filter((p) => p.url).map((p) => p.blob),
         usuario: profile?.full_name ?? profile?.email ?? undefined,
       });
+      if (fotosSolicitadas > 0 && fotosIncluidas < fotosSolicitadas) {
+        toast.warning(
+          `PDF generado, pero solo se incluyeron ${fotosIncluidas} de ${fotosSolicitadas} foto(s).`,
+        );
+      }
     } catch (e) {
       console.error(e);
       toast.error(
@@ -106,6 +118,8 @@ function Detalle() {
       await generateFormularioFotosPDF({
         razon_social: f.razon_social,
         imageUrls: urls,
+        imageBlobs: photos.filter((p) => p.url).map((p) => p.blob),
+        usuario: profile?.full_name ?? profile?.email ?? undefined,
       });
     } catch (e) {
       console.error(e);
