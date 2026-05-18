@@ -216,42 +216,55 @@ function Detalle() {
         </Badge>
       </div>
 
-      <div className="flex gap-2 flex-wrap">
+      <div className="flex flex-nowrap items-center gap-1.5 overflow-x-auto pb-0.5 -mx-1 px-1 [&_button]:shrink-0 [&_a]:shrink-0">
         {f.estado === "activo" && f.superficie != null && (
           <Button
             type="button"
+            size="sm"
             disabled={pdfBusy || photosLoading}
             onClick={() => void pdf()}
             className="bg-gradient-primary"
           >
-            <FileDown className="h-4 w-4 mr-1" />
-            {pdfBusy ? "Generando…" : photosLoading ? "Cargando fotos…" : "PDF"}
+            <FileDown className="h-4 w-4 shrink-0" />
+            <span className="ml-1">PDF</span>
           </Button>
         )}
         {f.estado === "pendiente_verificacion" && (
-          <Button variant="default" className="bg-gradient-primary" asChild>
+          <Button variant="default" size="sm" className="bg-gradient-primary shrink-0" asChild>
             <Link to="/formularios" search={{ verificar: id }}>
-              <Pencil className="h-4 w-4 mr-1" />
-              Completar verificación
+              <Pencil className="h-4 w-4 shrink-0" />
+              <span className="ml-1 whitespace-nowrap">Verificar</span>
             </Link>
           </Button>
         )}
         {(f.estado === "activo" || f.estado === "pendiente_verificacion") && (
-          <Button variant="outline" asChild>
+          <Button variant="outline" size="sm" className="shrink-0" asChild>
             <Link to="/formularios" search={{ editar: id }}>
-              <Pencil className="h-4 w-4 mr-1" />
-              Editar
+              <Pencil className="h-4 w-4 shrink-0" />
+              <span className="ml-1">Editar</span>
             </Link>
           </Button>
         )}
         {role === "admin" && f.estado === "activo" && (
           <>
-            <Button variant="outline" type="button" onClick={() => setEstadoDialog("baja")}>
+            <Button
+              variant="outline"
+              size="sm"
+              type="button"
+              className="shrink-0 whitespace-nowrap"
+              onClick={() => setEstadoDialog("baja")}
+            >
               Dar de baja
             </Button>
-            <Button variant="destructive" type="button" onClick={() => setEstadoDialog("anulado")}>
-              <Ban className="h-4 w-4 mr-1" />
-              Anular
+            <Button
+              variant="destructive"
+              size="sm"
+              type="button"
+              className="shrink-0 whitespace-nowrap"
+              onClick={() => setEstadoDialog("anulado")}
+            >
+              <Ban className="h-4 w-4 shrink-0" />
+              <span className="ml-1">Anular</span>
             </Button>
           </>
         )}
