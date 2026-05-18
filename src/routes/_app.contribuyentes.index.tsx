@@ -14,7 +14,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ContribuyenteAltaForm } from "@/components/forms/ContribuyenteAltaForm";
@@ -155,21 +154,6 @@ function ListaContribuyentes() {
     }
   }, [nuevo, navigate]);
 
-  const darDeBaja = async (item: ContribListItem, e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    if (!item.puedeDarDeBaja) {
-      toast.error("No se puede dar de baja: tiene formularios o notificaciones asociadas.");
-      return;
-    }
-    if (!confirm(`¿Dar de baja a «${item.nombre_completo}»? Esta acción no se puede deshacer.`)) return;
-    const { error } = await supabase.from("contribuyentes").delete().eq("id", item.id);
-    if (error) toast.error(error.message);
-    else {
-      toast.success("Contribuyente dado de baja");
-      void load();
-    }
-  };
-
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-2">
@@ -196,6 +180,7 @@ function ListaContribuyentes() {
           </DialogHeader>
           <ContribuyenteAltaForm
             key={altaKey}
+            showCard={false}
             onSuccess={() => {
               setDialogOpen(false);
               void load();
@@ -219,6 +204,7 @@ function ListaContribuyentes() {
           {editTarget && (
             <ContribuyenteEditarForm
               key={editTarget.id}
+              showCard={false}
               contribuyenteId={editTarget.id}
               initial={{
                 ci: editTarget.ci,
@@ -275,7 +261,10 @@ function ListaContribuyentes() {
                   <TableRow
                     key={c.id}
                     className="cursor-pointer border-b border-border/60 hover:bg-muted/40"
-                    onClick={() => navigate({ to: "/contribuyentes/$id", params: { id: c.id } })}
+                    onClick={() => {
+                      setEditTarget(c);
+                      setEditDialogOpen(true);
+                    }}
                   >
                     <DataListTd className="whitespace-nowrap text-muted-foreground">{formatDateEsBo(c.created_at)}</DataListTd>
                     <DataListTd>
@@ -306,13 +295,10 @@ function ListaContribuyentes() {
                           >
                             Editar datos
                           </DropdownMenuItem>
-                          <DropdownMenuSeparator />
                           <DropdownMenuItem
-                            className="text-destructive focus:text-destructive"
-                            disabled={!c.puedeDarDeBaja}
-                            onClick={(e) => void darDeBaja(c, e)}
+                            onClick={() => navigate({ to: "/contribuyentes/$id", params: { id: c.id } })}
                           >
-                            Dar de baja
+                            Ver detalle
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
