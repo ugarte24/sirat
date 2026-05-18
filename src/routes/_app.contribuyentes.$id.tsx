@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { contribuyenteToUpdatePayload } from "@/lib/sirat-forms";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -40,11 +41,7 @@ function Detalle() {
     if (!c) return;
     const { error } = await supabase
       .from("contribuyentes")
-      .update({
-        ci: c.ci,
-        nombre_completo: c.nombre_completo,
-        telefono: c.telefono || null,
-      })
+      .update(contribuyenteToUpdatePayload(c))
       .eq("id", id);
     if (error) toast.error(error.message);
     else toast.success("Actualizado");

@@ -5,11 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import type {
-  ContribuyenteCatalogRow,
-  ContribuyenteInsertPayload,
-  ContribuyenteNuevoForm,
-} from "@/lib/sirat-forms";
+import type { ContribuyenteCatalogRow, ContribuyenteNuevoForm } from "@/lib/sirat-forms";
+import { contribuyenteFormToInsert } from "@/lib/sirat-forms";
 
 export type ContribuyenteAltaFormProps = {
   onSuccess: (contribuyente: ContribuyenteCatalogRow) => void;
@@ -24,12 +21,7 @@ export function ContribuyenteAltaForm({ onSuccess, submitLabel = "Registrar" }: 
     e.preventDefault();
     setBusy(true);
     const { data: u } = await supabase.auth.getUser();
-    const payload: ContribuyenteInsertPayload = {
-      ci: form.ci.trim(),
-      nombre_completo: form.nombre_completo.trim(),
-      telefono: form.telefono.trim() || null,
-      created_by: u.user?.id ?? null,
-    };
+    const payload = contribuyenteFormToInsert(form, u.user?.id);
     const { data: created, error } = await supabase
       .from("contribuyentes")
       .insert(payload)

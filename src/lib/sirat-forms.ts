@@ -5,6 +5,29 @@ type ContribRow = Db["contribuyentes"]["Row"];
 type FormRow = Db["formularios"]["Row"];
 type NotifRow = Db["notificaciones"]["Row"];
 
+const UPPER_LOCALE = "es-BO";
+
+function trimUpper(value: string): string {
+  return value.trim().toLocaleUpperCase(UPPER_LOCALE);
+}
+
+function trimUpperOrNull(value: string): string | null {
+  const t = value.trim();
+  return t ? t.toLocaleUpperCase(UPPER_LOCALE) : null;
+}
+
+/** Textos de formulario normalizados para guardar en la BD (mayúsculas). */
+function formularioTextFieldsForDb(f: FormularioNuevoState) {
+  return {
+    razon_social: trimUpper(f.razon_social),
+    nit: trimUpperOrNull(f.nit),
+    direccion: trimUpper(f.direccion),
+    celular: f.celular.trim(),
+    referencia: trimUpper(f.referencia),
+    observacion: trimUpperOrNull(f.observacion),
+  };
+}
+
 /** Fila para selects (contribuyente) */
 export type ContribuyenteCatalogRow = Pick<ContribRow, "id" | "ci" | "nombre_completo">;
 
@@ -88,21 +111,17 @@ export function formularioStateToInsert(
   f: FormularioNuevoState,
   createdBy: string | null | undefined,
 ): FormularioInsertPayload {
+  const text = formularioTextFieldsForDb(f);
   return {
     contribuyente_id: f.contribuyente_id,
-    razon_social: f.razon_social.trim(),
-    nit: f.nit.trim() || null,
+    ...text,
     zona: f.zona,
     superficie: Number.parseFloat(f.superficie),
-    direccion: f.direccion.trim(),
-    celular: f.celular.trim(),
-    referencia: f.referencia.trim(),
     latitud: f.latitud,
     longitud: f.longitud,
     procedente: f.procedente ?? true,
     padron: f.padron,
     bebidas_alcoholicas: f.bebidas_alcoholicas,
-    observacion: f.observacion.trim() || null,
     created_by: createdBy ?? null,
   };
 }
@@ -127,14 +146,15 @@ export function formularioRegistroToInsert(
   f: FormularioNuevoState,
   createdBy: string | null | undefined,
 ): FormularioRegistroPayload & { estado: "pendiente_verificacion"; superficie: null } {
+  const text = formularioTextFieldsForDb(f);
   return {
     contribuyente_id: f.contribuyente_id,
-    razon_social: f.razon_social.trim(),
-    nit: f.nit.trim() || null,
+    razon_social: text.razon_social,
+    nit: text.nit,
     zona: f.zona,
-    direccion: f.direccion.trim(),
-    celular: f.celular.trim(),
-    referencia: f.referencia.trim(),
+    direccion: text.direccion,
+    celular: text.celular,
+    referencia: text.referencia,
     latitud: f.latitud,
     longitud: f.longitud,
     mapa_zoom: f.mapa_zoom,
@@ -159,14 +179,15 @@ export type FormularioRegistroUpdatePayload = Pick<
 >;
 
 export function formularioRegistroToUpdate(f: FormularioNuevoState): FormularioRegistroUpdatePayload {
+  const text = formularioTextFieldsForDb(f);
   return {
     contribuyente_id: f.contribuyente_id,
-    razon_social: f.razon_social.trim(),
-    nit: f.nit.trim() || null,
+    razon_social: text.razon_social,
+    nit: text.nit,
     zona: f.zona,
-    direccion: f.direccion.trim(),
-    celular: f.celular.trim(),
-    referencia: f.referencia.trim(),
+    direccion: text.direccion,
+    celular: text.celular,
+    referencia: text.referencia,
     latitud: f.latitud,
     longitud: f.longitud,
     mapa_zoom: f.mapa_zoom,
@@ -194,7 +215,7 @@ export function formularioVerificacionToUpdate(
     procedente: f.procedente as boolean,
     padron: f.padron,
     bebidas_alcoholicas: f.bebidas_alcoholicas,
-    observacion: f.observacion.trim() || null,
+    observacion: formularioTextFieldsForDb(f).observacion,
   };
   if (opts.completar) {
     return {
@@ -254,21 +275,17 @@ export type FormularioUpdatePayload = Pick<
 >;
 
 export function formularioStateToUpdate(f: FormularioNuevoState): FormularioUpdatePayload {
+  const text = formularioTextFieldsForDb(f);
   return {
     contribuyente_id: f.contribuyente_id,
-    razon_social: f.razon_social.trim(),
-    nit: f.nit.trim() || null,
+    ...text,
     zona: f.zona,
     superficie: Number.parseFloat(f.superficie),
-    direccion: f.direccion.trim(),
-    celular: f.celular.trim(),
-    referencia: f.referencia.trim(),
     latitud: f.latitud,
     longitud: f.longitud,
     procedente: f.procedente ?? true,
     padron: f.padron,
     bebidas_alcoholicas: f.bebidas_alcoholicas,
-    observacion: f.observacion.trim() || null,
   };
 }
 
@@ -361,16 +378,40 @@ export type NotificacionInsertPayload = Pick<
 function notificacionStateToRowFields(n: NotificacionNuevaState) {
   return {
     contribuyente_id: n.contribuyente_id,
-    nombre_actividad: n.nombre_actividad.trim() || null,
-    numero_identificacion: n.numero_identificacion.trim() || null,
-    direccion: n.direccion.trim(),
+    nombre_actividad: trimUpperOrNull(n.nombre_actividad),
+    numero_identificacion: trimUpperOrNull(n.numero_identificacion),
+    direccion: trimUpper(n.direccion),
     fecha_limite: n.fecha_limite,
     padron_municipal: n.padron_municipal,
     permiso_bebidas_alcoholicas: n.permiso_bebidas_alcoholicas,
     impuestos_patente: n.impuestos_patente,
     bienes_inmuebles: n.bienes_inmuebles,
     vehiculos: n.vehiculos,
-    gestiones_adeudadas: n.gestiones_adeudadas.trim() || null,
+    gestiones_adeudadas: trimUpperOrNull(n.gestiones_adeudadas),
+  };
+}
+
+export function contribuyenteFormToInsert(
+  form: ContribuyenteNuevoForm,
+  createdBy: string | null | undefined,
+): ContribuyenteInsertPayload {
+  return {
+    ci: form.ci.trim(),
+    nombre_completo: trimUpper(form.nombre_completo),
+    telefono: form.telefono.trim() || null,
+    created_by: createdBy ?? null,
+  };
+}
+
+export function contribuyenteToUpdatePayload(c: {
+  ci: string;
+  nombre_completo: string;
+  telefono: string | null;
+}): Pick<ContribRow, "ci" | "nombre_completo" | "telefono"> {
+  return {
+    ci: c.ci.trim(),
+    nombre_completo: trimUpper(c.nombre_completo),
+    telefono: c.telefono?.trim() || null,
   };
 }
 
