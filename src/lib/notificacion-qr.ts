@@ -88,11 +88,11 @@ export function notificacionQrPublicOrigin(): string {
  * El parámetro ?d= queda solo como respaldo en enlaces largos, no en el QR.
  */
 export function buildNotificacionQrUrl(payload: NotificacionQrPayload): string {
-  return `${notificacionQrPublicOrigin()}/verificacion/${payload.id}/pdf`;
+  return `${notificacionQrPublicOrigin()}/verificacion/${payload.id}`;
 }
 
 /** Enlace con datos embebidos (respaldo si el servidor no responde); no usar en QR. */
 export function buildNotificacionQrUrlWithEmbeddedData(payload: NotificacionQrPayload): string {
   const encoded = encodeURIComponent(encodeNotificacionQrPayload(payload));
-  return `${notificacionQrPublicOrigin()}/verificacion/${payload.id}/pdf?d=${encoded}`;
+  return `${notificacionQrPublicOrigin()}/verificacion/${payload.id}?d=${encoded}`;
 }

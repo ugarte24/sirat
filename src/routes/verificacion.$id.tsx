@@ -4,8 +4,9 @@ import {
   loadVerificacionNotificacion,
   parseVerificacionSearch,
 } from "@/lib/verificacion-notificacion";
+import { useAutoNotificacionPdfDownload } from "@/hooks/use-auto-notificacion-pdf";
 import { SiratLoginBrand } from "@/components/SiratLoginBrand";
-import { Loader2 } from "lucide-react";
+import { Loader2, FileDown } from "lucide-react";
 
 export const Route = createFileRoute("/verificacion/$id")({
   validateSearch: (search) => parseVerificacionSearch(search),
@@ -27,7 +28,8 @@ function VerificacionPending() {
 
 function VerificacionNotificacionPage() {
   const result = Route.useLoaderData();
-  const { d } = Route.useSearch();
+  const payload = result.ok ? result.payload : null;
+  const { status: pdfStatus, retry } = useAutoNotificacionPdfDownload(payload);
 
   return (
     <div className="min-h-screen bg-muted/30 px-4 py-8">
@@ -35,7 +37,7 @@ function VerificacionNotificacionPage() {
         <SiratLoginBrand />
       </div>
 
-      {!result.ok || !result.payload ? (
+      {!payload ? (
         <div className="mx-auto max-w-md rounded-lg border bg-card p-6 text-center shadow-sm">
           <h1 className="font-display text-lg font-bold text-foreground">Notificación no disponible</h1>
           <p className="mt-2 text-sm text-muted-foreground">
@@ -50,19 +52,48 @@ function VerificacionNotificacionPage() {
           </Link>
         </div>
       ) : (
-        <>
-          <NotificacionVerificacionView data={result.payload} />
-          <p className="mx-auto mt-4 max-w-lg text-center text-sm text-muted-foreground">
-            <Link
-              to="/verificacion/$id/pdf"
-              params={{ id: result.payload.id }}
-              search={d ? { d } : {}}
-              className="font-medium text-primary hover:underline"
-            >
-              Descargar PDF de esta notificación
-            </Link>
-          </p>
-        </>
+        <div className="mx-auto max-w-lg space-y-4">
+          <NotificacionVerificacionView data={payload} />
+
+          {pdfStatus === "downloading" && (
+            <p className="flex items-center justify-center gap-2 text-center text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              Descargando PDF…
+            </p>
+          )}
+
+          {pdfStatus === "done" && (
+            <div className="rounded-lg border border-primary/25 bg-primary/5 px-4 py-3 text-center text-sm">
+              <p className="flex items-center justify-center gap-2 font-medium text-foreground">
+                <FileDown className="h-4 w-4 text-primary" />
+                PDF descargado
+              </p>
+              <p className="mt-1 text-muted-foreground">
+                Si no lo ve, revise la carpeta de descargas del dispositivo.
+              </p>
+              <button
+                type="button"
+                onClick={retry}
+                className="mt-3 text-sm font-medium text-primary hover:underline"
+              >
+                Descargar de nuevo
+              </button>
+            </div>
+          )}
+
+          {pdfStatus === "error" && (
+            <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-center text-sm">
+              <p className="text-destructive">No se pudo generar el PDF.</p>
+              <button
+                type="button"
+                onClick={retry}
+                className="mt-2 font-medium text-primary hover:underline"
+              >
+                Reintentar descarga
+              </button>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
