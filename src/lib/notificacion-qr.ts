@@ -83,7 +83,16 @@ export function notificacionQrPublicOrigin(): string {
   return "https://sirat.vercel.app";
 }
 
+/**
+ * URL corta para el QR (solo id). Así la cámara lo lee bien; los datos se cargan del servidor al abrir.
+ * El parámetro ?d= queda solo como respaldo en enlaces largos, no en el QR.
+ */
 export function buildNotificacionQrUrl(payload: NotificacionQrPayload): string {
+  return `${notificacionQrPublicOrigin()}/verificacion/${payload.id}/pdf`;
+}
+
+/** Enlace con datos embebidos (respaldo si el servidor no responde); no usar en QR. */
+export function buildNotificacionQrUrlWithEmbeddedData(payload: NotificacionQrPayload): string {
   const encoded = encodeURIComponent(encodeNotificacionQrPayload(payload));
   return `${notificacionQrPublicOrigin()}/verificacion/${payload.id}/pdf?d=${encoded}`;
 }

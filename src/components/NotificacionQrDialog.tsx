@@ -28,9 +28,10 @@ export function NotificacionQrDialog({ open, onOpenChange, payload }: Props) {
     }
     const url = buildNotificacionQrUrl(payload);
     void QRCode.toDataURL(url, {
-      width: 300,
-      margin: 2,
-      errorCorrectionLevel: "H",
+      width: 512,
+      margin: 4,
+      errorCorrectionLevel: "M",
+      color: { dark: "#000000", light: "#ffffff" },
     })
       .then(setQrSrc)
       .catch(() => setError("No se pudo generar el código QR."));
@@ -51,9 +52,7 @@ export function NotificacionQrDialog({ open, onOpenChange, payload }: Props) {
             <img
               src={qrSrc}
               alt="Código QR de la notificación tributaria"
-              className="rounded-md border bg-white p-2"
-              width={280}
-              height={280}
+              className="h-auto w-full max-w-[min(100%,20rem)] rounded-md border bg-white p-3"
             />
           )}
           {!qrSrc && !error && (
