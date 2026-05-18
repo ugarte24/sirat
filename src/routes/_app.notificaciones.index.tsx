@@ -34,6 +34,7 @@ import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 import type { ContribuyenteCatalogRow } from "@/lib/sirat-forms";
 import { formatDateEsBo, formatDateTimeEsBo } from "@/lib/date";
+import { cn } from "@/lib/utils";
 type NotifSearch = { nueva?: boolean };
 
 type NotifRow = Pick<
@@ -54,16 +55,69 @@ export const Route = createFileRoute("/_app/notificaciones/")({
   component: Lista,
 });
 
-function NotifEstadoPill({ estado }: { estado: Database["public"]["Enums"]["notificacion_estado"] }) {
+function NotificacionListaAcciones({
+  n,
+  onEdit,
+  className,
+}: {
+  n: NotifRow;
+  onEdit: (id: string) => void;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn("flex items-center justify-end gap-0.5", className)}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {n.estado === "pendiente" && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          aria-label="Editar notificación"
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit(n.id);
+          }}
+        >
+          <Pencil className="h-4 w-4" />
+        </Button>
+      )}
+      <Button type="button" variant="ghost" size="icon" className="h-8 w-8" asChild>
+        <Link to="/notificaciones/$id" params={{ id: n.id }} aria-label="Ver notificación">
+          <ChevronRight className="h-4 w-4" />
+        </Link>
+      </Button>
+    </div>
+  );
+}
+
+function NotifEstadoPill({
+  estado,
+  compact,
+}: {
+  estado: Database["public"]["Enums"]["notificacion_estado"];
+  compact?: boolean;
+}) {
   if (estado === "cumplido") return <span className={pillSuccess()}>Cumplido</span>;
   if (estado === "anulado") {
     return (
-      <span className="inline-flex items-center rounded-full bg-destructive/15 px-3 py-0.5 text-xs font-medium text-destructive">
+      <span
+        className={cn(
+          "inline-flex items-center rounded-full bg-destructive/15 px-3 py-0.5 text-xs font-medium text-destructive",
+          compact && "px-2.5",
+        )}
+      >
         Anulado
       </span>
     );
   }
   return <span className={pillMuted()}>Pendiente</span>;
+}
+
+function notifTitulo(n: NotifRow): string {
+  return n.nombre_actividad?.trim() || n.contribuyente?.nombre_completo || "—";
 }
 
 function Lista() {
@@ -259,8 +313,55 @@ function Lista() {
       </div>
 
       <DataListCard>
-        <DataListTableWrap>
-          <DataListTable>
+        <div className="md:hidden divide-y divide-border/60">
+          {loading && (
+            <p className="py-10 text-center text-sm text-muted-foreground">Cargando…</p>
+          )}
+          {!loading && list.length === 0 && (
+            <p className="py-10 text-center text-sm text-muted-foreground">Sin notificaciones</p>
+          )}
+          {!loading &&
+            list.map((n) => (
+              <div
+                key={n.id}
+                role="button"
+                tabIndex={0}
+                className="w-full cursor-pointer px-4 py-3.5 text-left hover:bg-muted/40 active:bg-muted/60"
+                onClick={() => navigate({ to: "/notificaciones/$id", params: { id: n.id } })}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    navigate({ to: "/notificaciones/$id", params: { id: n.id } });
+                  }
+                }}
+              >
+                <div className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1.5">
+                  <span className="text-xs text-muted-foreground tabular-nums">
+                    {formatDateEsBo(n.created_at.slice(0, 10))}
+                  </span>
+                  <div className="justify-self-end">
+                    <NotifEstadoPill estado={n.estado} compact />
+                  </div>
+                  <p className="col-span-2 mt-0.5 font-semibold text-foreground leading-snug">
+                    {notifTitulo(n)}
+                  </p>
+                  <p className="col-span-2 text-xs text-muted-foreground">
+                    Límite: {formatDateEsBo(n.fecha_limite)}
+                  </p>
+                  <p className="min-w-0 text-xs text-muted-foreground leading-snug">
+                    {n.contribuyente?.nombre_completo ?? "—"}
+                  </p>
+                  <div className="justify-self-end self-center">
+                    <NotificacionListaAcciones n={n} onEdit={openEdit} />
+                  </div>
+                </div>
+              </div>
+            ))}
+        </div>
+
+        <div className="hidden md:block">
+          <DataListTableWrap>
+            <DataListTable>
             <DataListTheadRow>
               <DataListTh>Emisión</DataListTh>
               <DataListTh>Notificación</DataListTh>
@@ -294,11 +395,9 @@ function Lista() {
                       {formatDateTimeEsBo(n.created_at)}
                     </DataListTd>
                     <DataListTd>
-                      <div className="font-semibold text-foreground">
-                        {n.nombre_actividad?.trim() || n.contribuyente?.nombre_completo || "—"}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {n.contribuyente?.nombre_completo ?? "—"} — C.I. {n.contribuyente?.ci ?? "—"}
+                      <div className="font-semibold text-foreground">{notifTitulo(n)}</div>
+                      <div className="mt-0.5 text-xs text-muted-foreground">
+                        {n.contribuyente?.nombre_completo ?? "—"}
                       </div>
                     </DataListTd>
                     <DataListTd className="whitespace-nowrap text-muted-foreground">{formatDateEsBo(n.fecha_limite)}</DataListTd>
@@ -306,35 +405,14 @@ function Lista() {
                       <NotifEstadoPill estado={n.estado} />
                     </DataListTd>
                     <DataListTd align="center" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center justify-center gap-0.5">
-                        {n.estado === "pendiente" && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            aria-label="Editar notificación"
-                            onPointerDown={(e) => e.stopPropagation()}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              e.preventDefault();
-                              openEdit(n.id);
-                            }}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                        )}
-                        <Button type="button" variant="ghost" size="icon" asChild aria-label="Ver notificación">
-                          <Link to="/notificaciones/$id" params={{ id: n.id }}>
-                            <ChevronRight className="h-4 w-4" />
-                          </Link>
-                        </Button>
-                      </div>
+                      <NotificacionListaAcciones n={n} onEdit={openEdit} className="justify-center" />
                     </DataListTd>
                   </TableRow>
                 ))}
             </DataListTbody>
           </DataListTable>
-        </DataListTableWrap>
+          </DataListTableWrap>
+        </div>
         <TablePaginationFooter
           page={page}
           pageSize={LIST_PAGE_SIZE}
