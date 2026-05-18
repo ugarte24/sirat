@@ -87,10 +87,12 @@ export async function drawInstitucionalPdfHeader(
     doc.addImage(escudo, "PNG", MARGIN, y, 24, 28);
   }
 
+  const logoH = 26;
+  let logoBottomY = y;
   if (logo) {
-    const logoH = 26;
     const logoW = logoH * SIRAT_LOGO_ASPECT;
     doc.addImage(logo, "PNG", w - MARGIN - logoW, y + 1, logoW, logoH);
+    logoBottomY = y + 1 + logoH;
   }
 
   doc.setTextColor(C.text.r, C.text.g, C.text.b);
@@ -110,18 +112,24 @@ export async function drawInstitucionalPdfHeader(
   const titleSize = opts.titleFontSize ?? 11;
   const titleLineGap = titleSize * 0.42;
   doc.setFontSize(titleSize);
+  let contentBottom = y;
   for (let i = 0; i < opts.titleLines.length; i++) {
     const line = opts.titleLines[i];
     const lineY = y;
     doc.text(line, w / 2, lineY, { align: "center" });
     if (opts.qrDataUrl && i === 0) {
       const qrSize = opts.qrSizeMm ?? 22;
-      doc.addImage(opts.qrDataUrl, "PNG", w - MARGIN - qrSize, lineY - qrSize * 0.72, qrSize, qrSize);
+      const titleMidY = lineY - titleSize * 0.35;
+      let qrY = titleMidY - qrSize / 2;
+      if (logo) qrY = Math.max(qrY, logoBottomY + 3);
+      doc.addImage(opts.qrDataUrl, "PNG", w - MARGIN - qrSize, qrY, qrSize, qrSize);
+      contentBottom = Math.max(contentBottom, qrY + qrSize);
     }
     y += titleLineGap;
+    contentBottom = Math.max(contentBottom, y);
   }
 
-  return y + 6;
+  return contentBottom + 6;
 }
 
 export async function drawFormularioPdfHeader(doc: jsPDF, usuario?: string): Promise<number> {
