@@ -19,6 +19,7 @@ import {
 import { NotificacionEditarForm } from "@/components/forms/NotificacionEditarForm";
 import { ArrowLeft, FileDown, Check, Ban, Pencil, QrCode } from "lucide-react";
 import { NotificacionQrDialog } from "@/components/NotificacionQrDialog";
+import { MapPicker } from "@/components/MapPicker";
 import { buildNotificacionQrPayload } from "@/lib/notificacion-qr";
 import { toast } from "sonner";
 import { generateNotificacionPDF } from "@/lib/pdf";
@@ -220,6 +221,18 @@ function Detalle() {
           </DetailGrid>
         </DetailSection>
       </DetailTemplate>
+
+      {n.latitud != null && n.longitud != null && (
+        <DetailSection title="Ubicación en mapa" showSeparator={false}>
+          <MapPicker
+            lat={n.latitud}
+            lng={n.longitud}
+            mapZoom={n.mapa_zoom}
+            readOnly
+            staticPreview
+          />
+        </DetailSection>
+      )}
 
       {qrPayload && (
         <NotificacionQrDialog open={qrOpen} onOpenChange={setQrOpen} payload={qrPayload} />

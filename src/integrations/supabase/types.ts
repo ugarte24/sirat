@@ -171,6 +171,9 @@ export type Database = {
           id: string
           gestiones_adeudadas: string | null
           impuestos_patente: boolean
+          latitud: number | null
+          longitud: number | null
+          mapa_zoom: number | null
           nombre_actividad: string | null
           numero_identificacion: string | null
           observacion_seguimiento: string | null
@@ -190,6 +193,9 @@ export type Database = {
           id?: string
           gestiones_adeudadas?: string | null
           impuestos_patente?: boolean
+          latitud?: number | null
+          longitud?: number | null
+          mapa_zoom?: number | null
           nombre_actividad?: string | null
           numero_identificacion?: string | null
           observacion_seguimiento?: string | null
@@ -209,6 +215,9 @@ export type Database = {
           id?: string
           gestiones_adeudadas?: string | null
           impuestos_patente?: boolean
+          latitud?: number | null
+          longitud?: number | null
+          mapa_zoom?: number | null
           nombre_actividad?: string | null
           numero_identificacion?: string | null
           observacion_seguimiento?: string | null

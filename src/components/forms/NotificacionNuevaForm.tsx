@@ -20,6 +20,7 @@ import {
   FORMULARIO_VERIFICACION_SECCION,
   NOTIFICACION_GESTIONES_ADEUDADAS_LABEL,
 } from "@/lib/sirat-brand";
+import { NotificacionMapaFields } from "@/components/forms/NotificacionMapaFields";
 
 type RazonSocialFormHit = {
   razon_social: string;
@@ -261,6 +262,12 @@ export function NotificacionNuevaForm({
             className="resize-y min-h-[80px]"
           />
         </div>
+        <NotificacionMapaFields
+          latitud={n.latitud}
+          longitud={n.longitud}
+          mapa_zoom={n.mapa_zoom}
+          onChange={(patch) => setN((prev) => ({ ...prev, ...patch }))}
+        />
       </Card>
       <Button type="submit" className="w-full h-11 bg-gradient-gold text-gold-foreground">
         Emitir notificación

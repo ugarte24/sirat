@@ -335,6 +335,9 @@ export interface NotificacionNuevaState {
   numero_identificacion: string;
   direccion: string;
   fecha_limite: string;
+  latitud: number | null;
+  longitud: number | null;
+  mapa_zoom: number | null;
   padron_municipal: boolean;
   permiso_bebidas_alcoholicas: boolean;
   impuestos_patente: boolean;
@@ -350,6 +353,9 @@ export function defaultNotificacionNueva(): NotificacionNuevaState {
     numero_identificacion: "",
     direccion: "",
     fecha_limite: "",
+    latitud: null,
+    longitud: null,
+    mapa_zoom: null,
     padron_municipal: false,
     permiso_bebidas_alcoholicas: false,
     impuestos_patente: false,
@@ -367,6 +373,9 @@ export type NotificacionInsertPayload = Pick<
   | "numero_identificacion"
   | "direccion"
   | "fecha_limite"
+  | "latitud"
+  | "longitud"
+  | "mapa_zoom"
   | "padron_municipal"
   | "permiso_bebidas_alcoholicas"
   | "impuestos_patente"
@@ -383,6 +392,9 @@ function notificacionStateToRowFields(n: NotificacionNuevaState) {
     numero_identificacion: trimUpperOrNull(n.numero_identificacion),
     direccion: trimUpper(n.direccion),
     fecha_limite: n.fecha_limite,
+    latitud: n.latitud,
+    longitud: n.longitud,
+    mapa_zoom: n.mapa_zoom,
     padron_municipal: n.padron_municipal,
     permiso_bebidas_alcoholicas: n.permiso_bebidas_alcoholicas,
     impuestos_patente: n.impuestos_patente,
@@ -431,6 +443,9 @@ export type NotificacionUpdatePayload = Pick<
   | "numero_identificacion"
   | "direccion"
   | "fecha_limite"
+  | "latitud"
+  | "longitud"
+  | "mapa_zoom"
   | "padron_municipal"
   | "permiso_bebidas_alcoholicas"
   | "impuestos_patente"
@@ -450,6 +465,9 @@ export function notificacionRowToState(row: NotifRow): NotificacionNuevaState {
     numero_identificacion: row.numero_identificacion ?? "",
     direccion: row.direccion,
     fecha_limite: row.fecha_limite,
+    latitud: row.latitud,
+    longitud: row.longitud,
+    mapa_zoom: row.mapa_zoom,
     padron_municipal: row.padron_municipal,
     permiso_bebidas_alcoholicas: row.permiso_bebidas_alcoholicas,
     impuestos_patente: row.impuestos_patente,
