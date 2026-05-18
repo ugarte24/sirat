@@ -270,3 +270,9 @@ export function drawFormularioPdfFooter(doc: jsPDF, startY: number, pageNumber =
   doc.text(lines, w / 2, y, { align: "center" });
   doc.setPage(prevPage);
 }
+
+/** Firmas y pie de página 1 del formulario (evita referencias sueltas en pdf.ts). */
+export function finalizeFormularioPdfFirstPage(doc: jsPDF, startY: number): void {
+  const y = drawFormularioPdfSignatures(doc, startY);
+  drawFormularioPdfFooter(doc, y, 1);
+}

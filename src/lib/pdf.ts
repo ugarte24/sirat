@@ -1,17 +1,16 @@
 import jsPDF from "jspdf";
 import QRCode from "qrcode";
 import { formatDateEsBo } from "@/lib/date";
-import { applySiratPdfPageNumbers, downloadBlob } from "@/lib/download-file";
+import { applySiratPdfPageNumbers, downloadBlob, downloadJsPdf } from "@/lib/download-file";
 import {
   drawFormularioDatosSection,
   drawFormularioFotosPageStart,
   drawFormularioInfoSection,
-  drawFormularioPdfFooter,
   drawFormularioPdfHeader,
-  drawFormularioPdfSignatures,
   drawFormularioUbicacionSection,
   drawInstitucionalPdfHeader,
   drawPdfTablaSection,
+  finalizeFormularioPdfFirstPage,
 } from "@/lib/pdf-formulario-layout";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -240,8 +239,7 @@ export async function generateFormularioPDF(
     }
   }
 
-  y = drawFormularioPdfSignatures(doc, y);
-  drawFormularioPdfFooter(doc, y, 1);
+  finalizeFormularioPdfFirstPage(doc, y);
 
   const photoSources = normalizeFormularioPhotos(d);
   let fotosIncluidas = 0;
