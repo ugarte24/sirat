@@ -8,8 +8,10 @@ export const SIRAT_TAGLINE =
 export const SIRAT_REPORT_COLORS = {
   /** Azul primario — encabezados y cabecera de tabla */
   primary: { r: 45, g: 55, b: 120, hex: "2D3778" },
-  /** Dorado — línea de acento y título principal */
+  /** Dorado — línea de acento (Excel y UI legacy) */
   gold: { r: 201, g: 162, b: 59, hex: "C9A23B" },
+  /** Verde del logo SIRAT — barra superior, acentos y títulos en PDF */
+  green: { r: 45, g: 122, b: 49, hex: "2D7A31" },
   /** Fila alterna de tabla */
   zebra: { r: 245, g: 247, b: 252, hex: "F5F7FC" },
   white: { r: 255, g: 255, b: 255, hex: "FFFFFF" },
@@ -45,5 +47,5 @@ export const JEFATURA_RECAUDACIONES = "JEFATURA DE RECAUDACIONES";
 /** Etiqueta de firma en PDF del formulario (tercera columna) */
 export const FORMULARIO_PDF_FIRMA_ENCARGADO_RUAT = "Encargado de Ruat";
 
-/** Título en PDF de notificación tributaria */
-export const NOTIFICACION_TRIBUTARIA_PDF_TITULO = "NOTIFICACIÓN TRIBUTARIA";
+/** Título en PDF de notificación */
+export const NOTIFICACION_TRIBUTARIA_PDF_TITULO = "NOTIFICACIÓN";

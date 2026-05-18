@@ -7,8 +7,9 @@ import { SIRAT_REPORT_COLORS, SIRAT_TAGLINE } from "@/lib/sirat-brand";
 import type { ReportColumn, ReporteFila } from "@/lib/report-export";
 
 const C = SIRAT_REPORT_COLORS;
+const G = C.green;
 
-/** Barra azul SIRAT + línea dorada (como reportes). Devuelve la Y inicial del bloque de título. */
+/** Barra verde SIRAT + línea de acento. Devuelve la Y inicial del bloque de título. */
 export function drawSiratPdfTopBar(
   doc: jsPDF,
   opts: { usuario?: string; fechaReporte?: string } = {},
@@ -18,7 +19,7 @@ export function drawSiratPdfTopBar(
   const fecha =
     opts.fechaReporte ?? formatDateEsBo(toIsoDateLocal(new Date()));
 
-  doc.setFillColor(C.primary.r, C.primary.g, C.primary.b);
+  doc.setFillColor(G.r, G.g, G.b);
   doc.rect(0, 0, w, headerH, "F");
   doc.setTextColor(255, 255, 255);
 
@@ -35,7 +36,7 @@ export function drawSiratPdfTopBar(
     });
   }
 
-  doc.setFillColor(C.gold.r, C.gold.g, C.gold.b);
+  doc.setFillColor(G.r, G.g, G.b);
   doc.rect(0, headerH, w, 1.2, "F");
 
   return headerH + 1.2;
@@ -52,7 +53,7 @@ export const SIRAT_PDF_TABLE_STYLES = {
     lineWidth: 0.1,
   },
   headStyles: {
-    fillColor: [C.primary.r, C.primary.g, C.primary.b] as [number, number, number],
+    fillColor: [G.r, G.g, G.b] as [number, number, number],
     textColor: [255, 255, 255] as [number, number, number],
     fontStyle: "bold" as const,
     halign: "center" as const,
@@ -88,7 +89,7 @@ export async function generateStyledReportPDF(
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const w = doc.internal.pageSize.getWidth();
   let y = drawSiratPdfTopBar(doc, { usuario: meta.usuario }) + 10;
-  doc.setTextColor(C.gold.r, C.gold.g, C.gold.b);
+  doc.setTextColor(G.r, G.g, G.b);
   doc.setFont("helvetica", "bold").setFontSize(18);
   doc.text(meta.titulo.toUpperCase(), w / 2, y, { align: "center" });
   y += 7;

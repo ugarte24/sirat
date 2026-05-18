@@ -13,6 +13,8 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as VerificacionIdRouteImport } from './routes/verificacion.$id'
+import { Route as VNotificacionRouteImport } from './routes/v.notificacion'
 import { Route as AppUsuariosRouteImport } from './routes/_app.usuarios'
 import { Route as AppReportesRouteImport } from './routes/_app.reportes'
 import { Route as AppPerfilRouteImport } from './routes/_app.perfil'
@@ -44,6 +46,16 @@ const AppRoute = AppRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VerificacionIdRoute = VerificacionIdRouteImport.update({
+  id: '/verificacion/$id',
+  path: '/verificacion/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VNotificacionRoute = VNotificacionRouteImport.update({
+  id: '/v/notificacion',
+  path: '/v/notificacion',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppUsuariosRoute = AppUsuariosRouteImport.update({
@@ -123,6 +135,8 @@ export interface FileRoutesByFullPath {
   '/perfil': typeof AppPerfilRoute
   '/reportes': typeof AppReportesRoute
   '/usuarios': typeof AppUsuariosRoute
+  '/v/notificacion': typeof VNotificacionRoute
+  '/verificacion/$id': typeof VerificacionIdRoute
   '/contribuyentes/$id': typeof AppContribuyentesIdRoute
   '/formularios/$id': typeof AppFormulariosIdRoute
   '/notificaciones/$id': typeof AppNotificacionesIdRoute
@@ -138,6 +152,8 @@ export interface FileRoutesByTo {
   '/perfil': typeof AppPerfilRoute
   '/reportes': typeof AppReportesRoute
   '/usuarios': typeof AppUsuariosRoute
+  '/v/notificacion': typeof VNotificacionRoute
+  '/verificacion/$id': typeof VerificacionIdRoute
   '/contribuyentes/$id': typeof AppContribuyentesIdRoute
   '/formularios/$id': typeof AppFormulariosIdRoute
   '/notificaciones/$id': typeof AppNotificacionesIdRoute
@@ -158,6 +174,8 @@ export interface FileRoutesById {
   '/_app/perfil': typeof AppPerfilRoute
   '/_app/reportes': typeof AppReportesRoute
   '/_app/usuarios': typeof AppUsuariosRoute
+  '/v/notificacion': typeof VNotificacionRoute
+  '/verificacion/$id': typeof VerificacionIdRoute
   '/_app/contribuyentes/$id': typeof AppContribuyentesIdRoute
   '/_app/formularios/$id': typeof AppFormulariosIdRoute
   '/_app/notificaciones/$id': typeof AppNotificacionesIdRoute
@@ -178,6 +196,8 @@ export interface FileRouteTypes {
     | '/perfil'
     | '/reportes'
     | '/usuarios'
+    | '/v/notificacion'
+    | '/verificacion/$id'
     | '/contribuyentes/$id'
     | '/formularios/$id'
     | '/notificaciones/$id'
@@ -193,6 +213,8 @@ export interface FileRouteTypes {
     | '/perfil'
     | '/reportes'
     | '/usuarios'
+    | '/v/notificacion'
+    | '/verificacion/$id'
     | '/contribuyentes/$id'
     | '/formularios/$id'
     | '/notificaciones/$id'
@@ -212,6 +234,8 @@ export interface FileRouteTypes {
     | '/_app/perfil'
     | '/_app/reportes'
     | '/_app/usuarios'
+    | '/v/notificacion'
+    | '/verificacion/$id'
     | '/_app/contribuyentes/$id'
     | '/_app/formularios/$id'
     | '/_app/notificaciones/$id'
@@ -225,6 +249,8 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  VNotificacionRoute: typeof VNotificacionRoute
+  VerificacionIdRoute: typeof VerificacionIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -255,6 +281,20 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/verificacion/$id': {
+      id: '/verificacion/$id'
+      path: '/verificacion/$id'
+      fullPath: '/verificacion/$id'
+      preLoaderRoute: typeof VerificacionIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/v/notificacion': {
+      id: '/v/notificacion'
+      path: '/v/notificacion'
+      fullPath: '/v/notificacion'
+      preLoaderRoute: typeof VNotificacionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/usuarios': {
@@ -418,6 +458,8 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  VNotificacionRoute: VNotificacionRoute,
+  VerificacionIdRoute: VerificacionIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

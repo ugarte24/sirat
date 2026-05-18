@@ -14,9 +14,10 @@ import {
 } from "@/lib/sirat-brand";
 
 const C = SIRAT_REPORT_COLORS;
+const G = C.green;
 const MARGIN = 12;
 const LABEL_FILL: [number, number, number] = [232, 236, 245];
-const SI_COLOR: [number, number, number] = [22, 163, 74];
+const SI_COLOR: [number, number, number] = [G.r, G.g, G.b];
 const NO_COLOR: [number, number, number] = [220, 38, 38];
 
 const TABLE_BASE = {
@@ -45,28 +46,42 @@ function styleSiNoCell(data: {
 
 function drawSectionTitle(doc: jsPDF, y: number, title: string): number {
   const w = doc.internal.pageSize.getWidth();
-  doc.setFillColor(C.primary.r, C.primary.g, C.primary.b);
+  doc.setFillColor(G.r, G.g, G.b);
   doc.circle(MARGIN + 2, y + 1.5, 1.6, "F");
   doc.setTextColor(C.text.r, C.text.g, C.text.b);
   doc.setFont("helvetica", "bold").setFontSize(10);
   doc.text(title, MARGIN + 7, y + 2.5);
   const lineY = y + 5;
-  doc.setDrawColor(C.gold.r, C.gold.g, C.gold.b);
+  doc.setDrawColor(G.r, G.g, G.b);
   doc.setLineWidth(0.35);
   doc.line(MARGIN, lineY, w - MARGIN, lineY);
   return lineY + 4;
 }
 
+const DATOS_TABLE_COLUMNS = {
+  0: { fontStyle: "bold" as const, fillColor: LABEL_FILL, cellWidth: 38 },
+  1: { fillColor: [255, 255, 255] as [number, number, number] },
+  2: { fontStyle: "bold" as const, fillColor: LABEL_FILL, cellWidth: 38 },
+  3: { fillColor: [255, 255, 255] as [number, number, number] },
+};
+
 /** Encabezado institucional con escudo Riberalta y logo SIRAT (maqueta PDF). */
-export async function drawFormularioPdfHeader(doc: jsPDF, usuario?: string): Promise<number> {
+export async function drawInstitucionalPdfHeader(
+  doc: jsPDF,
+  opts: {
+    usuario?: string;
+    titleLines: string[];
+    titleFontSize?: number;
+    /** Espacio extra (mm) entre la línea verde y el título */
+    titleMarginTop?: number;
+  },
+): Promise<number> {
   const w = doc.internal.pageSize.getWidth();
   const [logo, escudo] = await Promise.all([loadSiratLogoDataUrl(), loadEscudoRiberaltaDataUrl()]);
-  let y = drawSiratPdfTopBar(doc, { usuario }) + 5;
+  let y = drawSiratPdfTopBar(doc, { usuario: opts.usuario }) + 5;
 
   if (escudo) {
-    const escudoW = 24;
-    const escudoH = 28;
-    doc.addImage(escudo, "PNG", MARGIN, y, escudoW, escudoH);
+    doc.addImage(escudo, "PNG", MARGIN, y, 24, 28);
   }
 
   if (logo) {
@@ -82,19 +97,50 @@ export async function drawFormularioPdfHeader(doc: jsPDF, usuario?: string): Pro
   doc.text(JEFATURA_RECAUDACIONES, w / 2, y + 15, { align: "center" });
 
   y += 20;
-  doc.setDrawColor(C.gold.r, C.gold.g, C.gold.b);
+  doc.setDrawColor(G.r, G.g, G.b);
   doc.setLineWidth(0.4);
   doc.line(w / 2 - 42, y, w / 2 + 42, y);
-  y += 6;
+  y += 6 + (opts.titleMarginTop ?? 0);
 
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(C.primary.r, C.primary.g, C.primary.b);
-  doc.setFontSize(11);
-  doc.text("FORMULARIO DE REGISTRO Y VERIFICACIÓN", w / 2, y, { align: "center" });
-  y += 5;
-  doc.text("DE ACTIVIDADES ECONÓMICAS", w / 2, y + 1, { align: "center" });
+  doc.setTextColor(G.r, G.g, G.b);
+  const titleSize = opts.titleFontSize ?? 11;
+  const titleLineGap = titleSize * 0.42;
+  doc.setFontSize(titleSize);
+  for (const line of opts.titleLines) {
+    doc.text(line, w / 2, y, { align: "center" });
+    y += titleLineGap;
+  }
 
-  return y + 10;
+  return y + 6;
+}
+
+export async function drawFormularioPdfHeader(doc: jsPDF, usuario?: string): Promise<number> {
+  return drawInstitucionalPdfHeader(doc, {
+    usuario,
+    titleLines: [
+      "FORMULARIO DE REGISTRO Y VERIFICACIÓN",
+      "DE ACTIVIDADES ECONÓMICAS",
+    ],
+  });
+}
+
+type PdfTableRow = (string | { content: string; colSpan?: number; styles?: Record<string, unknown> })[];
+
+export function drawPdfTablaSection(
+  doc: jsPDF,
+  startY: number,
+  sectionTitle: string,
+  rows: PdfTableRow[],
+): number {
+  const y = drawSectionTitle(doc, startY, sectionTitle);
+  autoTable(doc, {
+    startY: y,
+    ...TABLE_BASE,
+    columnStyles: DATOS_TABLE_COLUMNS,
+    body: rows,
+  });
+  return (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 6;
 }
 
 export function drawFormularioDatosSection(
@@ -102,19 +148,7 @@ export function drawFormularioDatosSection(
   startY: number,
   rows: string[][],
 ): number {
-  let y = drawSectionTitle(doc, startY, "DATOS GENERALES");
-  autoTable(doc, {
-    startY: y,
-    ...TABLE_BASE,
-    columnStyles: {
-      0: { fontStyle: "bold", fillColor: LABEL_FILL, cellWidth: 38 },
-      1: { fillColor: [255, 255, 255] },
-      2: { fontStyle: "bold", fillColor: LABEL_FILL, cellWidth: 38 },
-      3: { fillColor: [255, 255, 255] },
-    },
-    body: rows,
-  });
-  return (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 6;
+  return drawPdfTablaSection(doc, startY, "DATOS GENERALES", rows);
 }
 
 export function drawFormularioInfoSection(

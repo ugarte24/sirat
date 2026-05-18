@@ -1,5 +1,4 @@
 import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 import { formatDateEsBo } from "@/lib/date";
 import { downloadJsPdf } from "@/lib/download-file";
 import {
@@ -10,6 +9,8 @@ import {
   drawFormularioPdfHeader,
   drawFormularioPdfSignatures,
   drawFormularioUbicacionSection,
+  drawInstitucionalPdfHeader,
+  drawPdfTablaSection,
 } from "@/lib/pdf-formulario-layout";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -18,16 +19,7 @@ import {
   type FormularioFotoPdfAsset,
 } from "@/lib/formulario-fotos";
 import { captureFormularioMapForPdf } from "@/lib/pdf-map-snapshot";
-import { drawSiratPdfTopBar, SIRAT_PDF_TABLE_STYLES } from "@/lib/report-format";
-import {
-  NOTIFICACION_TRIBUTARIA_PDF_TITULO,
-  SIRAT_REPORT_COLORS,
-  SIRAT_TAGLINE,
-} from "@/lib/sirat-brand";
-
-const C = SIRAT_REPORT_COLORS;
-const PDF_PRIMARY = C.primary;
-const LABEL_CELL_FILL: [number, number, number] = [C.zebra.r, C.zebra.g, C.zebra.b];
+import { NOTIFICACION_TRIBUTARIA_PDF_TITULO } from "@/lib/sirat-brand";
 
 /** Nombre de archivo PDF: solo razón social (caracteres no válidos en Windows eliminados). */
 function formularioPdfFilename(razonSocial: string, extraSuffix?: string): string {
@@ -39,26 +31,7 @@ function formularioPdfFilename(razonSocial: string, extraSuffix?: string): strin
   if (!base) return extraSuffix ? `${extraSuffix}.pdf` : "formulario.pdf";
   return extraSuffix ? `${base} - ${extraSuffix}.pdf` : `${base}.pdf`;
 }
-const PDF_TABLE_THEME = {
-  theme: "grid" as const,
-  styles: { fontSize: 9, cellPadding: 2 },
-  headStyles: { fillColor: [PDF_PRIMARY.r, PDF_PRIMARY.g, PDF_PRIMARY.b] as [number, number, number] },
-};
-
-
-function drawSiratPdfSignatures(
-  doc: jsPDF,
-  w: number,
-  finalY: number,
-  labels = ["Inspector Tributario", "Contribuyente", "Asesor Legal"],
-) {
-  const sigW = (w - 28) / labels.length;
-  labels.forEach((label, i) => {
-    const x = 14 + i * sigW;
-    doc.line(x + 5, finalY + 18, x + sigW - 5, finalY + 18);
-    doc.setFontSize(8).text(label, x + sigW / 2, finalY + 24, { align: "center" });
-  });
-}
+const PDF_LABEL_CELL = { fontStyle: "bold" as const, fillColor: [232, 236, 245] as [number, number, number] };
 
 interface FormularioData {
   fecha: string;
@@ -290,48 +263,57 @@ interface NotificacionData {
   fecha_limite: string;
   conceptos: string[];
   gestiones_adeudadas: string | null;
+  usuario?: string;
+}
+
+function notificacionPdfFilename(nombreActividad: string | null | undefined, ci: string): string {
+  const base = (nombreActividad?.trim() || ci)
+    .replace(/[\\/:*?"<>|]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!base) return "notificacion.pdf";
+  return `${base}.pdf`;
 }
 
 export async function generateNotificacionPDF(d: NotificacionData) {
   const doc = new jsPDF();
-  const w = doc.internal.pageSize.getWidth();
-  let y = drawSiratPdfTopBar(doc) + 8;
-
-  doc.setTextColor(C.text.r, C.text.g, C.text.b);
-  doc.setFontSize(9).setFont("helvetica", "normal");
-  doc.text(SIRAT_TAGLINE, w / 2, y, { align: "center" });
-  y += 6;
-
-  doc.setFontSize(13).setFont("helvetica", "bold");
-  doc.text(NOTIFICACION_TRIBUTARIA_PDF_TITULO, w / 2, y + 4, { align: "center" });
-
-  autoTable(doc, {
-    startY: y + 10,
-    ...PDF_TABLE_THEME,
-    body: [
-      ["Fecha emisión", formatDateEsBo(d.fecha), "", ""],
-      ["Contribuyente", d.contribuyente_nombre, "C.I.", d.contribuyente_ci],
-      [
-        "Nombre de la actividad",
-        d.nombre_actividad?.trim() || "—",
-        "Licencia / placa / inmueble",
-        d.numero_identificacion?.trim() || "—",
-      ],
-      ["Dirección", d.direccion, "Fecha límite", formatDateEsBo(d.fecha_limite)],
-      ["Conceptos", d.conceptos.join(", ") || "—", "", ""],
-      ["Gestiones adeudadas", d.gestiones_adeudadas?.trim() || "—", "", ""],
-    ],
+  let y = await drawInstitucionalPdfHeader(doc, {
+    usuario: d.usuario,
+    titleLines: [NOTIFICACION_TRIBUTARIA_PDF_TITULO],
+    titleFontSize: 17,
+    titleMarginTop: 12,
   });
 
-  const finalY = (doc as any).lastAutoTable.finalY + 20;
-  drawSiratPdfSignatures(doc, w, finalY);
+  y = drawPdfTablaSection(doc, y, "DATOS DE LA NOTIFICACIÓN", [
+    ["Fecha emisión", formatDateEsBo(d.fecha), "Fecha límite", formatDateEsBo(d.fecha_limite)],
+    ["Contribuyente", d.contribuyente_nombre, "C.I.", d.contribuyente_ci],
+    [
+      "Nombre de la actividad",
+      d.nombre_actividad?.trim() || "—",
+      "Licencia / placa / inmueble",
+      d.numero_identificacion?.trim() || "—",
+    ],
+    [
+      { content: "Dirección", styles: PDF_LABEL_CELL },
+      { content: d.direccion, colSpan: 3 },
+    ],
+    [
+      { content: "Conceptos", styles: PDF_LABEL_CELL },
+      { content: d.conceptos.join(", ") || "—", colSpan: 3 },
+    ],
+    [
+      { content: "Gestiones adeudadas", styles: PDF_LABEL_CELL },
+      { content: d.gestiones_adeudadas?.trim() || "—", colSpan: 3 },
+    ],
+  ]);
 
-  const slug = (d.nombre_actividad?.trim() || d.contribuyente_ci)
-    .replace(/[^\w\s-]/g, "")
-    .trim()
-    .replace(/\s+/g, "-")
-    .slice(0, 40) || "notificacion";
-  downloadJsPdf(doc, `notificacion-${slug}.pdf`);
+  drawFormularioPdfSignatures(doc, y, [
+    "Inspector Tributario",
+    "Contribuyente",
+    "Asesor Legal",
+  ]);
+
+  downloadJsPdf(doc, notificacionPdfFilename(d.nombre_actividad, d.contribuyente_ci));
 }
 
 export interface FormularioFotosPdfOpts {

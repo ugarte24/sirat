@@ -1,8 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  DetailField,
+  DetailGrid,
+  DetailSection,
+  DetailTemplate,
+} from "@/components/DetailTemplate";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -12,9 +17,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { NotificacionEditarForm } from "@/components/forms/NotificacionEditarForm";
-import { ArrowLeft, FileDown, Check, Ban, Pencil } from "lucide-react";
+import { ArrowLeft, FileDown, Check, Ban, Pencil, QrCode } from "lucide-react";
+import { NotificacionQrDialog } from "@/components/NotificacionQrDialog";
+import { buildNotificacionQrPayload } from "@/lib/notificacion-qr";
 import { toast } from "sonner";
 import { generateNotificacionPDF } from "@/lib/pdf";
+import { useAuth } from "@/lib/auth";
 import { notificacionConceptosMarcados } from "@/lib/sirat-forms";
 import { formatDateEsBo } from "@/lib/date";
 
@@ -22,8 +30,10 @@ export const Route = createFileRoute("/_app/notificaciones/$id")({ component: De
 
 function Detalle() {
   const { id } = Route.useParams();
+  const { profile } = useAuth();
   const [n, setN] = useState<any>(null);
   const [editOpen, setEditOpen] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false);
 
   const reload = useCallback(async () => {
     const { data } = await supabase
@@ -38,9 +48,30 @@ function Detalle() {
     void reload();
   }, [reload]);
 
+  const conceptos = useMemo(() => (n ? notificacionConceptosMarcados(n) : []), [n]);
+
+  const qrPayload = useMemo(
+    () =>
+      n
+        ? buildNotificacionQrPayload({
+            id,
+            created_at: n.created_at,
+            fecha_limite: n.fecha_limite,
+            contribuyente_nombre: n.contribuyente.nombre_completo,
+            contribuyente_ci: n.contribuyente.ci,
+            nombre_actividad: n.nombre_actividad,
+            numero_identificacion: n.numero_identificacion,
+            direccion: n.direccion,
+            conceptos,
+            gestiones_adeudadas: n.gestiones_adeudadas,
+          })
+        : null,
+    [id, n, conceptos],
+  );
+
   if (!n) {
     return (
-      <div className="space-y-4 max-w-xl">
+      <div className="space-y-4 max-w-2xl">
         <Button variant="ghost" size="sm" className="-ml-2 gap-1.5 px-2 text-muted-foreground hover:text-foreground" asChild>
           <Link to="/notificaciones">
             <ArrowLeft className="h-4 w-4 shrink-0" />
@@ -52,29 +83,32 @@ function Detalle() {
     );
   }
 
-  const conceptos = notificacionConceptosMarcados(n);
-
   const pdf = async () => {
     await generateNotificacionPDF({
-    fecha: n.created_at.slice(0, 10),
-    contribuyente_nombre: n.contribuyente.nombre_completo,
-    contribuyente_ci: n.contribuyente.ci,
-    nombre_actividad: n.nombre_actividad,
-    numero_identificacion: n.numero_identificacion,
-    direccion: n.direccion,
-    fecha_limite: n.fecha_limite,
-    conceptos,
-    gestiones_adeudadas: n.gestiones_adeudadas,
+      fecha: n.created_at.slice(0, 10),
+      contribuyente_nombre: n.contribuyente.nombre_completo,
+      contribuyente_ci: n.contribuyente.ci,
+      nombre_actividad: n.nombre_actividad,
+      numero_identificacion: n.numero_identificacion,
+      direccion: n.direccion,
+      fecha_limite: n.fecha_limite,
+      conceptos,
+      gestiones_adeudadas: n.gestiones_adeudadas,
+      usuario: profile?.full_name ?? profile?.email ?? undefined,
     });
   };
 
   const cambiarEstado = async (estado: any) => {
     const { error } = await supabase.from("notificaciones").update({ estado }).eq("id", id);
-    if (error) toast.error(error.message); else { setN({ ...n, estado }); toast.success(`Estado: ${estado}`); }
+    if (error) toast.error(error.message);
+    else {
+      setN({ ...n, estado });
+      toast.success(`Estado: ${estado}`);
+    }
   };
 
   return (
-    <div className="space-y-4 max-w-xl">
+    <div className="space-y-4 max-w-2xl">
       <Button variant="ghost" size="sm" className="-ml-2 gap-1.5 px-2 text-muted-foreground hover:text-foreground" asChild>
         <Link to="/notificaciones">
           <ArrowLeft className="h-4 w-4 shrink-0" />
@@ -82,51 +116,89 @@ function Detalle() {
         </Link>
       </Button>
 
-      <div className="flex justify-between items-start flex-wrap gap-2">
-        <div>
-          <h1 className="font-display text-2xl font-bold">Notificación</h1>
-        </div>
-        <Badge variant={n.estado === "cumplido" ? "default" : n.estado === "anulado" ? "destructive" : "secondary"}>{n.estado}</Badge>
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <h1 className="font-display text-2xl font-bold">Notificación</h1>
+        <Badge
+          variant={
+            n.estado === "cumplido" ? "default" : n.estado === "anulado" ? "destructive" : "secondary"
+          }
+        >
+          {n.estado}
+        </Badge>
       </div>
-      <div className="flex gap-2 flex-wrap">
-        <Button onClick={pdf} className="bg-gradient-primary"><FileDown className="h-4 w-4 mr-1" />PDF</Button>
+
+      <div className="flex flex-wrap gap-2">
+        <Button onClick={() => void pdf()} className="bg-gradient-primary">
+          <FileDown className="h-4 w-4 mr-1" />
+          PDF
+        </Button>
+        <Button variant="outline" type="button" onClick={() => setQrOpen(true)}>
+          <QrCode className="h-4 w-4 mr-1" />
+          QR
+        </Button>
         {n.estado === "pendiente" && (
           <Button variant="outline" type="button" onClick={() => setEditOpen(true)}>
             <Pencil className="h-4 w-4 mr-1" />
             Editar
           </Button>
         )}
-        {n.estado === "pendiente" && <>
-          <Button variant="outline" onClick={() => cambiarEstado("cumplido")}><Check className="h-4 w-4 mr-1" />Cumplido</Button>
-          <Button variant="destructive" onClick={() => cambiarEstado("anulado")}><Ban className="h-4 w-4 mr-1" />Anular</Button>
-        </>}
+        {n.estado === "pendiente" && (
+          <>
+            <Button variant="outline" onClick={() => void cambiarEstado("cumplido")}>
+              <Check className="h-4 w-4 mr-1" />
+              Cumplido
+            </Button>
+            <Button variant="destructive" onClick={() => void cambiarEstado("anulado")}>
+              <Ban className="h-4 w-4 mr-1" />
+              Anular
+            </Button>
+          </>
+        )}
       </div>
-      <Card className="p-5 space-y-2 text-sm">
-        <div>
-          <span className="text-muted-foreground">Nombre de la actividad:</span>{" "}
-          <strong>{n.nombre_actividad?.trim() || "—"}</strong>
-        </div>
-        <div>
-          <span className="text-muted-foreground">N.º licencia / placa / inmueble (opcional):</span>{" "}
-          <strong>{n.numero_identificacion?.trim() || "—"}</strong>
-        </div>
-        <div>
-          <span className="text-muted-foreground">Contribuyente:</span>{" "}
-          <strong>{n.contribuyente.nombre_completo}</strong>
-        </div>
-        <div><span className="text-muted-foreground">C.I.:</span> {n.contribuyente.ci}</div>
-        <div><span className="text-muted-foreground">Dirección:</span> {n.direccion}</div>
-        <div><span className="text-muted-foreground">Fecha límite:</span> {formatDateEsBo(n.fecha_limite)}</div>
-        <div><span className="text-muted-foreground">Conceptos:</span> {conceptos.join(", ") || "—"}</div>
-        <div>
-          <span className="text-muted-foreground">Observaciones o gestiones adeudadas:</span>{" "}
-          {n.gestiones_adeudadas?.trim() ? (
-            <span className="whitespace-pre-wrap">{n.gestiones_adeudadas.trim()}</span>
-          ) : (
-            "—"
-          )}
-        </div>
-      </Card>
+
+      <DetailTemplate>
+        <DetailSection title="Datos de la notificación" showSeparator={false}>
+          <DetailGrid>
+            <DetailField label="Fecha emisión" value={formatDateEsBo(n.created_at.slice(0, 10))} />
+            <DetailField label="Fecha límite" value={formatDateEsBo(n.fecha_limite)} />
+          </DetailGrid>
+        </DetailSection>
+        <DetailSection title="Actividad económica">
+          <DetailGrid>
+            <DetailField label="Nombre de la actividad" value={n.nombre_actividad?.trim() || "—"} />
+            <DetailField
+              label="Licencia / placa / inmueble"
+              value={n.numero_identificacion?.trim() || "—"}
+            />
+          </DetailGrid>
+        </DetailSection>
+        <DetailSection title="Contribuyente">
+          <DetailGrid>
+            <DetailField label="Nombre" value={n.contribuyente.nombre_completo} />
+            <DetailField label="C.I." value={n.contribuyente.ci} />
+            <DetailField label="Dirección" value={n.direccion} />
+          </DetailGrid>
+        </DetailSection>
+        <DetailSection title="Conceptos y gestiones">
+          <DetailGrid>
+            <DetailField label="Conceptos" value={conceptos.join(", ") || "—"} />
+            <DetailField
+              label="Gestiones adeudadas"
+              value={
+                n.gestiones_adeudadas?.trim() ? (
+                  <span className="whitespace-pre-wrap font-medium">{n.gestiones_adeudadas.trim()}</span>
+                ) : (
+                  "—"
+                )
+              }
+            />
+          </DetailGrid>
+        </DetailSection>
+      </DetailTemplate>
+
+      {qrPayload && (
+        <NotificacionQrDialog open={qrOpen} onOpenChange={setQrOpen} payload={qrPayload} />
+      )}
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
