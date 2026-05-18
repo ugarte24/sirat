@@ -26,6 +26,7 @@ function Detalle() {
   const { role } = useAuth();
   const [f, setF] = useState<any>(null);
   const [photos, setPhotos] = useState<{ url: string }[]>([]);
+  const [pdfBusy, setPdfBusy] = useState(false);
   const [fotosPdfBusy, setFotosPdfBusy] = useState(false);
 
   useEffect(() => { (async () => {
@@ -57,18 +58,38 @@ function Detalle() {
     );
   }
 
-  const pdf = () => generateFormularioPDF({
-    fecha: f.fecha,
-    razon_social: f.razon_social, contribuyente_nombre: f.contribuyente.nombre_completo,
-    contribuyente_ci: f.contribuyente.ci, nit: f.nit, zona: f.zona, superficie: f.superficie,
-    direccion: f.direccion, celular: f.celular, referencia: f.referencia,
-    latitud: f.latitud,
-    longitud: f.longitud,
-    procedente: f.procedente,
-    padron: f.padron,
-    bebidas_alcoholicas: f.bebidas_alcoholicas,
-    observacion: f.observacion, estado: f.estado,
-  });
+  const pdf = async () => {
+    setPdfBusy(true);
+    try {
+      await generateFormularioPDF({
+        fecha: f.fecha,
+        razon_social: f.razon_social,
+        contribuyente_nombre: f.contribuyente.nombre_completo,
+        contribuyente_ci: f.contribuyente.ci,
+        nit: f.nit,
+        zona: f.zona,
+        superficie: f.superficie,
+        direccion: f.direccion,
+        celular: f.celular,
+        referencia: f.referencia,
+        latitud: f.latitud,
+        longitud: f.longitud,
+        procedente: f.procedente,
+        padron: f.padron,
+        bebidas_alcoholicas: f.bebidas_alcoholicas,
+        observacion: f.observacion,
+        estado: f.estado,
+        imageUrls: photos.map((p) => p.url).filter(Boolean),
+      });
+    } catch (e) {
+      console.error(e);
+      toast.error(
+        e instanceof Error ? e.message : "No se pudo generar el PDF. Compruebe la conexión.",
+      );
+    } finally {
+      setPdfBusy(false);
+    }
+  };
 
   const pdfFotos = async () => {
     const urls = photos.map((p) => p.url).filter(Boolean);
@@ -127,9 +148,14 @@ function Detalle() {
 
       <div className="flex gap-2 flex-wrap">
         {f.estado === "activo" && f.superficie != null && (
-          <Button onClick={pdf} className="bg-gradient-primary">
+          <Button
+            type="button"
+            disabled={pdfBusy}
+            onClick={() => void pdf()}
+            className="bg-gradient-primary"
+          >
             <FileDown className="h-4 w-4 mr-1" />
-            PDF
+            {pdfBusy ? "Generando…" : "PDF"}
           </Button>
         )}
         {f.estado === "pendiente_verificacion" && (

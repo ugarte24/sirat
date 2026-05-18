@@ -38,5 +38,12 @@ export const FORMULARIO_VERIFICACION_SECCION = "Formularios de registro y verifi
 export const FORMULARIO_VERIFICACION_PDF_TITULO =
   "FORMULARIO DE REGISTRO Y VERIFICACIÓN DE ACTIVIDADES ECONÓMICAS";
 
+/** Encabezado institucional en PDF del formulario de actividades económicas */
+export const GAM_RIBERALTA_NOMBRE = "GOBIERNO AUTONOMO MUNICIPAL DE RIBERALTA";
+export const JEFATURA_RECAUDACIONES = "JEFATURA DE RECAUDACIONES";
+
+/** Etiqueta de firma en PDF del formulario (tercera columna) */
+export const FORMULARIO_PDF_FIRMA_ENCARGADO_RUAT = "Encargado de Ruat";
+
 /** Título en PDF de notificación tributaria */
 export const NOTIFICACION_TRIBUTARIA_PDF_TITULO = "NOTIFICACIÓN TRIBUTARIA";
