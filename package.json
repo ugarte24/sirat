@@ -1,6 +1,6 @@
 {
   "name": "tanstack_start_ts",
-  "version": "1.0.42",
+  "version": "1.0.43",
   "private": true,
   "sideEffects": false,
   "type": "module",
@@ -63,6 +63,7 @@
     "jspdf-autotable": "^5.0.7",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.575.0",
+    "pdfjs-dist": "^5.7.284",
     "qrcode": "^1.5.4",
     "react": "^19.2.0",
     "react-day-picker": "^9.14.0",
