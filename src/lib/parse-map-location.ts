@@ -48,6 +48,19 @@ export function isLikelyBoliviaBounds(lat: number, lng: number): boolean {
   return lat >= -23 && lat <= -9 && lng >= -70 && lng <= -57;
 }
 
+const COORD_NUM = String.raw`-?\d+(?:\.\d+)?`;
+/** Par lat,lng; Google a veces usa «,+» antes de la longitud (p. ej. /search/-11.00,+-66.06). */
+const COORD_PAIR = new RegExp(
+  `(${COORD_NUM})\\s*,\\s*\\+?\\s*(${COORD_NUM})`,
+  "i",
+);
+
+function matchCoordPair(decoded: string, re: RegExp): MapCoordinates | null {
+  const m = decoded.match(re);
+  if (!m) return null;
+  return validCoords(Number(m[1]), Number(m[2]));
+}
+
 /**
  * Extrae lat/lng de enlaces de Google Maps, geo: o texto con coordenadas (p. ej. WhatsApp).
  */
@@ -64,24 +77,24 @@ export function parseMapLocationInput(raw: string): MapCoordinates | null {
   }
 
   const patterns: RegExp[] = [
-    /[?&](?:q|query)=(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)/i,
-    /@(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)/,
-    /[?&](?:ll|center)=(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)/i,
-    /geo:(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)/i,
+    new RegExp(`[?&](?:q|query)=${COORD_PAIR.source}`, "i"),
+    new RegExp(`@\\s*${COORD_PAIR.source}`),
+    new RegExp(`[?&](?:ll|center)=${COORD_PAIR.source}`, "i"),
+    new RegExp(`/search/${COORD_PAIR.source}`, "i"),
+    new RegExp(`geo:${COORD_PAIR.source}`, "i"),
     /!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/i,
     /!8m2!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/i,
-    /\/(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)(?:,|\?|\/|$)/,
+    new RegExp(`/${COORD_PAIR.source}(?:[,\\?\\/]|$)`),
   ];
 
   for (const re of patterns) {
-    const m = decoded.match(re);
-    if (m) {
-      const c = validCoords(Number(m[1]), Number(m[2]));
-      if (c) return c;
-    }
+    const c = matchCoordPair(decoded, re);
+    if (c) return c;
   }
 
-  const pair = decoded.match(/(-?\d{1,2}(?:\.\d+)?)\s*[,;\s]+\s*(-?\d{1,3}(?:\.\d+)?)/);
+  const pair = decoded.match(
+    new RegExp(`(${COORD_NUM})\\s*[,;\\s+]+\\s*\\+?\\s*(${COORD_NUM})`),
+  );
   if (pair) {
     return validCoords(Number(pair[1]), Number(pair[2]));
   }

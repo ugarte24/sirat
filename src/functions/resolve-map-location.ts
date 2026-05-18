@@ -10,7 +10,7 @@ const inputSchema = z.object({
   text: z.string().trim().min(1).max(2048),
 });
 
-async function followMapRedirects(startUrl: string): Promise<string> {
+async function fetchExpandedMapLink(startUrl: string): Promise<{ url: string; html: string }> {
   const res = await fetch(startUrl, {
     method: "GET",
     redirect: "follow",
@@ -18,10 +18,11 @@ async function followMapRedirects(startUrl: string): Promise<string> {
       "User-Agent":
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
       Accept: "text/html,application/xhtml+xml",
+      "Accept-Language": "es-419,es;q=0.9",
     },
     signal: AbortSignal.timeout(12_000),
   });
-  return res.url || startUrl;
+  return { url: res.url || startUrl, html: await res.text() };
 }
 
 /** Resuelve enlaces cortos de WhatsApp / Google Maps y devuelve coordenadas. */
@@ -39,8 +40,8 @@ export const resolveMapLocationFn = createServerFn({ method: "POST" })
     }
 
     try {
-      const expanded = await followMapRedirects(url);
-      const fromUrl = parseMapLocationInput(expanded);
+      const { url: expanded, html } = await fetchExpandedMapLink(url);
+      const fromUrl = parseMapLocationInput(expanded) ?? parseMapLocationInput(html);
       if (fromUrl) return { ok: true as const, lat: fromUrl.lat, lng: fromUrl.lng };
 
       return { ok: false as const, code: "no_coords" as const };
