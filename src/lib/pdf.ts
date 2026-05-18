@@ -317,6 +317,8 @@ export async function buildNotificacionPdfDoc(d: NotificacionPdfData): Promise<j
     qrSizeMm: 22,
   });
 
+  y += 10;
+
   y = drawPdfTablaSection(doc, y, "DATOS DE LA NOTIFICACIÓN", [
     ["Fecha emisión", formatDateEsBo(d.fecha), "Contribuyente", d.contribuyente_nombre],
     [
