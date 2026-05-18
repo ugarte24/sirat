@@ -62,6 +62,10 @@ export function mapMarkerPinSvg(variant: MapMarkerVariant, width = 32): string {
 </svg>`;
 }
 
+export function createSiratMapMarkerIcon(variant: MapMarkerVariant = "verificado"): L.DivIcon {
+  return getMarkerIcon(variant);
+}
+
 function getMarkerIcon(variant: MapMarkerVariant): L.DivIcon {
   const cached = MARKER_ICON_CACHE[variant];
   if (cached) return cached;

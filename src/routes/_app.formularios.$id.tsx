@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,11 +23,12 @@ export const Route = createFileRoute("/_app/formularios/$id")({ component: Detal
 
 function Detalle() {
   const { id } = Route.useParams();
-  const { role } = useAuth();
+  const { role, profile } = useAuth();
   const [f, setF] = useState<any>(null);
   const [photos, setPhotos] = useState<{ url: string }[]>([]);
   const [pdfBusy, setPdfBusy] = useState(false);
   const [fotosPdfBusy, setFotosPdfBusy] = useState(false);
+  const mapCaptureRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { (async () => {
     const { data } = await supabase.from("formularios").select(
@@ -74,12 +75,15 @@ function Detalle() {
         referencia: f.referencia,
         latitud: f.latitud,
         longitud: f.longitud,
+        mapa_zoom: f.mapa_zoom,
+        mapCaptureElement: mapCaptureRef.current,
         procedente: f.procedente,
         padron: f.padron,
         bebidas_alcoholicas: f.bebidas_alcoholicas,
         observacion: f.observacion,
         estado: f.estado,
         imageUrls: photos.map((p) => p.url).filter(Boolean),
+        usuario: profile?.full_name ?? profile?.email ?? undefined,
       });
     } catch (e) {
       console.error(e);
@@ -233,7 +237,9 @@ function Detalle() {
 
       {f.latitud && (
         <Card className="p-3">
-          <MapPicker lat={f.latitud} lng={f.longitud} mapZoom={f.mapa_zoom} readOnly />
+          <div ref={mapCaptureRef}>
+            <MapPicker lat={f.latitud} lng={f.longitud} mapZoom={f.mapa_zoom} readOnly />
+          </div>
         </Card>
       )}
 

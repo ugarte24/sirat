@@ -8,6 +8,56 @@ import type { ReportColumn, ReporteFila } from "@/lib/report-export";
 
 const C = SIRAT_REPORT_COLORS;
 
+/** Barra azul SIRAT + línea dorada (como reportes). Devuelve la Y inicial del bloque de título. */
+export function drawSiratPdfTopBar(
+  doc: jsPDF,
+  opts: { usuario?: string; fechaReporte?: string } = {},
+): number {
+  const w = doc.internal.pageSize.getWidth();
+  const headerH = 20;
+  const fecha = opts.fechaReporte ?? formatReportDateTimeEsBo();
+
+  doc.setFillColor(C.primary.r, C.primary.g, C.primary.b);
+  doc.rect(0, 0, w, headerH, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFont("helvetica", "bold").setFontSize(16);
+  doc.text("SIRAT", 10, 9);
+  if (opts.usuario?.trim()) {
+    doc.setFont("helvetica", "normal").setFontSize(8);
+    doc.text(`USUARIO CONECTADO: ${opts.usuario.trim().toUpperCase()}`, 10, 15);
+  }
+  doc.setFont("helvetica", "bold").setFontSize(8);
+  doc.text(`FECHA REPORTE: ${fecha}`, w - 10, 12, { align: "right" });
+
+  doc.setFillColor(C.gold.r, C.gold.g, C.gold.b);
+  doc.rect(0, headerH, w, 1.2, "F");
+
+  return headerH + 1.2;
+}
+
+/** Estilos de tabla alineados con los reportes PDF/Excel. */
+export const SIRAT_PDF_TABLE_STYLES = {
+  theme: "plain" as const,
+  styles: {
+    fontSize: 9,
+    cellPadding: 2,
+    textColor: [C.text.r, C.text.g, C.text.b] as [number, number, number],
+    lineColor: [220, 224, 232] as [number, number, number],
+    lineWidth: 0.1,
+  },
+  headStyles: {
+    fillColor: [C.primary.r, C.primary.g, C.primary.b] as [number, number, number],
+    textColor: [255, 255, 255] as [number, number, number],
+    fontStyle: "bold" as const,
+    halign: "center" as const,
+  },
+  alternateRowStyles: {
+    fillColor: [C.zebra.r, C.zebra.g, C.zebra.b] as [number, number, number],
+  },
+  bodyStyles: { fillColor: [255, 255, 255] as [number, number, number] },
+  margin: { left: 10, right: 10 },
+};
+
 export interface ReportFormatMeta {
   titulo: string;
   subtitulo: string;
@@ -31,27 +81,8 @@ export function generateStyledReportPDF(
 ): jsPDF {
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const w = doc.internal.pageSize.getWidth();
-  const headerH = 20;
-  const fechaReporte = formatReportDateTimeEsBo();
 
-  // Barra superior
-  doc.setFillColor(C.primary.r, C.primary.g, C.primary.b);
-  doc.rect(0, 0, w, headerH, "F");
-  doc.setTextColor(255, 255, 255);
-  doc.setFont("helvetica", "bold").setFontSize(16);
-  doc.text("SIRAT", 10, 9);
-  doc.setFont("helvetica", "normal").setFontSize(8);
-  doc.text(`USUARIO CONECTADO: ${meta.usuario.toUpperCase()}`, 10, 15);
-  doc.setFont("helvetica", "bold").setFontSize(8);
-  const fechaLabel = `FECHA REPORTE: ${fechaReporte}`;
-  doc.text(fechaLabel, w - 10, 12, { align: "right" });
-
-  // Línea dorada
-  doc.setFillColor(C.gold.r, C.gold.g, C.gold.b);
-  doc.rect(0, headerH, w, 1.2, "F");
-
-  // Bloque de título
-  let y = headerH + 10;
+  let y = drawSiratPdfTopBar(doc, { usuario: meta.usuario }) + 10;
   doc.setTextColor(C.gold.r, C.gold.g, C.gold.b);
   doc.setFont("helvetica", "bold").setFontSize(18);
   doc.text(meta.titulo.toUpperCase(), w / 2, y, { align: "center" });
@@ -70,23 +101,8 @@ export function generateStyledReportPDF(
     startY: y + 6,
     head: [cols.map((c) => c.header)],
     body: rows.map((row) => cols.map((c) => row[c.key] ?? "")),
-    theme: "plain",
-    styles: {
-      fontSize: 7,
-      cellPadding: 2,
-      textColor: [C.text.r, C.text.g, C.text.b],
-      lineColor: [220, 224, 232],
-      lineWidth: 0.1,
-    },
-    headStyles: {
-      fillColor: [C.primary.r, C.primary.g, C.primary.b],
-      textColor: [255, 255, 255],
-      fontStyle: "bold",
-      halign: "center",
-    },
-    alternateRowStyles: { fillColor: [C.zebra.r, C.zebra.g, C.zebra.b] },
-    bodyStyles: { fillColor: [255, 255, 255] },
-    margin: { left: 10, right: 10 },
+    ...SIRAT_PDF_TABLE_STYLES,
+    styles: { ...SIRAT_PDF_TABLE_STYLES.styles, fontSize: 7 },
   });
 
   return doc;

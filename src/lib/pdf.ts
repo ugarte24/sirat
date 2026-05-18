@@ -3,16 +3,24 @@ import autoTable from "jspdf-autotable";
 import { formatDateEsBo } from "@/lib/date";
 import { downloadJsPdf } from "@/lib/download-file";
 import {
-  FORMULARIO_PDF_FIRMA_ENCARGADO_RUAT,
-  FORMULARIO_VERIFICACION_PDF_TITULO,
-  GAM_RIBERALTA_NOMBRE,
-  JEFATURA_RECAUDACIONES,
+  drawFormularioDatosSection,
+  drawFormularioInfoSection,
+  drawFormularioPdfFooter,
+  drawFormularioPdfHeader,
+  drawFormularioPdfSignatures,
+  drawFormularioUbicacionSection,
+} from "@/lib/pdf-formulario-layout";
+import { captureFormularioMapForPdf } from "@/lib/pdf-map-snapshot";
+import { drawSiratPdfTopBar, SIRAT_PDF_TABLE_STYLES } from "@/lib/report-format";
+import {
   NOTIFICACION_TRIBUTARIA_PDF_TITULO,
   SIRAT_REPORT_COLORS,
   SIRAT_TAGLINE,
 } from "@/lib/sirat-brand";
 
-const PDF_PRIMARY = SIRAT_REPORT_COLORS.primary;
+const C = SIRAT_REPORT_COLORS;
+const PDF_PRIMARY = C.primary;
+const LABEL_CELL_FILL: [number, number, number] = [C.zebra.r, C.zebra.g, C.zebra.b];
 const PDF_TABLE_THEME = {
   theme: "grid" as const,
   styles: { fontSize: 9, cellPadding: 2 },
@@ -27,23 +35,6 @@ function drawSiratPdfBanner(doc: jsPDF, w: number) {
   doc.text("SIRAT", 14, 14);
   doc.setFontSize(9).setFont("helvetica", "normal");
   doc.text(SIRAT_TAGLINE, 14, 21);
-}
-
-/** Encabezado del PDF del formulario de actividades económicas (altura en mm). */
-function drawFormularioPdfBanner(doc: jsPDF, w: number): number {
-  const bannerH = 40;
-  doc.setFillColor(PDF_PRIMARY.r, PDF_PRIMARY.g, PDF_PRIMARY.b);
-  doc.rect(0, 0, w, bannerH, "F");
-  doc.setTextColor(255);
-  doc.setFont("helvetica", "bold").setFontSize(10);
-  doc.text(GAM_RIBERALTA_NOMBRE, w / 2, 11, { align: "center" });
-  doc.setFont("helvetica", "normal").setFontSize(9);
-  doc.text(JEFATURA_RECAUDACIONES, w / 2, 17, { align: "center" });
-  doc.setFont("helvetica", "bold").setFontSize(16);
-  doc.text("SIRAT", 14, 28);
-  doc.setFont("helvetica", "normal").setFontSize(8);
-  doc.text(SIRAT_TAGLINE, 14, 34);
-  return bannerH;
 }
 
 function drawSiratPdfSignatures(
@@ -73,6 +64,7 @@ interface FormularioData {
   referencia: string;
   latitud?: number | null;
   longitud?: number | null;
+  mapa_zoom?: number | null;
   procedente: boolean;
   padron: boolean;
   bebidas_alcoholicas: boolean;
@@ -80,6 +72,10 @@ interface FormularioData {
   estado: string;
   /** URLs firmadas de fotos de verificación (se añaden en página(s) siguientes). */
   imageUrls?: string[];
+  /** Nombre del usuario que genera el PDF (barra superior). */
+  usuario?: string;
+  /** Contenedor del MapPicker visible (captura idéntica a la vista de registro). */
+  mapCaptureElement?: HTMLElement | null;
 }
 
 async function imageUrlToJpegDataUrl(url: string): Promise<{ dataUrl: string; w: number; h: number }> {
@@ -121,24 +117,41 @@ async function imageUrlToJpegDataUrl(url: string): Promise<{ dataUrl: string; w:
   }
 }
 
-function drawFormularioFotosSectionHeader(doc: jsPDF, w: number, razonSocial?: string): number {
-  const bannerH = drawFormularioPdfBanner(doc, w);
-  doc.setTextColor(0);
-  doc.setFont("helvetica", "bold").setFontSize(11);
-  doc.text("FOTOS DE LA VERIFICACIÓN", w / 2, bannerH + 8, { align: "center" });
-  if (razonSocial?.trim()) {
-    doc.setFont("helvetica", "normal").setFontSize(9);
-    const lines = doc.splitTextToSize(razonSocial.trim(), w - 28);
-    doc.text(lines, w / 2, bannerH + 14, { align: "center" });
-    return bannerH + 14 + lines.length * 4;
+function drawFormularioFotosSectionHeader(
+  doc: jsPDF,
+  w: number,
+  opts?: { razonSocial?: string; usuario?: string },
+): number {
+  let y = drawSiratPdfTopBar(doc, { usuario: opts?.usuario }) + 10;
+  doc.setTextColor(C.gold.r, C.gold.g, C.gold.b);
+  doc.setFont("helvetica", "bold").setFontSize(14);
+  doc.text("FOTOS DE LA VERIFICACIÓN", w / 2, y, { align: "center" });
+  y += 7;
+  if (opts?.razonSocial?.trim()) {
+    doc.setTextColor(C.text.r, C.text.g, C.text.b);
+    doc.setFont("helvetica", "bold").setFontSize(9);
+    const lines = doc.splitTextToSize(opts.razonSocial.trim().toUpperCase(), w - 24);
+    doc.text(lines, w / 2, y, { align: "center" });
+    y += lines.length * 4 + 2;
   }
-  return bannerH + 12;
+  return y + 2;
 }
 
-/** Añade página(s) con fotos al documento (nueva hoja si `startWithNewPage`). */
+function fitImageInBox(iw: number, ih: number, boxW: number, boxH: number) {
+  const aspect = iw / ih;
+  let w = boxW;
+  let h = w / aspect;
+  if (h > boxH) {
+    h = boxH;
+    w = h * aspect;
+  }
+  return { w, h };
+}
+
+/** Añade una sola hoja con todas las fotos escaladas para caber juntas. */
 async function appendFormularioFotosPages(
   doc: jsPDF,
-  opts: { imageUrls: string[]; razon_social?: string; startWithNewPage?: boolean },
+  opts: { imageUrls: string[]; razon_social?: string; usuario?: string; startWithNewPage?: boolean },
 ): Promise<void> {
   const urls = opts.imageUrls.filter(Boolean);
   if (!urls.length) return;
@@ -147,76 +160,81 @@ async function appendFormularioFotosPages(
   const pageH = doc.internal.pageSize.getHeight();
   const margin = 14;
   const maxW = pageW - 2 * margin;
-  const captionGap = 6;
+  const gap = 5;
 
   if (opts.startWithNewPage !== false) doc.addPage();
-  let y = drawFormularioFotosSectionHeader(doc, pageW, opts.razon_social);
+  const startY = drawFormularioFotosSectionHeader(doc, pageW, {
+    razonSocial: opts.razon_social,
+    usuario: opts.usuario,
+  });
 
-  for (let i = 0; i < urls.length; i++) {
-    const { dataUrl, w: iw, h: ih } = await imageUrlToJpegDataUrl(urls[i]);
-    const aspect = iw / ih;
+  const images = await Promise.all(urls.map((url) => imageUrlToJpegDataUrl(url)));
+  const n = images.length;
+  const cols = n <= 1 ? 1 : 2;
+  const rows = Math.ceil(n / cols);
+  const availableH = pageH - margin - startY;
+  const cellW = (maxW - (cols - 1) * gap) / cols;
+  const cellH = (availableH - (rows - 1) * gap) / rows;
 
-    let room = pageH - margin - y - captionGap;
-    if (room < 22) {
-      doc.addPage();
-      y = drawFormularioFotosSectionHeader(doc, pageW, opts.razon_social);
-      room = pageH - margin - y - captionGap;
-    }
+  images.forEach((img, i) => {
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const { w: dispW, h: dispH } = fitImageInBox(img.w, img.h, cellW, cellH);
+    const cellX = margin + col * (cellW + gap);
+    const cellY = startY + row * (cellH + gap);
+    const x = cellX + (cellW - dispW) / 2;
+    const y = cellY + (cellH - dispH) / 2;
 
-    let dispW = maxW;
-    let dispH = dispW / aspect;
-    if (dispH > room) {
-      dispH = room;
-      dispW = dispH * aspect;
-    }
-
-    doc.addImage(dataUrl, "JPEG", margin, y, dispW, dispH);
-    doc.setFontSize(7).setTextColor(90);
-    doc.text(`Foto ${i + 1} de ${urls.length}`, margin, y + dispH + 5);
-    doc.setTextColor(0);
-    y += dispH + captionGap + 4;
-  }
+    doc.addImage(img.dataUrl, "JPEG", x, y, dispW, dispH);
+  });
 }
 
 export async function generateFormularioPDF(d: FormularioData): Promise<void> {
   const doc = new jsPDF();
-  const w = doc.internal.pageSize.getWidth();
-  const headerH = drawFormularioPdfBanner(doc, w);
+  let y = await drawFormularioPdfHeader(doc, d.usuario);
 
-  doc.setTextColor(0);
-  doc.setFontSize(13).setFont("helvetica", "bold");
-  doc.text(FORMULARIO_VERIFICACION_PDF_TITULO, w / 2, headerH + 10, { align: "center" });
-
-  autoTable(doc, {
-    startY: headerH + 16,
-    ...PDF_TABLE_THEME,
-    body: [
-      ["Fecha", formatDateEsBo(d.fecha), "Estado", d.estado.toUpperCase()],
-      ["Contribuyente", d.contribuyente_nombre, "C.I.", d.contribuyente_ci],
-      ["Razón social", d.razon_social, "NIT", d.nit ?? "—"],
-      ["Zona", d.zona, "Superficie (m²)", String(d.superficie)],
-      ["Celular", d.celular, "", ""],
-      ["Dirección", d.direccion, "", ""],
-      ["Referencia", d.referencia, "", ""],
-      ["Coordenadas", d.latitud && d.longitud ? `${d.latitud}, ${d.longitud}` : "—", "", ""],
-      ["Procedente", d.procedente ? "SÍ" : "NO", "Padrón", d.padron ? "SÍ" : "NO"],
-      ["", "", "Bebidas alcohólicas", d.bebidas_alcoholicas ? "SÍ" : "NO"],
-      ["Observación", d.observacion ?? "—", "", ""],
-    ],
-  });
-
-  const finalY = (doc as any).lastAutoTable.finalY + 20;
-  drawSiratPdfSignatures(doc, w, finalY, [
-    FORMULARIO_PDF_FIRMA_ENCARGADO_RUAT,
-    "Inspector Tributario",
-    "Contribuyente",
+  y = drawFormularioDatosSection(doc, y, [
+    ["Fecha", formatDateEsBo(d.fecha), "Superficie (m²)", String(d.superficie)],
+    ["Contribuyente", d.contribuyente_nombre, "Celular", d.celular],
+    ["C.I.", d.contribuyente_ci, "Dirección", d.direccion],
+    ["Razón social", d.razon_social, "Referencia", d.referencia],
+    ["NIT", d.nit ?? "—", "Zona", d.zona],
   ]);
+
+  y = drawFormularioInfoSection(
+    doc,
+    y,
+    d.procedente ? "SÍ" : "NO",
+    d.padron ? "SÍ" : "NO",
+    d.bebidas_alcoholicas ? "SÍ" : "NO",
+    d.observacion?.trim() || "—",
+  );
+
+  const la = d.latitud != null ? Number(d.latitud) : NaN;
+  const ln = d.longitud != null ? Number(d.longitud) : NaN;
+  if (Number.isFinite(la) && Number.isFinite(ln)) {
+    try {
+      const mapDataUrl = await captureFormularioMapForPdf(
+        la,
+        ln,
+        d.mapa_zoom ?? 17,
+        d.mapCaptureElement,
+      );
+      y = drawFormularioUbicacionSection(doc, y, mapDataUrl);
+    } catch (e) {
+      console.warn("Mapa no incluido en PDF:", e);
+    }
+  }
+
+  y = drawFormularioPdfSignatures(doc, y);
+  drawFormularioPdfFooter(doc, y);
 
   const urls = d.imageUrls?.filter(Boolean) ?? [];
   if (urls.length) {
     await appendFormularioFotosPages(doc, {
       imageUrls: urls,
       razon_social: d.razon_social,
+      usuario: d.usuario,
       startWithNewPage: true,
     });
   }
