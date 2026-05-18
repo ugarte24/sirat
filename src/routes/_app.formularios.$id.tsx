@@ -26,7 +26,7 @@ function Detalle() {
   const { id } = Route.useParams();
   const { role, profile } = useAuth();
   const [f, setF] = useState<any>(null);
-  const [photos, setPhotos] = useState<{ url: string; blob?: Blob }[]>([]);
+  const [photos, setPhotos] = useState<{ url: string; storagePath: string; blob?: Blob }[]>([]);
   const [pdfBusy, setPdfBusy] = useState(false);
   const [fotosPdfBusy, setFotosPdfBusy] = useState(false);
   const mapCaptureRef = useRef<HTMLDivElement>(null);
@@ -44,7 +44,11 @@ function Detalle() {
             supabase.storage.from("formulario-fotos").createSignedUrl(p.storage_path, 3600),
             downloadFormularioFoto(supabase, p.storage_path),
           ]);
-          return { url: signed?.signedUrl ?? "", blob: blob ?? undefined };
+          return {
+            url: signed?.signedUrl ?? "",
+            storagePath: p.storage_path,
+            blob: blob ?? undefined,
+          };
         }),
       );
       setPhotos(urls);
@@ -64,6 +68,15 @@ function Detalle() {
       </div>
     );
   }
+
+  const resolvePhotosForPdf = async () =>
+    Promise.all(
+      photos.map(async (p) => ({
+        url: p.url,
+        storagePath: p.storagePath,
+        blob: (await downloadFormularioFoto(supabase, p.storagePath)) ?? p.blob,
+      })),
+    );
 
   const pdf = async () => {
     setPdfBusy(true);
@@ -88,8 +101,7 @@ function Detalle() {
         bebidas_alcoholicas: f.bebidas_alcoholicas,
         observacion: f.observacion,
         estado: f.estado,
-        imageUrls: photos.map((p) => p.url).filter(Boolean),
-        imageBlobs: photos.filter((p) => p.url).map((p) => p.blob),
+        photos: await resolvePhotosForPdf(),
         usuario: profile?.full_name ?? profile?.email ?? undefined,
       });
       if (fotosSolicitadas > 0 && fotosIncluidas < fotosSolicitadas) {
@@ -117,8 +129,7 @@ function Detalle() {
     try {
       await generateFormularioFotosPDF({
         razon_social: f.razon_social,
-        imageUrls: urls,
-        imageBlobs: photos.filter((p) => p.url).map((p) => p.blob),
+        photos: await resolvePhotosForPdf(),
         usuario: profile?.full_name ?? profile?.email ?? undefined,
       });
     } catch (e) {

@@ -164,6 +164,38 @@ export async function prepareFormularioFotoFile(
   }
 }
 
+export type FormularioFotoPdfAsset = {
+  dataUrl: string;
+  w: number;
+  h: number;
+  format: "JPEG";
+};
+
+/** Decodifica un blob de Storage a JPEG embebible en jsPDF. */
+export async function blobToFormularioPdfImage(blob: Blob): Promise<FormularioFotoPdfAsset> {
+  if (!blob.size) throw new Error("Imagen vacía");
+  const type = blob.type?.startsWith("image/") ? blob.type : "image/jpeg";
+  const file = new File([blob], "foto.jpg", { type });
+  const { source, width, height, cleanup } = await loadImageSource(file);
+  try {
+    if (width < 1 || height < 1) throw new Error("Dimensiones inválidas");
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Canvas no disponible");
+    ctx.drawImage(source, 0, 0, width, height);
+    return {
+      dataUrl: canvas.toDataURL("image/jpeg", 0.92),
+      w: width,
+      h: height,
+      format: "JPEG",
+    };
+  } finally {
+    cleanup?.();
+  }
+}
+
 /** Validación rápida antes de subir (re-comprime si hiciera falta). */
 export async function ensureFormularioFotoFile(file: File): Promise<File> {
   const { file: ready } = await prepareFormularioFotoFile(file);

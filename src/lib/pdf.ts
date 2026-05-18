@@ -11,6 +11,12 @@ import {
   drawFormularioPdfSignatures,
   drawFormularioUbicacionSection,
 } from "@/lib/pdf-formulario-layout";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  blobToFormularioPdfImage,
+  downloadFormularioFoto,
+  type FormularioFotoPdfAsset,
+} from "@/lib/formulario-fotos";
 import { captureFormularioMapForPdf } from "@/lib/pdf-map-snapshot";
 import { drawSiratPdfTopBar, SIRAT_PDF_TABLE_STYLES } from "@/lib/report-format";
 import {
@@ -73,9 +79,11 @@ interface FormularioData {
   bebidas_alcoholicas: boolean;
   observacion?: string | null;
   estado: string;
-  /** URLs firmadas de fotos de verificación (se añaden en página(s) siguientes). */
+  /** Fotos para la hoja 2 (preferir storagePath para descarga fiable). */
+  photos?: FormularioPdfPhoto[];
+  /** @deprecated Usar photos */
   imageUrls?: string[];
-  /** Blobs descargados vía Supabase (evita CORS al rasterizar). Mismo orden que imageUrls. */
+  /** @deprecated Usar photos */
   imageBlobs?: (Blob | undefined)[];
   /** Nombre del usuario que genera el PDF (barra superior). */
   usuario?: string;
@@ -83,108 +91,60 @@ interface FormularioData {
   mapCaptureElement?: HTMLElement | null;
 }
 
-type PdfImageAsset = { dataUrl: string; w: number; h: number; format: "JPEG" | "PNG" };
+export type FormularioPdfPhoto = {
+  url?: string;
+  storagePath?: string;
+  blob?: Blob;
+};
 
-async function rasterizeImageElement(img: HTMLImageElement): Promise<PdfImageAsset> {
-  const canvas = document.createElement("canvas");
-  canvas.width = img.naturalWidth || img.width;
-  canvas.height = img.naturalHeight || img.height;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("Canvas no disponible");
-  ctx.drawImage(img, 0, 0);
-  const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
-  return { dataUrl, w: canvas.width, h: canvas.height, format: "JPEG" };
+type PdfImageAsset = FormularioFotoPdfAsset;
+
+function normalizeFormularioPhotos(d: {
+  photos?: FormularioPdfPhoto[];
+  imageUrls?: string[];
+  imageBlobs?: (Blob | undefined)[];
+}): FormularioPdfPhoto[] {
+  if (d.photos?.length) return d.photos;
+  return (d.imageUrls ?? [])
+    .map((url, i) => ({ url, blob: d.imageBlobs?.[i] }))
+    .filter((p) => Boolean(p.url || p.storagePath || p.blob));
 }
 
-async function loadPhotoFromBlob(blob: Blob): Promise<PdfImageAsset> {
-  if (typeof createImageBitmap === "function") {
-    try {
-      const bmp = await createImageBitmap(blob);
-      const canvas = document.createElement("canvas");
-      canvas.width = bmp.width;
-      canvas.height = bmp.height;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) throw new Error("Canvas no disponible");
-      ctx.drawImage(bmp, 0, 0);
-      bmp.close();
-      return {
-        dataUrl: canvas.toDataURL("image/jpeg", 0.92),
-        w: canvas.width,
-        h: canvas.height,
-        format: "JPEG",
-      };
-    } catch {
-      /* object URL + Image */
-    }
-  }
-  const objectUrl = URL.createObjectURL(blob);
-  try {
-    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-      const el = new Image();
-      el.onload = () => resolve(el);
-      el.onerror = () => reject(new Error("decode"));
-      el.src = objectUrl;
+async function resolvePhotoForPdf(photo: FormularioPdfPhoto): Promise<PdfImageAsset> {
+  const attempts: Array<() => Promise<PdfImageAsset>> = [];
+
+  if (photo.storagePath?.trim()) {
+    const path = photo.storagePath.trim();
+    attempts.push(async () => {
+      const blob = await downloadFormularioFoto(supabase, path);
+      if (!blob?.size) throw new Error("Descarga vacía");
+      return blobToFormularioPdfImage(blob);
     });
-    return rasterizeImageElement(img);
-  } finally {
-    URL.revokeObjectURL(objectUrl);
   }
-}
 
-async function loadPhotoForPdf(url: string, blob?: Blob): Promise<PdfImageAsset> {
-  if (blob) return loadPhotoFromBlob(blob);
-  try {
-    const res = await fetch(url, { mode: "cors", credentials: "omit" });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const blob = await res.blob();
-    if (typeof createImageBitmap === "function") {
-      try {
-        const bmp = await createImageBitmap(blob);
-        const canvas = document.createElement("canvas");
-        canvas.width = bmp.width;
-        canvas.height = bmp.height;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) throw new Error("Canvas no disponible");
-        ctx.drawImage(bmp, 0, 0);
-        bmp.close();
-        return {
-          dataUrl: canvas.toDataURL("image/jpeg", 0.92),
-          w: canvas.width,
-          h: canvas.height,
-          format: "JPEG",
-        };
-      } catch {
-        /* Image + object URL */
-      }
-    }
-    const objectUrl = URL.createObjectURL(blob);
-    try {
-      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-        const el = new Image();
-        el.crossOrigin = "anonymous";
-        el.onload = () => resolve(el);
-        el.onerror = () => reject(new Error("decode"));
-        el.src = objectUrl;
-      });
-      return await rasterizeImageElement(img);
-    } finally {
-      URL.revokeObjectURL(objectUrl);
-    }
-  } catch {
-    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-      const el = new Image();
-      el.crossOrigin = "anonymous";
-      el.onload = () => resolve(el);
-      el.onerror = () => reject(new Error("No se pudo cargar la foto"));
-      el.src = url;
+  if (photo.blob?.size) {
+    const blob = photo.blob;
+    attempts.push(() => blobToFormularioPdfImage(blob));
+  }
+
+  if (photo.url?.trim()) {
+    const url = photo.url.trim();
+    attempts.push(async () => {
+      const res = await fetch(url, { credentials: "omit" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return blobToFormularioPdfImage(await res.blob());
     });
-    return rasterizeImageElement(img);
   }
-}
 
-async function imageUrlToJpegDataUrl(url: string): Promise<{ dataUrl: string; w: number; h: number }> {
-  const asset = await loadPhotoForPdf(url);
-  return { dataUrl: asset.dataUrl, w: asset.w, h: asset.h };
+  let lastErr: unknown;
+  for (const attempt of attempts) {
+    try {
+      return await attempt();
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  throw lastErr instanceof Error ? lastErr : new Error("No se pudo cargar la foto");
 }
 
 function fitImageInBox(iw: number, ih: number, boxW: number, boxH: number) {
@@ -198,18 +158,38 @@ function fitImageInBox(iw: number, ih: number, boxW: number, boxH: number) {
   return { w, h };
 }
 
+/** Fotos apaisadas (ancho ≥ alto): una debajo de otra; verticales: hasta 2 por fila. */
+function fotosPdfLayout(images: Pick<PdfImageAsset, "w" | "h">[]): { cols: number; rows: number } {
+  const n = images.length;
+  if (n <= 1) return { cols: 1, rows: n };
+  const apaisadas = images.every((img) => img.w >= img.h);
+  if (apaisadas) return { cols: 1, rows: n };
+  return { cols: 2, rows: Math.ceil(n / 2) };
+}
+
 /** Añade una hoja con todas las fotos (debe llamarse con la página 2 ya activa si aplica). */
 async function appendFormularioFotosPages(
   doc: jsPDF,
   opts: {
-    imageUrls: string[];
-    imageBlobs?: (Blob | undefined)[];
+    photos: FormularioPdfPhoto[];
     usuario?: string;
     startWithNewPage?: boolean;
   },
 ): Promise<number> {
-  const urls = opts.imageUrls.filter(Boolean);
-  if (!urls.length) return 0;
+  const sources = opts.photos.filter((p) => p.url || p.storagePath || p.blob);
+  if (!sources.length) return 0;
+
+  const images: PdfImageAsset[] = [];
+  for (const photo of sources) {
+    try {
+      images.push(await resolvePhotoForPdf(photo));
+    } catch (e) {
+      console.warn("Foto omitida en PDF:", photo.storagePath ?? photo.url, e);
+    }
+  }
+  if (!images.length) {
+    throw new Error("No se pudieron cargar las fotos para el PDF");
+  }
 
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
@@ -220,22 +200,8 @@ async function appendFormularioFotosPages(
   if (opts.startWithNewPage !== false) doc.addPage();
   const startY = drawFormularioFotosPageStart(doc, opts.usuario);
 
-  const images: PdfImageAsset[] = [];
-  for (let i = 0; i < urls.length; i++) {
-    try {
-      images.push(await loadPhotoForPdf(urls[i], opts.imageBlobs?.[i]));
-    } catch (e) {
-      console.warn("Foto omitida en PDF:", urls[i], e);
-    }
-  }
-  if (!images.length) {
-    throw new Error("No se pudieron cargar las fotos para el PDF");
-  }
-
-  const n = images.length;
-  const cols = n <= 1 ? 1 : 2;
-  const rows = Math.ceil(n / cols);
-  const availableH = Math.max(40, pageH - margin - startY);
+  const { cols, rows } = fotosPdfLayout(images);
+  const availableH = Math.max(40, pageH - margin - startY - 12);
   const cellW = (maxW - (cols - 1) * gap) / cols;
   const cellH = Math.max(30, (availableH - (rows - 1) * gap) / rows);
 
@@ -248,7 +214,7 @@ async function appendFormularioFotosPages(
     const cellY = startY + row * (cellH + gap);
     const x = cellX + (cellW - dispW) / 2;
     const y = cellY + (cellH - dispH) / 2;
-    doc.addImage(img.dataUrl, img.format, x, y, dispW, dispH);
+    doc.addImage(img.dataUrl, "JPEG", x, y, dispW, dispH);
   });
 
   return images.length;
@@ -296,13 +262,12 @@ export async function generateFormularioPDF(
   y = drawFormularioPdfSignatures(doc, y);
   drawFormularioPdfFooter(doc, y, 1);
 
-  const urls = d.imageUrls?.filter(Boolean) ?? [];
+  const photoSources = normalizeFormularioPhotos(d);
   let fotosIncluidas = 0;
-  if (urls.length) {
+  if (photoSources.length) {
     try {
       fotosIncluidas = await appendFormularioFotosPages(doc, {
-        imageUrls: urls,
-        imageBlobs: d.imageBlobs,
+        photos: photoSources,
         usuario: d.usuario,
         startWithNewPage: true,
       });
@@ -312,7 +277,7 @@ export async function generateFormularioPDF(
   }
 
   downloadJsPdf(doc, formularioPdfFilename(d.razon_social));
-  return { fotosIncluidas, fotosSolicitadas: urls.length };
+  return { fotosIncluidas, fotosSolicitadas: photoSources.length };
 }
 
 interface NotificacionData {
@@ -372,20 +337,20 @@ export async function generateNotificacionPDF(d: NotificacionData) {
 export interface FormularioFotosPdfOpts {
   razon_social?: string;
   usuario?: string;
-  /** URLs firmadas o públicas de las imágenes */
-  imageUrls: string[];
+  photos?: FormularioPdfPhoto[];
+  /** @deprecated Usar photos */
+  imageUrls?: string[];
   imageBlobs?: (Blob | undefined)[];
 }
 
 /** PDF solo con las fotos del formulario (A4, listo para imprimir). */
 export async function generateFormularioFotosPDF(opts: FormularioFotosPdfOpts): Promise<void> {
-  const urls = opts.imageUrls.filter(Boolean);
-  if (!urls.length) throw new Error("Sin fotos");
+  const photos = normalizeFormularioPhotos(opts);
+  if (!photos.length) throw new Error("Sin fotos");
 
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
   await appendFormularioFotosPages(doc, {
-    imageUrls: urls,
-    imageBlobs: opts.imageBlobs,
+    photos,
     usuario: opts.usuario,
     startWithNewPage: false,
   });
