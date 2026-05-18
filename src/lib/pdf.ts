@@ -8,6 +8,7 @@ import {
   drawFormularioInfoSection,
   drawFormularioPdfFooter,
   drawFormularioPdfHeader,
+  drawFormularioPdfSignatures,
   drawFormularioUbicacionSection,
   drawInstitucionalPdfHeader,
   drawPdfTablaSection,
