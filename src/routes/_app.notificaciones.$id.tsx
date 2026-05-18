@@ -54,6 +54,8 @@ function Detalle() {
 
   const conceptos = useMemo(() => (n ? notificacionConceptosMarcados(n) : []), [n]);
 
+  const contrib = n?.contribuyente as { nombre_completo: string; ci: string } | null | undefined;
+
   const qrPayload = useMemo(
     () =>
       n
@@ -61,8 +63,8 @@ function Detalle() {
             id,
             created_at: n.created_at,
             fecha_limite: n.fecha_limite,
-            contribuyente_nombre: n.contribuyente.nombre_completo,
-            contribuyente_ci: n.contribuyente.ci,
+            contribuyente_nombre: contrib?.nombre_completo ?? "—",
+            contribuyente_ci: contrib?.ci ?? "—",
             nombre_actividad: n.nombre_actividad,
             numero_identificacion: n.numero_identificacion,
             direccion: n.direccion,
@@ -70,7 +72,7 @@ function Detalle() {
             gestiones_adeudadas: n.gestiones_adeudadas,
           })
         : null,
-    [id, n, conceptos],
+    [id, n, conceptos, contrib],
   );
 
   if (!n) {
@@ -91,8 +93,8 @@ function Detalle() {
     await generateNotificacionPDF({
       id,
       fecha: n.created_at.slice(0, 10),
-      contribuyente_nombre: n.contribuyente.nombre_completo,
-      contribuyente_ci: n.contribuyente.ci,
+      contribuyente_nombre: contrib?.nombre_completo ?? "—",
+      contribuyente_ci: contrib?.ci ?? "—",
       nombre_actividad: n.nombre_actividad,
       numero_identificacion: n.numero_identificacion,
       direccion: n.direccion,
@@ -188,7 +190,7 @@ function Detalle() {
         <DetailSection title="Datos de la notificación" showSeparator={false}>
           <DetailGrid>
             <DetailField label="Fecha emisión" value={formatDateEsBo(n.created_at.slice(0, 10))} />
-            <DetailField label="Contribuyente" value={n.contribuyente.nombre_completo} />
+            <DetailField label="Contribuyente" value={contrib?.nombre_completo ?? "—"} />
             <DetailField label="Nombre de la actividad" value={n.nombre_actividad?.trim() || "—"} />
             <DetailField label="Dirección" value={n.direccion} />
             <DetailField label="Conceptos" value={conceptos.join(", ") || "—"} />
@@ -210,7 +212,7 @@ function Detalle() {
                 value={<span className="whitespace-pre-wrap font-medium">{n.observacion_seguimiento}</span>}
               />
             ) : null}
-            <DetailField label="C.I." value={n.contribuyente.ci} />
+            <DetailField label="C.I." value={contrib?.ci ?? "—"} />
             <DetailField
               label="Licencia / placa / inmueble"
               value={n.numero_identificacion?.trim() || "—"}

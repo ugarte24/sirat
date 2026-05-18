@@ -378,7 +378,7 @@ export type NotificacionInsertPayload = Pick<
 
 function notificacionStateToRowFields(n: NotificacionNuevaState) {
   return {
-    contribuyente_id: n.contribuyente_id,
+    contribuyente_id: n.contribuyente_id.trim() || null,
     nombre_actividad: trimUpperOrNull(n.nombre_actividad),
     numero_identificacion: trimUpperOrNull(n.numero_identificacion),
     direccion: trimUpper(n.direccion),
@@ -445,7 +445,7 @@ export function notificacionStateToUpdate(n: NotificacionNuevaState): Notificaci
 
 export function notificacionRowToState(row: NotifRow): NotificacionNuevaState {
   return {
-    contribuyente_id: row.contribuyente_id,
+    contribuyente_id: row.contribuyente_id ?? "",
     nombre_actividad: row.nombre_actividad ?? "",
     numero_identificacion: row.numero_identificacion ?? "",
     direccion: row.direccion,

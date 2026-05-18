@@ -74,7 +74,6 @@ export function NotificacionNuevaForm({
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!n.contribuyente_id) return toast.error("Selecciona contribuyente");
     if (!n.fecha_limite.trim()) return toast.error("Indique la fecha límite");
     const hasConcepto =
       n.padron_municipal ||
@@ -138,12 +137,13 @@ export function NotificacionNuevaForm({
     <form onSubmit={submit} className="space-y-4">
       <Card className="p-5 space-y-4 border-0 shadow-none sm:border sm:shadow-sm">
         <div>
-          <Label>Contribuyente *</Label>
+          <Label>Contribuyente (opcional)</Label>
           <ContribuyenteCombobox
             contribs={contribs}
             value={n.contribuyente_id}
             onValueChange={(v) => setN({ ...n, contribuyente_id: v })}
             placeholder="Seleccionar contribuyente"
+            allowClear
           />
           {onPedirAltaContribuyente ? (
             <Button

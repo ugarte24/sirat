@@ -49,9 +49,6 @@ export const getNotificacionPublicaFn = createServerFn({ method: "POST" })
         | { nombre_completo: string; ci: string }
         | null
         | undefined;
-      if (!contrib?.nombre_completo || !contrib.ci) {
-        return { ok: false as const };
-      }
       const conceptos = notificacionConceptosMarcados(row);
 
       return {
@@ -60,8 +57,8 @@ export const getNotificacionPublicaFn = createServerFn({ method: "POST" })
           id: row.id,
           created_at: row.created_at,
           fecha_limite: row.fecha_limite,
-          contribuyente_nombre: contrib.nombre_completo,
-          contribuyente_ci: contrib.ci,
+          contribuyente_nombre: contrib?.nombre_completo ?? "—",
+          contribuyente_ci: contrib?.ci ?? "—",
           nombre_actividad: row.nombre_actividad,
           numero_identificacion: row.numero_identificacion,
           direccion: row.direccion,

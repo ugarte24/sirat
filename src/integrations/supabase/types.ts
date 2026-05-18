@@ -162,7 +162,7 @@ export type Database = {
       notificaciones: {
         Row: {
           bienes_inmuebles: boolean
-          contribuyente_id: string
+          contribuyente_id: string | null
           created_at: string
           created_by: string | null
           direccion: string
@@ -181,7 +181,7 @@ export type Database = {
         }
         Insert: {
           bienes_inmuebles?: boolean
-          contribuyente_id: string
+          contribuyente_id?: string | null
           created_at?: string
           created_by?: string | null
           direccion: string

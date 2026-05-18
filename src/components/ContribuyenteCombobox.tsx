@@ -20,6 +20,8 @@ export type ContribuyenteComboboxProps = {
   disabled?: boolean;
   /** Texto del botón cuando no hay selección */
   placeholder?: string;
+  /** Permite quitar la selección (valor vacío) */
+  allowClear?: boolean;
 };
 
 export function ContribuyenteCombobox({
@@ -28,6 +30,7 @@ export function ContribuyenteCombobox({
   onValueChange,
   disabled,
   placeholder = "Buscar y seleccionar contribuyente…",
+  allowClear = false,
 }: ContribuyenteComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [cmdKey, setCmdKey] = React.useState(0);
@@ -71,6 +74,20 @@ export function ContribuyenteCombobox({
           <CommandList>
             <CommandEmpty>No hay resultados.</CommandEmpty>
             <CommandGroup>
+              {allowClear ? (
+                <CommandItem
+                  value="__sin_contribuyente__"
+                  onSelect={() => {
+                    onValueChange("");
+                    setOpen(false);
+                  }}
+                >
+                  <Check
+                    className={cn("mr-2 h-4 w-4 shrink-0", !value ? "opacity-100" : "opacity-0")}
+                  />
+                  <span className="text-muted-foreground">Sin contribuyente</span>
+                </CommandItem>
+              ) : null}
               {contribs.map((c) => (
                 <CommandItem
                   key={c.id}

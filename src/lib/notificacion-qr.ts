@@ -68,7 +68,7 @@ export function decodeNotificacionQrPayload(encoded: string): NotificacionQrPayl
   try {
     const data = JSON.parse(base64UrlDecode(encoded)) as NotificacionQrPayload;
     if (data?.t !== "notificacion" || data?.v !== NOTIFICACION_QR_VERSION) return null;
-    if (!data.id || !data.contribuyente_ci) return null;
+    if (!data.id) return null;
     return data;
   } catch {
     return null;
