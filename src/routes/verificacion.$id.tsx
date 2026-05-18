@@ -1,44 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { NotificacionVerificacionView } from "@/components/NotificacionVerificacionView";
-import { getNotificacionPublicaFn } from "@/functions/get-notificacion-publica";
-import { decodeNotificacionQrPayload } from "@/lib/notificacion-qr";
+import {
+  loadVerificacionNotificacion,
+  parseVerificacionSearch,
+} from "@/lib/verificacion-notificacion";
 import { SiratLoginBrand } from "@/components/SiratLoginBrand";
 import { Loader2 } from "lucide-react";
 
-type VerificacionSearch = {
-  d?: string;
-};
-
-export type VerificacionLoaderResult =
-  | { ok: true; payload: NonNullable<ReturnType<typeof decodeNotificacionQrPayload>> }
-  | { ok: false };
-
-function payloadFromSearch(id: string, d?: string) {
-  if (!d) return null;
-  const decoded = decodeNotificacionQrPayload(d);
-  if (!decoded || decoded.id !== id) return null;
-  return decoded;
-}
-
 export const Route = createFileRoute("/verificacion/$id")({
-  validateSearch: (search: Record<string, unknown>): VerificacionSearch => ({
-    d: typeof search.d === "string" ? search.d : undefined,
-  }),
-  loader: async ({ params, location }): Promise<VerificacionLoaderResult> => {
-    const d = (location.search as VerificacionSearch).d;
-    const fromQr = payloadFromSearch(params.id, d);
-
-    try {
-      const result = await getNotificacionPublicaFn({ data: { id: params.id } });
-      if (result.ok && result.payload) {
-        return { ok: true, payload: result.payload };
-      }
-    } catch (e) {
-      console.warn("[verificacion] lectura en servidor falló, se usa respaldo del QR:", e);
-    }
-
-    if (fromQr) return { ok: true, payload: fromQr };
-    return { ok: false };
+  validateSearch: (search) => parseVerificacionSearch(search),
+  loader: async ({ params, location }) => {
+    const { d } = location.search as ReturnType<typeof parseVerificacionSearch>;
+    return loadVerificacionNotificacion(params.id, d);
   },
   component: VerificacionNotificacionPage,
   pendingComponent: VerificacionPending,
@@ -54,6 +27,7 @@ function VerificacionPending() {
 
 function VerificacionNotificacionPage() {
   const result = Route.useLoaderData();
+  const { d } = Route.useSearch();
 
   return (
     <div className="min-h-screen bg-muted/30 px-4 py-8">
@@ -76,7 +50,19 @@ function VerificacionNotificacionPage() {
           </Link>
         </div>
       ) : (
-        <NotificacionVerificacionView data={result.payload} />
+        <>
+          <NotificacionVerificacionView data={result.payload} />
+          <p className="mx-auto mt-4 max-w-lg text-center text-sm text-muted-foreground">
+            <Link
+              to="/verificacion/$id/pdf"
+              params={{ id: result.payload.id }}
+              search={d ? { d } : {}}
+              className="font-medium text-primary hover:underline"
+            >
+              Descargar PDF de esta notificación
+            </Link>
+          </p>
+        </>
       )}
     </div>
   );

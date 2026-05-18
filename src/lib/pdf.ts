@@ -23,6 +23,7 @@ import {
   NOTIFICACION_GESTIONES_ADEUDADAS_LABEL,
   NOTIFICACION_TRIBUTARIA_PDF_TITULO,
 } from "@/lib/sirat-brand";
+import type { NotificacionQrPayload } from "@/lib/notificacion-qr";
 
 /** Nombre de archivo PDF: solo razón social (caracteres no válidos en Windows eliminados). */
 function formularioPdfFilename(razonSocial: string, extraSuffix?: string): string {
@@ -256,7 +257,7 @@ export async function generateFormularioPDF(
   return { fotosIncluidas, fotosSolicitadas: photoSources.length };
 }
 
-interface NotificacionData {
+export interface NotificacionPdfData {
   fecha: string;
   contribuyente_nombre: string;
   contribuyente_ci: string;
@@ -269,7 +270,22 @@ interface NotificacionData {
   usuario?: string;
 }
 
-function notificacionPdfFilename(nombreActividad: string | null | undefined, ci: string): string {
+export function notificacionQrPayloadToPdfData(payload: NotificacionQrPayload): NotificacionPdfData {
+  return {
+    fecha: payload.fecha_emision,
+    contribuyente_nombre: payload.contribuyente_nombre,
+    contribuyente_ci: payload.contribuyente_ci,
+    nombre_actividad: payload.nombre_actividad,
+    numero_identificacion: payload.numero_identificacion,
+    direccion: payload.direccion,
+    fecha_limite: payload.fecha_limite,
+    conceptos: payload.conceptos,
+    gestiones_adeudadas:
+      payload.gestiones_adeudadas === "—" ? null : payload.gestiones_adeudadas,
+  };
+}
+
+export function notificacionPdfFilename(nombreActividad: string | null | undefined, ci: string): string {
   const base = (nombreActividad?.trim() || ci)
     .replace(/[\\/:*?"<>|]/g, "")
     .replace(/\s+/g, " ")
@@ -278,7 +294,7 @@ function notificacionPdfFilename(nombreActividad: string | null | undefined, ci:
   return `${base}.pdf`;
 }
 
-export async function generateNotificacionPDF(d: NotificacionData) {
+export async function buildNotificacionPdfDoc(d: NotificacionPdfData): Promise<jsPDF> {
   const doc = new jsPDF();
   let y = await drawInstitucionalPdfHeader(doc, {
     usuario: d.usuario,
@@ -316,6 +332,11 @@ export async function generateNotificacionPDF(d: NotificacionData) {
     "Asesor Legal",
   ]);
 
+  return doc;
+}
+
+export async function generateNotificacionPDF(d: NotificacionPdfData): Promise<void> {
+  const doc = await buildNotificacionPdfDoc(d);
   downloadJsPdf(doc, notificacionPdfFilename(d.nombre_actividad, d.contribuyente_ci));
 }
 

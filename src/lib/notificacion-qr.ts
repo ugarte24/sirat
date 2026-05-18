@@ -85,5 +85,5 @@ export function notificacionQrPublicOrigin(): string {
 
 export function buildNotificacionQrUrl(payload: NotificacionQrPayload): string {
   const encoded = encodeURIComponent(encodeNotificacionQrPayload(payload));
-  return `${notificacionQrPublicOrigin()}/verificacion/${payload.id}?d=${encoded}`;
+  return `${notificacionQrPublicOrigin()}/verificacion/${payload.id}/pdf?d=${encoded}`;
 }

@@ -25,6 +25,7 @@ import { Route as AppContribuyentesRouteImport } from './routes/_app.contribuyen
 import { Route as AppNotificacionesIndexRouteImport } from './routes/_app.notificaciones.index'
 import { Route as AppFormulariosIndexRouteImport } from './routes/_app.formularios.index'
 import { Route as AppContribuyentesIndexRouteImport } from './routes/_app.contribuyentes.index'
+import { Route as VerificacionIdPdfRouteImport } from './routes/verificacion.$id.pdf'
 import { Route as AppNotificacionesIdRouteImport } from './routes/_app.notificaciones.$id'
 import { Route as AppFormulariosIdRouteImport } from './routes/_app.formularios.$id'
 import { Route as AppContribuyentesIdRouteImport } from './routes/_app.contribuyentes.$id'
@@ -108,6 +109,11 @@ const AppContribuyentesIndexRoute = AppContribuyentesIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppContribuyentesRoute,
 } as any)
+const VerificacionIdPdfRoute = VerificacionIdPdfRouteImport.update({
+  id: '/pdf',
+  path: '/pdf',
+  getParentRoute: () => VerificacionIdRoute,
+} as any)
 const AppNotificacionesIdRoute = AppNotificacionesIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -136,10 +142,11 @@ export interface FileRoutesByFullPath {
   '/reportes': typeof AppReportesRoute
   '/usuarios': typeof AppUsuariosRoute
   '/v/notificacion': typeof VNotificacionRoute
-  '/verificacion/$id': typeof VerificacionIdRoute
+  '/verificacion/$id': typeof VerificacionIdRouteWithChildren
   '/contribuyentes/$id': typeof AppContribuyentesIdRoute
   '/formularios/$id': typeof AppFormulariosIdRoute
   '/notificaciones/$id': typeof AppNotificacionesIdRoute
+  '/verificacion/$id/pdf': typeof VerificacionIdPdfRoute
   '/contribuyentes/': typeof AppContribuyentesIndexRoute
   '/formularios/': typeof AppFormulariosIndexRoute
   '/notificaciones/': typeof AppNotificacionesIndexRoute
@@ -153,10 +160,11 @@ export interface FileRoutesByTo {
   '/reportes': typeof AppReportesRoute
   '/usuarios': typeof AppUsuariosRoute
   '/v/notificacion': typeof VNotificacionRoute
-  '/verificacion/$id': typeof VerificacionIdRoute
+  '/verificacion/$id': typeof VerificacionIdRouteWithChildren
   '/contribuyentes/$id': typeof AppContribuyentesIdRoute
   '/formularios/$id': typeof AppFormulariosIdRoute
   '/notificaciones/$id': typeof AppNotificacionesIdRoute
+  '/verificacion/$id/pdf': typeof VerificacionIdPdfRoute
   '/contribuyentes': typeof AppContribuyentesIndexRoute
   '/formularios': typeof AppFormulariosIndexRoute
   '/notificaciones': typeof AppNotificacionesIndexRoute
@@ -175,10 +183,11 @@ export interface FileRoutesById {
   '/_app/reportes': typeof AppReportesRoute
   '/_app/usuarios': typeof AppUsuariosRoute
   '/v/notificacion': typeof VNotificacionRoute
-  '/verificacion/$id': typeof VerificacionIdRoute
+  '/verificacion/$id': typeof VerificacionIdRouteWithChildren
   '/_app/contribuyentes/$id': typeof AppContribuyentesIdRoute
   '/_app/formularios/$id': typeof AppFormulariosIdRoute
   '/_app/notificaciones/$id': typeof AppNotificacionesIdRoute
+  '/verificacion/$id/pdf': typeof VerificacionIdPdfRoute
   '/_app/contribuyentes/': typeof AppContribuyentesIndexRoute
   '/_app/formularios/': typeof AppFormulariosIndexRoute
   '/_app/notificaciones/': typeof AppNotificacionesIndexRoute
@@ -201,6 +210,7 @@ export interface FileRouteTypes {
     | '/contribuyentes/$id'
     | '/formularios/$id'
     | '/notificaciones/$id'
+    | '/verificacion/$id/pdf'
     | '/contribuyentes/'
     | '/formularios/'
     | '/notificaciones/'
@@ -218,6 +228,7 @@ export interface FileRouteTypes {
     | '/contribuyentes/$id'
     | '/formularios/$id'
     | '/notificaciones/$id'
+    | '/verificacion/$id/pdf'
     | '/contribuyentes'
     | '/formularios'
     | '/notificaciones'
@@ -239,6 +250,7 @@ export interface FileRouteTypes {
     | '/_app/contribuyentes/$id'
     | '/_app/formularios/$id'
     | '/_app/notificaciones/$id'
+    | '/verificacion/$id/pdf'
     | '/_app/contribuyentes/'
     | '/_app/formularios/'
     | '/_app/notificaciones/'
@@ -250,7 +262,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   VNotificacionRoute: typeof VNotificacionRoute
-  VerificacionIdRoute: typeof VerificacionIdRoute
+  VerificacionIdRoute: typeof VerificacionIdRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -367,6 +379,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppContribuyentesIndexRouteImport
       parentRoute: typeof AppContribuyentesRoute
     }
+    '/verificacion/$id/pdf': {
+      id: '/verificacion/$id/pdf'
+      path: '/pdf'
+      fullPath: '/verificacion/$id/pdf'
+      preLoaderRoute: typeof VerificacionIdPdfRouteImport
+      parentRoute: typeof VerificacionIdRoute
+    }
     '/_app/notificaciones/$id': {
       id: '/_app/notificaciones/$id'
       path: '/$id'
@@ -453,13 +472,25 @@ const AppRouteChildren: AppRouteChildren = {
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
+interface VerificacionIdRouteChildren {
+  VerificacionIdPdfRoute: typeof VerificacionIdPdfRoute
+}
+
+const VerificacionIdRouteChildren: VerificacionIdRouteChildren = {
+  VerificacionIdPdfRoute: VerificacionIdPdfRoute,
+}
+
+const VerificacionIdRouteWithChildren = VerificacionIdRoute._addFileChildren(
+  VerificacionIdRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   VNotificacionRoute: VNotificacionRoute,
-  VerificacionIdRoute: VerificacionIdRoute,
+  VerificacionIdRoute: VerificacionIdRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

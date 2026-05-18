@@ -15,7 +15,7 @@ export const Route = createFileRoute("/v/notificacion")({
     const data = search.d ? decodeNotificacionQrPayload(search.d) : null;
     if (data?.id) {
       throw redirect({
-        to: "/verificacion/$id",
+        to: "/verificacion/$id/pdf",
         params: { id: data.id },
         search: { d: search.d },
       });
