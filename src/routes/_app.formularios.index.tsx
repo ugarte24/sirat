@@ -374,21 +374,20 @@ function Lista() {
             <DataListTheadRow>
               <DataListTh>Fecha</DataListTh>
               <DataListTh>Actividad</DataListTh>
-              <DataListTh>Zona</DataListTh>
               <DataListTh>Estado</DataListTh>
               <DataListTh align="center">Acciones</DataListTh>
             </DataListTheadRow>
             <DataListTbody>
               {loading && (
                 <TableRow>
-                  <DataListTd className="py-10 text-center text-muted-foreground" colSpan={5}>
+                  <DataListTd className="py-10 text-center text-muted-foreground" colSpan={4}>
                     Cargando…
                   </DataListTd>
                 </TableRow>
               )}
               {!loading && list.length === 0 && (
                 <TableRow>
-                  <DataListTd className="py-10 text-center text-muted-foreground" colSpan={5}>
+                  <DataListTd className="py-10 text-center text-muted-foreground" colSpan={4}>
                     Sin registros
                   </DataListTd>
                 </TableRow>
@@ -408,9 +407,6 @@ function Lista() {
                       <div className="mt-0.5 text-xs text-muted-foreground">
                         {f.contribuyente?.nombre_completo ?? "—"} — C.I. {f.contribuyente?.ci ?? "—"}
                       </div>
-                    </DataListTd>
-                    <DataListTd>
-                      <span className={pillMuted()}>Zona {f.zona}</span>
                     </DataListTd>
                     <DataListTd>
                       <FormEstadoPill estado={f.estado} />
