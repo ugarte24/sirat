@@ -29,7 +29,11 @@ export function DataListCard({ children, className }: { children: React.ReactNod
 }
 
 export function DataListTableWrap({ children }: { children: React.ReactNode }) {
-  return <div className="overflow-x-auto">{children}</div>;
+  return (
+    <div className="overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch] touch-pan-x touch-pan-y">
+      {children}
+    </div>
+  );
 }
 
 export function DataListTheadRow({ children }: { children: React.ReactNode }) {
@@ -91,8 +95,16 @@ export function DataListTd({
   );
 }
 
-export function DataListTable({ children }: { children: React.ReactNode }) {
-  return <Table className="min-w-[640px]">{children}</Table>;
+export function DataListTable({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <table className={cn("w-full min-w-[640px] caption-bottom text-sm", className)}>{children}</table>
+  );
 }
 
 export function DataListTbody({ children }: { children: React.ReactNode }) {

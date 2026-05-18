@@ -41,6 +41,7 @@ import {
 } from "@/lib/sirat-brand";
 import type { ContribuyenteCatalogRow } from "@/lib/sirat-forms";
 import { formatDateEsBo } from "@/lib/date";
+import { cn } from "@/lib/utils";
 import { REOPEN_VERIFICAR_STORAGE_KEY } from "@/lib/formulario-navigation";
 
 type FormSearch = { nuevo?: boolean; editar?: string; verificar?: string };
@@ -67,12 +68,71 @@ export const Route = createFileRoute("/_app/formularios/")({
   component: Lista,
 });
 
-function FormEstadoPill({ estado }: { estado: Database["public"]["Enums"]["formulario_estado"] }) {
+function FormularioListaAcciones({
+  f,
+  onEdit,
+  className,
+}: {
+  f: FormRow;
+  onEdit: (id: string, tab: "registro" | "verificacion") => void;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn("flex items-center justify-end gap-0.5", className)}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {f.estado === "pendiente_verificacion" && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          aria-label="Completar verificación"
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit(f.id, "verificacion");
+          }}
+        >
+          <ClipboardCheck className="h-4 w-4" />
+        </Button>
+      )}
+      {(f.estado === "activo" || f.estado === "pendiente_verificacion") && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          aria-label={`Editar ${FORMULARIO_VERIFICACION_NOMBRE.toLowerCase()}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit(f.id, "registro");
+          }}
+        >
+          <Pencil className="h-4 w-4" />
+        </Button>
+      )}
+      <Button type="button" variant="ghost" size="icon" className="h-8 w-8" asChild>
+        <Link to="/formularios/$id" params={{ id: f.id }} aria-label={`Ver ${FORMULARIO_VERIFICACION_NOMBRE.toLowerCase()}`}>
+          <ChevronRight className="h-4 w-4" />
+        </Link>
+      </Button>
+    </div>
+  );
+}
+
+function FormEstadoPill({
+  estado,
+  compact,
+}: {
+  estado: Database["public"]["Enums"]["formulario_estado"];
+  compact?: boolean;
+}) {
   if (estado === "activo") return <span className={pillSuccess()}>Verificado</span>;
   if (estado === "pendiente_verificacion") {
     return (
       <span className="inline-flex items-center rounded-full bg-amber-500/15 px-3 py-0.5 text-xs font-medium text-amber-800 dark:text-amber-200">
-        Pendiente verificación
+        {compact ? "Pendiente" : "Pendiente verificación"}
       </span>
     );
   }
@@ -369,6 +429,50 @@ function Lista() {
       </div>
 
       <DataListCard>
+        <div className="md:hidden divide-y divide-border/60">
+          {loading && (
+            <p className="py-10 text-center text-sm text-muted-foreground">Cargando…</p>
+          )}
+          {!loading && list.length === 0 && (
+            <p className="py-10 text-center text-sm text-muted-foreground">Sin registros</p>
+          )}
+          {!loading &&
+            list.map((f) => (
+              <div
+                key={f.id}
+                role="button"
+                tabIndex={0}
+                className="w-full cursor-pointer px-4 py-3.5 text-left hover:bg-muted/40 active:bg-muted/60"
+                onClick={() => navigate({ to: "/formularios/$id", params: { id: f.id } })}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    navigate({ to: "/formularios/$id", params: { id: f.id } });
+                  }
+                }}
+              >
+                <div className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1.5">
+                  <span className="text-xs text-muted-foreground tabular-nums">
+                    {formatDateEsBo(f.fecha)}
+                  </span>
+                  <div className="justify-self-end">
+                    <FormEstadoPill estado={f.estado} compact />
+                  </div>
+                  <p className="col-span-2 mt-0.5 font-semibold text-foreground leading-snug">
+                    {f.razon_social}
+                  </p>
+                  <p className="min-w-0 text-xs text-muted-foreground leading-snug">
+                    {f.contribuyente?.nombre_completo ?? "—"}
+                  </p>
+                  <div className="justify-self-end self-center">
+                    <FormularioListaAcciones f={f} onEdit={openEdit} />
+                  </div>
+                </div>
+              </div>
+            ))}
+        </div>
+
+        <div className="hidden md:block">
         <DataListTableWrap>
           <DataListTable>
             <DataListTheadRow>
@@ -405,64 +509,25 @@ function Lista() {
                     <DataListTd>
                       <div className="font-semibold text-foreground">{f.razon_social}</div>
                       <div className="mt-0.5 text-xs text-muted-foreground">
-                        {f.contribuyente?.nombre_completo ?? "—"} — C.I. {f.contribuyente?.ci ?? "—"}
+                        {f.contribuyente?.nombre_completo ?? "—"}
                       </div>
                     </DataListTd>
                     <DataListTd>
                       <FormEstadoPill estado={f.estado} />
                     </DataListTd>
                     <DataListTd align="center" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center justify-center gap-0.5">
-                        {f.estado === "pendiente_verificacion" && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            aria-label="Completar verificación"
-                            onPointerDown={(e) => e.stopPropagation()}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              e.preventDefault();
-                              openEdit(f.id, "verificacion");
-                            }}
-                          >
-                            <ClipboardCheck className="h-4 w-4" />
-                          </Button>
-                        )}
-                        {(f.estado === "activo" || f.estado === "pendiente_verificacion") && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            aria-label={`Editar ${FORMULARIO_VERIFICACION_NOMBRE.toLowerCase()}`}
-                            onPointerDown={(e) => e.stopPropagation()}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              e.preventDefault();
-                              openEdit(f.id, f.estado === "pendiente_verificacion" ? "registro" : "registro");
-                            }}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                        )}
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          asChild
-                          aria-label={`Ver ${FORMULARIO_VERIFICACION_NOMBRE.toLowerCase()}`}
-                        >
-                          <Link to="/formularios/$id" params={{ id: f.id }}>
-                            <ChevronRight className="h-4 w-4" />
-                          </Link>
-                        </Button>
-                      </div>
+                      <FormularioListaAcciones
+                        f={f}
+                        onEdit={openEdit}
+                        className="justify-center"
+                      />
                     </DataListTd>
                   </TableRow>
                 ))}
             </DataListTbody>
           </DataListTable>
         </DataListTableWrap>
+        </div>
         <TablePaginationFooter
           page={page}
           pageSize={LIST_PAGE_SIZE}
