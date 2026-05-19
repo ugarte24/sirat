@@ -24,6 +24,10 @@ import {
   NOTIFICACION_TRIBUTARIA_PDF_TITULO,
 } from "@/lib/sirat-brand";
 import {
+  buildFormularioVerificacionUrl,
+  type FormularioQrPayload,
+} from "@/lib/formulario-qr";
+import {
   buildNotificacionVerificacionUrl,
   type NotificacionQrPayload,
 } from "@/lib/notificacion-qr";
@@ -41,6 +45,7 @@ function formularioPdfFilename(razonSocial: string, extraSuffix?: string): strin
 const PDF_LABEL_CELL = { fontStyle: "bold" as const, fillColor: [232, 236, 245] as [number, number, number] };
 
 interface FormularioData {
+  id: string;
   fecha: string;
   razon_social: string;
   contribuyente_nombre: string;
@@ -200,11 +205,43 @@ async function appendFormularioFotosPages(
   return images.length;
 }
 
-export async function generateFormularioPDF(
-  d: FormularioData,
-): Promise<{ fotosIncluidas: number; fotosSolicitadas: number }> {
+export function formularioQrPayloadToPdfData(p: FormularioQrPayload): FormularioData {
+  return {
+    id: p.id,
+    fecha: p.fecha,
+    razon_social: p.razon_social,
+    contribuyente_nombre: p.contribuyente_nombre,
+    contribuyente_ci: p.contribuyente_ci,
+    nit: p.nit === "—" ? null : p.nit,
+    zona: p.zona,
+    superficie: p.superficie ?? 0,
+    direccion: p.direccion,
+    celular: p.celular,
+    referencia: p.referencia,
+    latitud: p.latitud,
+    longitud: p.longitud,
+    mapa_zoom: p.mapa_zoom,
+    procedente: p.procedente,
+    padron: p.padron,
+    bebidas_alcoholicas: p.bebidas_alcoholicas,
+    observacion: p.observacion === "—" ? null : p.observacion,
+    estado: p.estado,
+  };
+}
+
+export async function buildFormularioPdfDoc(d: FormularioData): Promise<{
+  doc: jsPDF;
+  fotosIncluidas: number;
+  fotosSolicitadas: number;
+}> {
   const doc = new jsPDF();
-  let y = await drawFormularioPdfHeader(doc, d.usuario);
+  const qrDataUrl = await QRCode.toDataURL(buildFormularioVerificacionUrl(d.id), {
+    width: 256,
+    margin: 1,
+    errorCorrectionLevel: "M",
+    color: { dark: "#000000", light: "#ffffff" },
+  });
+  let y = await drawFormularioPdfHeader(doc, d.usuario, qrDataUrl);
 
   y = drawFormularioDatosSection(doc, y, [
     ["Fecha", formatDateEsBo(d.fecha), "Superficie (m²)", String(d.superficie)],
@@ -255,8 +292,27 @@ export async function generateFormularioPDF(
     }
   }
 
+  return { doc, fotosIncluidas, fotosSolicitadas: photoSources.length };
+}
+
+export async function buildFormularioPdfBlob(
+  d: FormularioData,
+): Promise<{ blob: Blob; filename: string }> {
+  const { doc } = await buildFormularioPdfDoc(d);
+  applySiratPdfPageNumbers(doc);
+  return {
+    blob: doc.output("blob") as Blob,
+    filename: formularioPdfFilename(d.razon_social),
+  };
+}
+
+export async function generateFormularioPDF(
+  d: FormularioData,
+): Promise<{ fotosIncluidas: number; fotosSolicitadas: number }> {
+  const { doc, fotosIncluidas, fotosSolicitadas } = await buildFormularioPdfDoc(d);
+  applySiratPdfPageNumbers(doc);
   downloadJsPdf(doc, formularioPdfFilename(d.razon_social));
-  return { fotosIncluidas, fotosSolicitadas: photoSources.length };
+  return { fotosIncluidas, fotosSolicitadas };
 }
 
 export interface NotificacionPdfData {

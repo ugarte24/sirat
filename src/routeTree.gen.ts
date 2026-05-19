@@ -14,6 +14,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as VerificacionIdRouteImport } from './routes/verificacion.$id'
+import { Route as VerificacionFormularioIdRouteImport } from './routes/verificacion-formulario.$id'
 import { Route as VNotificacionRouteImport } from './routes/v.notificacion'
 import { Route as AppUsuariosRouteImport } from './routes/_app.usuarios'
 import { Route as AppReportesRouteImport } from './routes/_app.reportes'
@@ -54,6 +55,12 @@ const VerificacionIdRoute = VerificacionIdRouteImport.update({
   path: '/verificacion/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VerificacionFormularioIdRoute =
+  VerificacionFormularioIdRouteImport.update({
+    id: '/verificacion-formulario/$id',
+    path: '/verificacion-formulario/$id',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const VNotificacionRoute = VNotificacionRouteImport.update({
   id: '/v/notificacion',
   path: '/v/notificacion',
@@ -142,6 +149,7 @@ export interface FileRoutesByFullPath {
   '/reportes': typeof AppReportesRoute
   '/usuarios': typeof AppUsuariosRoute
   '/v/notificacion': typeof VNotificacionRoute
+  '/verificacion-formulario/$id': typeof VerificacionFormularioIdRoute
   '/verificacion/$id': typeof VerificacionIdRouteWithChildren
   '/contribuyentes/$id': typeof AppContribuyentesIdRoute
   '/formularios/$id': typeof AppFormulariosIdRoute
@@ -160,6 +168,7 @@ export interface FileRoutesByTo {
   '/reportes': typeof AppReportesRoute
   '/usuarios': typeof AppUsuariosRoute
   '/v/notificacion': typeof VNotificacionRoute
+  '/verificacion-formulario/$id': typeof VerificacionFormularioIdRoute
   '/verificacion/$id': typeof VerificacionIdRouteWithChildren
   '/contribuyentes/$id': typeof AppContribuyentesIdRoute
   '/formularios/$id': typeof AppFormulariosIdRoute
@@ -183,6 +192,7 @@ export interface FileRoutesById {
   '/_app/reportes': typeof AppReportesRoute
   '/_app/usuarios': typeof AppUsuariosRoute
   '/v/notificacion': typeof VNotificacionRoute
+  '/verificacion-formulario/$id': typeof VerificacionFormularioIdRoute
   '/verificacion/$id': typeof VerificacionIdRouteWithChildren
   '/_app/contribuyentes/$id': typeof AppContribuyentesIdRoute
   '/_app/formularios/$id': typeof AppFormulariosIdRoute
@@ -206,6 +216,7 @@ export interface FileRouteTypes {
     | '/reportes'
     | '/usuarios'
     | '/v/notificacion'
+    | '/verificacion-formulario/$id'
     | '/verificacion/$id'
     | '/contribuyentes/$id'
     | '/formularios/$id'
@@ -224,6 +235,7 @@ export interface FileRouteTypes {
     | '/reportes'
     | '/usuarios'
     | '/v/notificacion'
+    | '/verificacion-formulario/$id'
     | '/verificacion/$id'
     | '/contribuyentes/$id'
     | '/formularios/$id'
@@ -246,6 +258,7 @@ export interface FileRouteTypes {
     | '/_app/reportes'
     | '/_app/usuarios'
     | '/v/notificacion'
+    | '/verificacion-formulario/$id'
     | '/verificacion/$id'
     | '/_app/contribuyentes/$id'
     | '/_app/formularios/$id'
@@ -262,6 +275,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   VNotificacionRoute: typeof VNotificacionRoute
+  VerificacionFormularioIdRoute: typeof VerificacionFormularioIdRoute
   VerificacionIdRoute: typeof VerificacionIdRouteWithChildren
 }
 
@@ -300,6 +314,13 @@ declare module '@tanstack/react-router' {
       path: '/verificacion/$id'
       fullPath: '/verificacion/$id'
       preLoaderRoute: typeof VerificacionIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/verificacion-formulario/$id': {
+      id: '/verificacion-formulario/$id'
+      path: '/verificacion-formulario/$id'
+      fullPath: '/verificacion-formulario/$id'
+      preLoaderRoute: typeof VerificacionFormularioIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/v/notificacion': {
@@ -490,6 +511,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   VNotificacionRoute: VNotificacionRoute,
+  VerificacionFormularioIdRoute: VerificacionFormularioIdRoute,
   VerificacionIdRoute: VerificacionIdRouteWithChildren,
 }
 export const routeTree = rootRouteImport

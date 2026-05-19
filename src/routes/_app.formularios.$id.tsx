@@ -113,6 +113,7 @@ function Detalle() {
     setPdfBusy(true);
     try {
       const { fotosIncluidas, fotosSolicitadas } = await generateFormularioPDF({
+        id: f.id,
         fecha: f.fecha,
         razon_social: f.razon_social,
         contribuyente_nombre: f.contribuyente.nombre_completo,

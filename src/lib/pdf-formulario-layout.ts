@@ -74,7 +74,7 @@ export async function drawInstitucionalPdfHeader(
     titleFontSize?: number;
     /** Espacio extra (mm) entre la línea verde y el título */
     titleMarginTop?: number;
-    /** QR opcional alineado a la derecha del primer título */
+    /** QR opcional bajo el logo; con varias líneas de título, el bloque queda centrado al QR */
     qrDataUrl?: string;
     qrSizeMm?: number;
   },
@@ -105,40 +105,64 @@ export async function drawInstitucionalPdfHeader(
   doc.setDrawColor(G.r, G.g, G.b);
   doc.setLineWidth(0.4);
   doc.line(w / 2 - 42, y, w / 2 + 42, y);
-  y += 6 + (opts.titleMarginTop ?? 0);
+  const titleAreaY = y + 6;
 
   doc.setFont("helvetica", "bold");
   doc.setTextColor(G.r, G.g, G.b);
   const titleSize = opts.titleFontSize ?? 11;
   const titleLineGap = titleSize * 0.42;
   doc.setFontSize(titleSize);
-  let contentBottom = y;
-  for (let i = 0; i < opts.titleLines.length; i++) {
-    const line = opts.titleLines[i];
-    const lineY = y;
-    doc.text(line, w / 2, lineY, { align: "center" });
-    if (opts.qrDataUrl && i === 0) {
-      const qrSize = opts.qrSizeMm ?? 22;
-      const titleMidY = lineY - titleSize * 0.35;
+
+  let contentBottom = titleAreaY;
+
+  if (opts.qrDataUrl) {
+    const qrSize = opts.qrSizeMm ?? 22;
+    const blockSpan = titleLineGap * Math.max(0, opts.titleLines.length - 1);
+
+    if (opts.titleLines.length > 1) {
+      const qrY = logo ? logoBottomY + 3 : titleAreaY;
+      const qrCenterY = qrY + qrSize / 2;
+      doc.addImage(opts.qrDataUrl, "PNG", w - MARGIN - qrSize, qrY, qrSize, qrSize);
+
+      const titleStartY = Math.max(qrCenterY - blockSpan / 2, titleAreaY);
+      for (let i = 0; i < opts.titleLines.length; i++) {
+        doc.text(opts.titleLines[i], w / 2, titleStartY + i * titleLineGap, { align: "center" });
+      }
+      contentBottom = Math.max(qrY + qrSize, titleStartY + blockSpan + titleSize * 0.25);
+    } else {
+      const titleStartY = titleAreaY + (opts.titleMarginTop ?? 0);
+      const titleMidY = titleStartY - titleSize * 0.35;
       let qrY = titleMidY - qrSize / 2;
       if (logo) qrY = Math.max(qrY, logoBottomY + 3);
       doc.addImage(opts.qrDataUrl, "PNG", w - MARGIN - qrSize, qrY, qrSize, qrSize);
-      contentBottom = Math.max(contentBottom, qrY + qrSize);
+      doc.text(opts.titleLines[0], w / 2, titleStartY, { align: "center" });
+      contentBottom = Math.max(qrY + qrSize, titleStartY + titleSize * 0.25);
     }
-    y += titleLineGap;
-    contentBottom = Math.max(contentBottom, y);
+  } else {
+    let lineY = titleAreaY + (opts.titleMarginTop ?? 0);
+    for (const line of opts.titleLines) {
+      doc.text(line, w / 2, lineY, { align: "center" });
+      lineY += titleLineGap;
+      contentBottom = lineY;
+    }
   }
 
   return contentBottom + 6;
 }
 
-export async function drawFormularioPdfHeader(doc: jsPDF, usuario?: string): Promise<number> {
+export async function drawFormularioPdfHeader(
+  doc: jsPDF,
+  usuario?: string,
+  qrDataUrl?: string,
+): Promise<number> {
   return drawInstitucionalPdfHeader(doc, {
     usuario,
     titleLines: [
       "FORMULARIO DE REGISTRO Y VERIFICACIÓN",
       "DE ACTIVIDADES ECONÓMICAS",
     ],
+    qrDataUrl,
+    qrSizeMm: 22,
   });
 }
 
