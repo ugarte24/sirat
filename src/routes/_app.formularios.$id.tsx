@@ -294,10 +294,8 @@ function Detalle() {
         <DetailSection title="Registro" showSeparator={false}>
           <DetailGrid>
             <DetailField label="Fecha" value={formatDateEsBo(f.fecha)} />
-            <DetailField
-              label="Contribuyente"
-              value={`${f.contribuyente.nombre_completo} (${f.contribuyente.ci})`}
-            />
+            <DetailField label="Contribuyente" value={f.contribuyente.nombre_completo} />
+            <DetailField label="C.I." value={f.contribuyente.ci} />
           </DetailGrid>
         </DetailSection>
         <DetailSection title="Actividad económica">
