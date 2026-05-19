@@ -35,7 +35,14 @@ import type { Database } from "@/integrations/supabase/types";
 import type { ContribuyenteCatalogRow } from "@/lib/sirat-forms";
 import { formatDateEsBo, formatDateTimeEsBo } from "@/lib/date";
 import { cn } from "@/lib/utils";
-type NotifSearch = { nueva?: boolean };
+type NotifEstadoFiltro = "pendiente" | "cumplido" | "anulado";
+
+type NotifSearch = { nueva?: boolean; estado?: NotifEstadoFiltro };
+
+function parseNotifEstado(raw: unknown): NotifEstadoFiltro | undefined {
+  if (raw === "pendiente" || raw === "cumplido" || raw === "anulado") return raw;
+  return undefined;
+}
 
 type NotifRow = Pick<
   Database["public"]["Tables"]["notificaciones"]["Row"],
@@ -51,6 +58,7 @@ export const Route = createFileRoute("/_app/notificaciones/")({
       raw.nueva === 1 ||
       raw.nueva === "1" ||
       raw.nueva === "true",
+    estado: parseNotifEstado(raw.estado),
   }),
   component: Lista,
 });
@@ -122,7 +130,8 @@ function notifTitulo(n: NotifRow): string {
 
 function Lista() {
   const navigate = useNavigate();
-  const { nueva } = Route.useSearch();
+  const { nueva, estado: estadoSearch } = Route.useSearch();
+  const activeEstado: NotifEstadoFiltro | "todos" = estadoSearch ?? "todos";
   const [list, setList] = useState<NotifRow[]>([]);
   const [total, setTotal] = useState<number | null>(null);
   const [page, setPage] = useState(0);
@@ -136,6 +145,21 @@ function Lista() {
   const [catalogRefreshKey, setCatalogRefreshKey] = useState(0);
   const [contribRecien, setContribRecien] = useState<ContribuyenteCatalogRow | null>(null);
 
+  const setEstadoFiltro = useCallback(
+    (key: NotifEstadoFiltro | "todos") => {
+      void navigate({
+        search: (prev) => {
+          const next = { ...(prev as NotifSearch) };
+          if (key === "todos") delete next.estado;
+          else next.estado = key;
+          return next;
+        },
+        replace: true,
+      });
+    },
+    [navigate],
+  );
+
   useEffect(() => {
     const t = setTimeout(() => setQDeb(qInput), 400);
     return () => clearTimeout(t);
@@ -143,7 +167,7 @@ function Lista() {
 
   useEffect(() => {
     setPage(0);
-  }, [qDeb]);
+  }, [qDeb, activeEstado]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -159,6 +183,10 @@ function Lista() {
       )
       .order("created_at", ORDER_CREATED_DESC)
       .order("id", ORDER_CREATED_DESC);
+
+    if (activeEstado !== "todos") {
+      qb = qb.eq("estado", activeEstado);
+    }
 
     if (pat) {
       const { data: cm } = await supabase
@@ -184,7 +212,7 @@ function Lista() {
       setTotal(count);
     }
     setLoading(false);
-  }, [page, qDeb]);
+  }, [page, qDeb, activeEstado]);
 
   useEffect(() => {
     void load();
@@ -301,6 +329,27 @@ function Lista() {
           )}
         </DialogContent>
       </Dialog>
+
+      <div className="flex flex-wrap gap-2">
+        {(
+          [
+            ["todos", "Todas"],
+            ["pendiente", "Pendientes"],
+            ["cumplido", "Cumplidas"],
+            ["anulado", "Anuladas"],
+          ] as const
+        ).map(([key, label]) => (
+          <Button
+            key={key}
+            type="button"
+            size="sm"
+            variant={activeEstado === key ? "default" : "outline"}
+            onClick={() => setEstadoFiltro(key)}
+          >
+            {label}
+          </Button>
+        ))}
+      </div>
 
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

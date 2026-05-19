@@ -44,8 +44,21 @@ import { formatDateEsBo } from "@/lib/date";
 import { cn } from "@/lib/utils";
 import { REOPEN_VERIFICAR_STORAGE_KEY } from "@/lib/formulario-navigation";
 
-type FormSearch = { nuevo?: boolean; editar?: string; verificar?: string };
-type ListFiltro = "todos" | "pendientes" | "activos";
+type FormSearch = { nuevo?: boolean; editar?: string; verificar?: string; filtro?: ListFiltro };
+type ListFiltro = "todos" | "pendientes" | "activos" | "baja" | "anulado";
+
+function parseListFiltro(raw: unknown): ListFiltro | undefined {
+  if (
+    raw === "todos" ||
+    raw === "pendientes" ||
+    raw === "activos" ||
+    raw === "baja" ||
+    raw === "anulado"
+  ) {
+    return raw;
+  }
+  return undefined;
+}
 
 type FormRow = Pick<
   Database["public"]["Tables"]["formularios"]["Row"],
@@ -64,6 +77,7 @@ export const Route = createFileRoute("/_app/formularios/")({
     editar: typeof raw.editar === "string" && raw.editar.length > 0 ? raw.editar : undefined,
     verificar:
       typeof raw.verificar === "string" && raw.verificar.length > 0 ? raw.verificar : undefined,
+    filtro: parseListFiltro(raw.filtro),
   }),
   component: Lista,
 });
@@ -146,14 +160,14 @@ function FormEstadoPill({
 
 function Lista() {
   const navigate = useNavigate();
-  const { nuevo, editar, verificar } = Route.useSearch();
+  const { nuevo, editar, verificar, filtro: filtroSearch } = Route.useSearch();
   const [list, setList] = useState<FormRow[]>([]);
   const [total, setTotal] = useState<number | null>(null);
   const [page, setPage] = useState(0);
   const [qInput, setQInput] = useState("");
   const [qDeb, setQDeb] = useState("");
   const [loading, setLoading] = useState(true);
-  const [listFiltro, setListFiltro] = useState<ListFiltro>("todos");
+  const activeFiltro: ListFiltro = filtroSearch ?? "todos";
   const [dialogMode, setDialogMode] = useState<"create" | "edit" | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
   const [gestionTab, setGestionTab] = useState<"registro" | "verificacion">("registro");
@@ -182,6 +196,21 @@ function Lista() {
     [navigate],
   );
 
+  const setFiltro = useCallback(
+    (key: ListFiltro) => {
+      void navigate({
+        search: (prev) => {
+          const next = { ...(prev as FormSearch) };
+          if (key === "todos") delete next.filtro;
+          else next.filtro = key;
+          return next;
+        },
+        replace: true,
+      });
+    },
+    [navigate],
+  );
+
   useEffect(() => {
     const t = setTimeout(() => setQDeb(qInput), 400);
     return () => clearTimeout(t);
@@ -189,7 +218,7 @@ function Lista() {
 
   useEffect(() => {
     setPage(0);
-  }, [qDeb, listFiltro]);
+  }, [qDeb, activeFiltro]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -206,10 +235,14 @@ function Lista() {
       .order("created_at", ORDER_CREATED_DESC)
       .order("id", ORDER_CREATED_DESC);
 
-    if (listFiltro === "pendientes") {
+    if (activeFiltro === "pendientes") {
       qb = qb.eq("estado", "pendiente_verificacion");
-    } else if (listFiltro === "activos") {
+    } else if (activeFiltro === "activos") {
       qb = qb.eq("estado", "activo");
+    } else if (activeFiltro === "baja") {
+      qb = qb.eq("estado", "baja");
+    } else if (activeFiltro === "anulado") {
+      qb = qb.eq("estado", "anulado");
     }
 
     if (pat) {
@@ -236,7 +269,7 @@ function Lista() {
       setTotal(count);
     }
     setLoading(false);
-  }, [page, qDeb, listFiltro]);
+  }, [page, qDeb, activeFiltro]);
 
   useEffect(() => {
     void load();
@@ -398,20 +431,23 @@ function Lista() {
         </DialogContent>
       </Dialog>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="-mx-4 flex gap-2 overflow-x-auto flex-nowrap px-4 pb-0.5 sm:mx-0 sm:px-0 md:flex-wrap md:overflow-visible">
         {(
           [
             ["todos", "Todos"],
             ["pendientes", "Pendientes"],
             ["activos", "Verificados"],
+            ["baja", "Baja"],
+            ["anulado", "Anulados"],
           ] as const
         ).map(([key, label]) => (
           <Button
             key={key}
             type="button"
             size="sm"
-            variant={listFiltro === key ? "default" : "outline"}
-            onClick={() => setListFiltro(key)}
+            className="shrink-0"
+            variant={activeFiltro === key ? "default" : "outline"}
+            onClick={() => setFiltro(key)}
           >
             {label}
           </Button>

@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+﻿import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -10,12 +10,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { ContribuyenteAltaForm } from "@/components/forms/ContribuyenteAltaForm";
 import { ContribuyenteEditarForm } from "@/components/forms/ContribuyenteEditarForm";
 import {
@@ -34,10 +28,11 @@ import {
   pillWarning,
 } from "@/components/data-list";
 import { TableRow } from "@/components/ui/table";
-import { MoreVertical, Plus, Search } from "lucide-react";
+import { ChevronRight, Pencil, Plus, Search } from "lucide-react";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 import { formatDateEsBo } from "@/lib/date";
+import { cn } from "@/lib/utils";
 
 type ContribSearch = { nuevo?: boolean };
 
@@ -57,6 +52,64 @@ export const Route = createFileRoute("/_app/contribuyentes/")({
   }),
   component: ListaContribuyentes,
 });
+
+function ContribVinculosPill({
+  puedeDarDeBaja,
+  compact,
+}: {
+  puedeDarDeBaja: boolean;
+  compact?: boolean;
+}) {
+  if (puedeDarDeBaja) {
+    return <span className={pillSuccess(compact ? "px-2.5" : undefined)}>Sin actividades</span>;
+  }
+  return (
+    <span className={pillWarning(compact ? "px-2.5" : undefined)}>
+      {compact ? "Con vínculos" : "Con formularios o notif."}
+    </span>
+  );
+}
+
+function ContribuyenteListaAcciones({
+  c,
+  onEdit,
+  className,
+}: {
+  c: ContribListItem;
+  onEdit: (c: ContribListItem) => void;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn("flex items-center justify-end gap-0.5", className)}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8"
+        aria-label={`Editar ${c.nombre_completo}`}
+        onClick={(e) => {
+          e.stopPropagation();
+          onEdit(c);
+        }}
+      >
+        <Pencil className="h-4 w-4" />
+      </Button>
+      <Button type="button" variant="ghost" size="icon" className="h-8 w-8" asChild>
+        <Link
+          to="/contribuyentes/$id"
+          params={{ id: c.id }}
+          aria-label={`Ver detalle de ${c.nombre_completo}`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Link>
+      </Button>
+    </div>
+  );
+}
 
 function countByContribuyente(rows: { contribuyente_id: string }[] | null): Map<string, number> {
   const m = new Map<string, number>();
@@ -154,6 +207,11 @@ function ListaContribuyentes() {
     }
   }, [nuevo, navigate]);
 
+  const openEditDialog = (c: ContribListItem) => {
+    setEditTarget(c);
+    window.setTimeout(() => setEditDialogOpen(true), 0);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-2">
@@ -232,6 +290,51 @@ function ListaContribuyentes() {
       </div>
 
       <DataListCard>
+        <div className="md:hidden divide-y divide-border/60">
+          {loading && (
+            <p className="py-10 text-center text-sm text-muted-foreground">Cargando…</p>
+          )}
+          {!loading && list.length === 0 && (
+            <p className="py-10 text-center text-sm text-muted-foreground">Sin contribuyentes</p>
+          )}
+          {!loading &&
+            list.map((c) => (
+              <div
+                key={c.id}
+                role="button"
+                tabIndex={0}
+                className="w-full cursor-pointer px-4 py-3.5 text-left hover:bg-muted/40 active:bg-muted/60"
+                onClick={() => navigate({ to: "/contribuyentes/$id", params: { id: c.id } })}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    navigate({ to: "/contribuyentes/$id", params: { id: c.id } });
+                  }
+                }}
+              >
+                <div className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1.5">
+                  <span className="text-xs text-muted-foreground tabular-nums">
+                    {formatDateEsBo(c.created_at)}
+                  </span>
+                  <div className="justify-self-end">
+                    <ContribVinculosPill puedeDarDeBaja={c.puedeDarDeBaja} compact />
+                  </div>
+                  <p className="col-span-2 mt-0.5 font-semibold text-foreground leading-snug">
+                    {c.nombre_completo}
+                  </p>
+                  <p className="min-w-0 text-xs text-muted-foreground leading-snug">
+                    C.I. {c.ci}
+                    {c.telefono ? ` · ${c.telefono}` : ""}
+                  </p>
+                  <div className="justify-self-end self-center">
+                    <ContribuyenteListaAcciones c={c} onEdit={openEditDialog} />
+                  </div>
+                </div>
+              </div>
+            ))}
+        </div>
+
+        <div className="hidden md:block">
         <DataListTableWrap>
           <DataListTable>
             <DataListTheadRow>
@@ -258,56 +361,35 @@ function ListaContribuyentes() {
               )}
               {!loading &&
                 list.map((c) => (
-                  <TableRow
-                    key={c.id}
-                    className="cursor-pointer border-b border-border/60 hover:bg-muted/40"
-                    onClick={() => {
-                      setEditTarget(c);
-                      setEditDialogOpen(true);
-                    }}
-                  >
+                  <TableRow key={c.id} className="border-b border-border/60 hover:bg-muted/40">
                     <DataListTd className="whitespace-nowrap text-muted-foreground">{formatDateEsBo(c.created_at)}</DataListTd>
                     <DataListTd>
-                      <div className="font-semibold text-foreground">{c.nombre_completo}</div>
-                      <div className="text-xs text-muted-foreground">C.I. {c.ci}</div>
+                      <Link
+                        to="/contribuyentes/$id"
+                        params={{ id: c.id }}
+                        className="block font-semibold text-foreground hover:underline"
+                      >
+                        {c.nombre_completo}
+                      </Link>
+                      <p className="text-xs text-muted-foreground">C.I. {c.ci}</p>
                     </DataListTd>
                     <DataListTd className="text-muted-foreground">{c.telefono || "—"}</DataListTd>
                     <DataListTd>
-                      {c.puedeDarDeBaja ? (
-                        <span className={pillSuccess()}>Sin actividades</span>
-                      ) : (
-                        <span className={pillWarning()}>Con formularios o notif.</span>
-                      )}
+                      <ContribVinculosPill puedeDarDeBaja={c.puedeDarDeBaja} />
                     </DataListTd>
                     <DataListTd align="center" onClick={(e) => e.stopPropagation()}>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button type="button" variant="ghost" size="icon" aria-label={`Acciones: ${c.nombre_completo}`}>
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48">
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setEditTarget(c);
-                              setEditDialogOpen(true);
-                            }}
-                          >
-                            Editar datos
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => navigate({ to: "/contribuyentes/$id", params: { id: c.id } })}
-                          >
-                            Ver detalle
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <ContribuyenteListaAcciones
+                        c={c}
+                        onEdit={openEditDialog}
+                        className="justify-center"
+                      />
                     </DataListTd>
                   </TableRow>
                 ))}
             </DataListTbody>
           </DataListTable>
         </DataListTableWrap>
+        </div>
         <TablePaginationFooter
           page={page}
           pageSize={LIST_PAGE_SIZE}

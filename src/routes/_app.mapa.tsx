@@ -13,8 +13,13 @@ import { REOPEN_VERIFICAR_STORAGE_KEY } from "@/lib/formulario-navigation";
 import { ArrowLeft, Search } from "lucide-react";
 import { toast } from "sonner";
 
-type MapaSearch = { actividad?: string };
+type MapaSearch = { actividad?: string; filtro?: MapaFiltro };
 type MapaFiltro = "todos" | "pendientes" | "verificados";
+
+function parseMapaFiltro(raw: unknown): MapaFiltro | undefined {
+  if (raw === "todos" || raw === "pendientes" || raw === "verificados") return raw;
+  return undefined;
+}
 
 function mapaVacioMensaje(
   modoActividad: boolean,
@@ -39,13 +44,14 @@ export const Route = createFileRoute("/_app/mapa")({
   validateSearch: (raw: Record<string, unknown>): MapaSearch => ({
     actividad:
       typeof raw.actividad === "string" && raw.actividad.length > 0 ? raw.actividad : undefined,
+    filtro: parseMapaFiltro(raw.filtro),
   }),
   component: Mapa,
 });
 
 function Mapa() {
   const navigate = useNavigate();
-  const { actividad } = Route.useSearch();
+  const { actividad, filtro: filtroSearch } = Route.useSearch();
   const modoActividad = Boolean(actividad);
 
   const [rows, setRows] = useState<FormularioMapaRow[]>([]);
@@ -54,6 +60,10 @@ function Mapa() {
   const [search, setSearch] = useState("");
   const [estadoFiltro, setEstadoFiltro] = useState<MapaFiltro>("todos");
   const deferredQ = useDeferredValue(search.trim().toLowerCase());
+
+  useEffect(() => {
+    if (filtroSearch && !modoActividad) setEstadoFiltro(filtroSearch);
+  }, [filtroSearch, modoActividad]);
 
   useEffect(() => {
     setLoading(true);
