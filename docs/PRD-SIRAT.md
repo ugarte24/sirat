@@ -4,8 +4,8 @@
 | Campo | Valor |
 |-------|-------|
 | **Cliente** | Gobierno Autónomo Municipal de Riberalta — Jefatura de Recaudaciones |
-| **Versión del documento** | 1.0 |
-| **Versión del producto** | 1.0.61 |
+| **Versión del documento** | 1.1 |
+| **Versión del producto** | 1.0.67 |
 | **Fecha** | Mayo 2026 |
 | **Estado** | Basado en el código en producción/desarrollo actual |
 
@@ -93,6 +93,8 @@ Unificar en una sola plataforma web responsive (móvil + escritorio) el ciclo: *
 - Reportes exportables (formularios, notificaciones, contribuyentes).
 - Administración de usuarios (alta, edición, reset de contraseña por correo).
 - Interfaz responsive con navegación inferior en móvil.
+- Dashboard operativo con KPIs, trabajo pendiente y enlaces filtrados a listados.
+- Verificación pública de formularios vía QR (`/verificacion-formulario/{id}`).
 - Despliegue en Cloudflare Workers o Vercel.
 
 ### 5.2 Fuera del alcance (v1)
@@ -108,7 +110,7 @@ Unificar en una sola plataforma web responsive (móvil + escritorio) el ciclo: *
 ### 5.3 Roadmap sugerido (no implementado)
 
 - Sincronización offline en campo.
-- Dashboard analítico con gráficos temporales.
+- Dashboard analítico con gráficos temporales (el panel operativo actual no incluye series históricas).
 - Notificaciones push o SMS.
 - Firma digital del contribuyente en dispositivo.
 - Integración con catastro o GIS municipal.
@@ -134,10 +136,24 @@ Unificar en una sola plataforma web responsive (móvil + escritorio) el ciclo: *
 
 | ID | Requisito | Prioridad |
 |----|-----------|-----------|
-| DASH-01 | Mostrar contadores: contribuyentes, verificaciones activas, verificaciones en baja, notificaciones pendientes | Must |
-| DASH-02 | Acceso rápido a nuevo formulario (`/formularios?nuevo=1`) | Must |
-| DASH-03 | Acceso rápido a nueva notificación (`/notificaciones?nueva=1`) | Must |
-| DASH-04 | Saludo con nombre y rol del usuario | Should |
+| DASH-01 | KPIs con enlace al listado filtrado: pendientes de verificación, notificaciones pendientes, actividades verificadas, contribuyentes, actividades de baja, mapa (pendientes) | Must |
+| DASH-02 | Resaltar KPIs con pendientes (borde ámbar) cuando el contador > 0 | Should |
+| DASH-03 | Sección «Tu trabajo pendiente»: hasta 5 formularios `pendiente_verificacion` y 5 notificaciones `pendiente` con enlace al detalle | Must |
+| DASH-04 | Mensaje positivo cuando no hay pendientes de verificación ni notificaciones | Should |
+| DASH-05 | Accesos rápidos: nuevo formulario, nueva notificación, nuevo contribuyente, reportes | Must |
+| DASH-06 | Botón «Actualizar» para recargar contadores y listas | Should |
+| DASH-07 | Admin: aviso si hay usuarios bloqueados o inactivos (enlace a `/usuarios`) | Should |
+| DASH-08 | Saludo con nombre y rol del usuario | Must |
+
+**Parámetros de enlace desde KPIs**
+
+| KPI | Ruta destino |
+|-----|----------------|
+| Pendientes de verificación | `/formularios?filtro=pendientes` |
+| Notificaciones pendientes | `/notificaciones?estado=pendiente` |
+| Actividades verificadas | `/formularios?filtro=activos` |
+| Actividades de baja | `/formularios?filtro=baja` |
+| En mapa (pendientes) | `/mapa?filtro=pendientes` |
 
 ### 6.3 Contribuyentes (`/contribuyentes`)
 
@@ -147,10 +163,12 @@ Unificar en una sola plataforma web responsive (móvil + escritorio) el ciclo: *
 | CONT-02 | Normalizar textos a MAYÚSCULAS (`es-BO`) al guardar | Must |
 | CONT-03 | Lista paginada (20/página), orden por fecha de creación descendente | Must |
 | CONT-04 | Búsqueda por nombre o C.I. (debounce 400 ms) | Must |
-| CONT-05 | Alta y edición en diálogo modal | Must |
-| CONT-06 | Detalle en `/contribuyentes/$id` con formularios vinculados | Must |
-| CONT-07 | Indicador “Sin actividades” vs “Con formularios o notif.” | Should |
+| CONT-05 | Alta en diálogo modal; edición en diálogo desde menú ⋮ o botón lápiz (no al abrir detalle) | Must |
+| CONT-06 | Detalle en `/contribuyentes/$id` **solo lectura** (`DetailTemplate`): C.I., nombre, celular, fecha de registro, formularios vinculados, conteo de notificaciones | Must |
+| CONT-07 | Indicador “Sin actividades” vs “Con formularios o notif.” en lista | Should |
 | CONT-08 | Eliminar solo si no tiene formularios ni notificaciones (RLS; sin UI de borrado) | Could |
+| CONT-09 | Lista: tarjetas en móvil, tabla en escritorio; acciones lápiz (editar) y menú (Editar datos / Ver detalle) | Must |
+| CONT-10 | Clic en nombre del contribuyente navega al detalle; la fila no abre el editor | Must |
 
 ### 6.4 Formularios — Actividades económicas (`/formularios`)
 
@@ -189,12 +207,15 @@ Unificar en una sola plataforma web responsive (móvil + escritorio) el ciclo: *
 
 | ID | Requisito | Prioridad |
 |----|-----------|-----------|
-| FORM-13 | Filtros de lista: Todos / Pendientes / Verificados | Must |
+| FORM-13 | Filtros de lista: Todos / Pendientes / Verificados / Baja / Anulados; sincronizados con URL `?filtro=` | Must |
 | FORM-14 | Búsqueda por razón social o contribuyente | Must |
-| FORM-15 | Detalle `/formularios/$id` con PDF, fotos, mapa | Must |
-| FORM-16 | PDF solo si `activo` y `superficie` definida | Must |
+| FORM-15 | Detalle `/formularios/$id` con PDF, fotos, mapa; contribuyente y C.I. en filas separadas | Must |
+| FORM-16 | PDF con QR de verificación pública; solo si `activo` y `superficie` definida | Must |
 | FORM-17 | Baja/anulación: solo admin, solo `activo`, observación obligatoria anexada con etiqueta `[BAJA fecha]` o `[ANULADO fecha]` | Must |
 | FORM-18 | Tarjetas en móvil, tabla en escritorio (patrón `DataListCard`) | Must |
+| FORM-19 | En móvil, filtros en una sola fila con desplazamiento horizontal | Should |
+| FORM-20 | Campos de verificación no completados (`pendiente_verificacion` y `superficie` nula): mostrar `—` en detalle, PDF y reportes (no valores por defecto de BD) | Must |
+| FORM-21 | Vista pública `/verificacion-formulario/$id` y QR en PDF del formulario | Must |
 
 ### 6.5 Notificaciones (`/notificaciones`)
 
@@ -211,6 +232,8 @@ Unificar en una sola plataforma web responsive (móvil + escritorio) el ciclo: *
 | NOT-09 | PDF institucional + QR con URL `/verificacion/{id}` | Must |
 | NOT-10 | Vista pública `/verificacion/$id` sin login (server function + service role) | Must |
 | NOT-11 | Compatibilidad QR antiguo `/v/notificacion?d=` | Should |
+| NOT-12 | Filtros de lista: Todas / Pendientes / Cumplidas / Anuladas; URL `?estado=` | Must |
+| NOT-13 | Tarjetas en móvil, tabla en escritorio (patrón `DataListCard`) | Must |
 
 ### 6.6 Mapa (`/mapa`)
 
@@ -221,6 +244,8 @@ Unificar en una sola plataforma web responsive (móvil + escritorio) el ciclo: *
 | MAP-03 | Búsqueda por razón social o nombre de contribuyente | Must |
 | MAP-04 | Modo foco: `?actividad={id}` centra una actividad | Should |
 | MAP-05 | Tiles OpenStreetMap (sin API key) | Must |
+| MAP-06 | Filtro inicial vía URL `?filtro=pendientes` o `?filtro=verificados` | Should |
+| MAP-07 | Mensaje contextual en vacío según filtro (p. ej. «Sin actividades pendientes») | Should |
 
 ### 6.7 Reportes (`/reportes`)
 
@@ -231,6 +256,8 @@ Unificar en una sola plataforma web responsive (móvil + escritorio) el ciclo: *
 | REP-03 | Límite 1 000 filas por exportación | Must |
 | REP-04 | Exportar Excel (`xlsx-js-style`) y PDF (`jspdf` + `jspdf-autotable`) | Must |
 | REP-05 | Colores institucionales en reportes (`SIRAT_REPORT_COLORS`) | Should |
+| REP-06 | Exportación de formularios: columna **Estado**; sin columna coordenadas; campos de verificación pendiente exportan `—` | Must |
+| REP-07 | Título de reporte de formularios sin subtítulo «LISTADO DE…» (solo título institucional) | Should |
 
 ### 6.8 Usuarios (`/usuarios`) — solo admin
 
@@ -402,7 +429,8 @@ sequenceDiagram
 | `adminCreateUserFn` | Alta usuario Auth + rol |
 | `adminUpdateUserFn` | Actualizar perfil y rol |
 | `adminResetPasswordEmailFn` | Email de reset Supabase |
-| `getNotificacionPublicaFn` | Lectura pública para QR |
+| `getNotificacionPublicaFn` | Lectura pública para QR de notificación |
+| `getFormularioPublicaFn` | Lectura pública para QR de formulario |
 | `resolveMapLocationFn` | Parseo de URLs de mapas |
 
 ### 10.3 Rutas de la aplicación
@@ -413,6 +441,7 @@ sequenceDiagram
 |------|-------------|
 | `/login` | Autenticación |
 | `/verificacion/$id` | Vista pública de notificación |
+| `/verificacion-formulario/$id` | Vista pública de formulario (QR en PDF) |
 | `/v/notificacion` | Compatibilidad QR legacy |
 
 **Autenticadas**
@@ -438,15 +467,18 @@ sequenceDiagram
 - **Campo primero:** botones grandes, mapa integrado, captura de ubicación GPS.
 - **Consistencia de listas:** `DataListCard` — tarjetas en móvil, tabla en desktop, paginación uniforme.
 - **Diálogos modales** para altas y ediciones rápidas sin abandonar la lista.
+- **Detalle de contribuyente** en modo consulta; la edición es acción explícita desde la lista.
+- **Dashboard** como punto de entrada operativo: prioriza pendientes de verificación y notificaciones.
 
 ### 11.2 Navegación móvil
 
 Barra inferior fija: **Inicio**, **Contrib.**, **Formul.**, **Notif.**, **Mapa**.  
-Reportes, Usuarios y Perfil accesibles desde menú lateral (hamburguesa).
+Menú lateral (hamburguesa): ítem de formularios etiquetado **Formulario** (no «Verificación»).  
+Reportes, Usuarios y Perfil accesibles desde el menú lateral.
 
 ### 11.3 Documentos impresos
 
-- **Formulario PDF:** encabezado GAM Riberalta, mapa capturado, fotos, firmas (incl. “Encargado de Ruat”).
+- **Formulario PDF:** encabezado GAM Riberalta, QR de verificación alineado con el título, mapa capturado, fotos, firmas (incl. “Encargado de Ruat”); campos sin verificar muestran `—`.
 - **Notificación PDF:** título “NOTIFICACIÓN”, conceptos marcados, QR de verificación.
 
 ---
@@ -469,7 +501,7 @@ Reportes, Usuarios y Perfil accesibles desde menú lateral (hamburguesa).
 |--------|---------|------------|
 | Dependencia de Supabase | Alto | Backups, monitoreo, documentar variables de entorno |
 | Sin modo offline | Medio | Roadmap; indicar conectividad en UI |
-| Texto desactualizado en dashboard (“aviso, advertencia o multa”) | Bajo | Alinear copy con modelo actual |
+| KPI «En mapa» repite contador de pendientes | Bajo | Valor informativo; enlace correcto al mapa filtrado |
 | Primer admin único | Medio | Procedimiento de respaldo de cuenta admin |
 | Límite 500 marcadores en mapa | Medio | Filtros y búsqueda; paginación futura |
 
@@ -485,7 +517,7 @@ Reportes, Usuarios y Perfil accesibles desde menú lateral (hamburguesa).
 | **Notificación** | Comunicación tributaria formal con fecha límite y conceptos adeudados |
 | **RUAT** | Registro Único de Actividades Tributarias (contexto municipal) |
 | **RLS** | Row Level Security de PostgreSQL en Supabase |
-| **QR de verificación** | Enlace público a `/verificacion/{uuid}` |
+| **QR de verificación** | Enlace público a `/verificacion/{uuid}` (notificación) o `/verificacion-formulario/{uuid}` (formulario) |
 
 ---
 
@@ -509,7 +541,8 @@ Reportes, Usuarios y Perfil accesibles desde menú lateral (hamburguesa).
 | Versión | Fecha | Autor | Cambios |
 |---------|-------|-------|---------|
 | 1.0 | Mayo 2026 | Generado desde análisis de código v1.0.61 | Documento inicial |
+| 1.1 | Mayo 2026 | Actualización de producto v1.0.67 | Dashboard operativo; detalle de contribuyente solo lectura; listas móvil unificadas; filtros por URL (formularios, notificaciones, mapa); filtros Baja/Anulados; reportes y campos pendientes de verificación; QR y vista pública de formulario |
 
 ---
 
-*Este PRD refleja el estado del producto según el código fuente del repositorio `sirat` (rama `main`, versión 1.0.61). Ante divergencias entre este documento y el código, prevalece el comportamiento implementado hasta que se actualice el PRD.*
+*Este PRD refleja el estado del producto según el código fuente del repositorio `sirat` (rama `main`, versión 1.0.67). Ante divergencias entre este documento y el código, prevalece el comportamiento implementado hasta que se actualice el PRD.*
