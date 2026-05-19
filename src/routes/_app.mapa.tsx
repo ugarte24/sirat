@@ -16,6 +16,22 @@ import { toast } from "sonner";
 type MapaSearch = { actividad?: string };
 type MapaFiltro = "todos" | "pendientes" | "verificados";
 
+function mapaVacioMensaje(
+  modoActividad: boolean,
+  estadoFiltro: MapaFiltro,
+  hayBusqueda: boolean,
+): string {
+  if (modoActividad) return "Actividad no encontrada.";
+  if (hayBusqueda) {
+    if (estadoFiltro === "pendientes") return "Ninguna actividad pendiente coincide con la búsqueda.";
+    if (estadoFiltro === "verificados") return "Ninguna actividad verificada coincide con la búsqueda.";
+    return "Ninguna actividad coincide con la búsqueda.";
+  }
+  if (estadoFiltro === "pendientes") return "Sin actividades pendientes.";
+  if (estadoFiltro === "verificados") return "Sin actividades verificadas.";
+  return "Sin actividades con ubicación.";
+}
+
 const MAPA_SELECT =
   "id,latitud,longitud,razon_social,direccion,referencia,estado,mapa_zoom,contribuyente:contribuyentes(nombre_completo)";
 
@@ -213,7 +229,7 @@ function Mapa() {
             </div>
           ) : markers.length === 0 ? (
             <div className="flex h-full items-center justify-center p-6 text-center text-sm text-muted-foreground">
-              {modoActividad ? "Actividad no encontrada." : "Sin actividades con ubicación."}
+              {mapaVacioMensaje(modoActividad, estadoFiltro, hayBusqueda)}
             </div>
           ) : (
             <MapPicker
