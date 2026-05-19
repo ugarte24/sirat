@@ -28,6 +28,10 @@ import {
   type FormularioQrPayload,
 } from "@/lib/formulario-qr";
 import {
+  FORMULARIO_CAMPO_SIN_VERIFICAR,
+  formularioVerificacionSinCompletar,
+} from "@/lib/sirat-forms";
+import {
   buildNotificacionVerificacionUrl,
   type NotificacionQrPayload,
 } from "@/lib/notificacion-qr";
@@ -52,7 +56,7 @@ interface FormularioData {
   contribuyente_ci: string;
   nit?: string | null;
   zona: string;
-  superficie: number;
+  superficie: number | null;
   direccion: string;
   celular: string;
   referencia: string;
@@ -214,7 +218,7 @@ export function formularioQrPayloadToPdfData(p: FormularioQrPayload): Formulario
     contribuyente_ci: p.contribuyente_ci,
     nit: p.nit === "—" ? null : p.nit,
     zona: p.zona,
-    superficie: p.superficie ?? 0,
+    superficie: p.superficie,
     direccion: p.direccion,
     celular: p.celular,
     referencia: p.referencia,
@@ -243,8 +247,19 @@ export async function buildFormularioPdfDoc(d: FormularioData): Promise<{
   });
   let y = await drawFormularioPdfHeader(doc, d.usuario, qrDataUrl);
 
+  const sinVerificar = formularioVerificacionSinCompletar({
+    estado: d.estado,
+    superficie: d.superficie,
+  });
+  const siNoPdf = (v: boolean) => (sinVerificar ? FORMULARIO_CAMPO_SIN_VERIFICAR : v ? "SÍ" : "NO");
+
   y = drawFormularioDatosSection(doc, y, [
-    ["Fecha", formatDateEsBo(d.fecha), "Superficie (m²)", String(d.superficie)],
+    [
+      "Fecha",
+      formatDateEsBo(d.fecha),
+      "Superficie (m²)",
+      sinVerificar || d.superficie == null ? FORMULARIO_CAMPO_SIN_VERIFICAR : String(d.superficie),
+    ],
     ["Contribuyente", d.contribuyente_nombre, "Celular", d.celular],
     ["C.I.", d.contribuyente_ci, "Dirección", d.direccion],
     ["Razón social", d.razon_social, "Referencia", d.referencia],
@@ -254,9 +269,9 @@ export async function buildFormularioPdfDoc(d: FormularioData): Promise<{
   y = drawFormularioInfoSection(
     doc,
     y,
-    d.procedente ? "SÍ" : "NO",
-    d.padron ? "SÍ" : "NO",
-    d.bebidas_alcoholicas ? "SÍ" : "NO",
+    siNoPdf(d.procedente),
+    siNoPdf(d.padron),
+    siNoPdf(d.bebidas_alcoholicas),
     d.observacion?.trim() || "—",
   );
 

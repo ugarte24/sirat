@@ -97,9 +97,11 @@ export async function generateStyledReportPDF(
   doc.setFont("helvetica", "normal").setFontSize(10);
   doc.text(`SIRAT — ${SIRAT_TAGLINE}`, w / 2, y, { align: "center" });
   y += 5;
-  doc.setFont("helvetica", "bold").setFontSize(9);
-  doc.text(meta.subtitulo.toUpperCase(), w / 2, y, { align: "center" });
-  y += 5;
+  if (meta.subtitulo.trim()) {
+    doc.setFont("helvetica", "bold").setFontSize(9);
+    doc.text(meta.subtitulo.toUpperCase(), w / 2, y, { align: "center" });
+    y += 5;
+  }
   doc.setFont("helvetica", "normal").setFontSize(9);
   doc.text(rangoTexto(meta.desde, meta.hasta), w / 2, y, { align: "center" });
 
@@ -155,6 +157,7 @@ export function buildStyledReportExcel(
   const emptyRow = (): XLSX.CellObject[] =>
     Array.from({ length: nCols }, () => cellStyle(C.white.hex));
 
+  const hasSubtitle = meta.subtitulo.trim().length > 0;
   const headerBlock: XLSX.CellObject[][] = [
     [
       textCell("SIRAT", C.primary.hex, { bold: true, color: C.white.hex, size: 14 }),
@@ -191,10 +194,18 @@ export function buildStyledReportExcel(
       textCell(`SIRAT — ${SIRAT_TAGLINE}`, C.white.hex, { size: 10, align: "center" }),
       ...Array.from({ length: nCols - 1 }, () => cellStyle(C.white.hex)),
     ],
-    [
-      textCell(meta.subtitulo.toUpperCase(), C.white.hex, { bold: true, size: 10, align: "center" }),
-      ...Array.from({ length: nCols - 1 }, () => cellStyle(C.white.hex)),
-    ],
+    ...(hasSubtitle
+      ? [
+          [
+            textCell(meta.subtitulo.toUpperCase(), C.white.hex, {
+              bold: true,
+              size: 10,
+              align: "center",
+            }),
+            ...Array.from({ length: nCols - 1 }, () => cellStyle(C.white.hex)),
+          ],
+        ]
+      : []),
     [
       textCell(rangoTexto(meta.desde, meta.hasta), C.white.hex, { size: 9, align: "center" }),
       ...Array.from({ length: nCols - 1 }, () => cellStyle(C.white.hex)),
@@ -214,6 +225,7 @@ export function buildStyledReportExcel(
   const aoa = [...headerBlock, ...dataRows];
   const ws = XLSX.utils.aoa_to_sheet(aoa);
 
+  const rangoRow = hasSubtitle ? 7 : 6;
   ws["!merges"] = [
     { s: { r: 0, c: 0 }, e: { r: 0, c: Math.max(0, nCols - 2) } },
     { s: { r: 0, c: nCols - 1 }, e: { r: 0, c: nCols - 1 } },
@@ -221,8 +233,8 @@ export function buildStyledReportExcel(
     { s: { r: 2, c: 0 }, e: { r: 2, c: nCols - 1 } },
     { s: { r: 4, c: 0 }, e: { r: 4, c: nCols - 1 } },
     { s: { r: 5, c: 0 }, e: { r: 5, c: nCols - 1 } },
-    { s: { r: 6, c: 0 }, e: { r: 6, c: nCols - 1 } },
-    { s: { r: 7, c: 0 }, e: { r: 7, c: nCols - 1 } },
+    ...(hasSubtitle ? [{ s: { r: 6, c: 0 }, e: { r: 6, c: nCols - 1 } }] : []),
+    { s: { r: rangoRow, c: 0 }, e: { r: rangoRow, c: nCols - 1 } },
   ];
 
   ws["!cols"] = cols.map((c) => ({

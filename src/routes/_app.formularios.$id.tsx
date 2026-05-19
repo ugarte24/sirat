@@ -12,7 +12,11 @@ import { generateFormularioPDF, generateFormularioFotosPDF } from "@/lib/pdf";
 import { useAuth } from "@/lib/auth";
 import { FORMULARIO_VERIFICACION_NOMBRE, FORMULARIO_VERIFICACION_SECCION } from "@/lib/sirat-brand";
 import { formatDateEsBo } from "@/lib/date";
-import { appendObservacionCambioEstado, type FormularioEstadoAccion } from "@/lib/sirat-forms";
+import {
+  appendObservacionCambioEstado,
+  formularioVerificacionSinCompletar,
+  type FormularioEstadoAccion,
+} from "@/lib/sirat-forms";
 import { ObservacionRequeridaDialog } from "@/components/ObservacionRequeridaDialog";
 import {
   DetailBoolean,
@@ -326,11 +330,27 @@ function Detalle() {
         </DetailSection>
         <DetailSection title="Verificación">
           <DetailGrid>
-            <DetailField label="Procedente" value={<DetailBoolean value={f.procedente} />} />
-            <DetailField label="Padrón" value={<DetailBoolean value={f.padron} />} />
+            <DetailField
+              label="Procedente"
+              value={
+                <DetailBoolean
+                  value={formularioVerificacionSinCompletar(f) ? null : f.procedente}
+                />
+              }
+            />
+            <DetailField
+              label="Padrón"
+              value={
+                <DetailBoolean value={formularioVerificacionSinCompletar(f) ? null : f.padron} />
+              }
+            />
             <DetailField
               label="Bebidas alcohólicas"
-              value={<DetailBoolean value={f.bebidas_alcoholicas} />}
+              value={
+                <DetailBoolean
+                  value={formularioVerificacionSinCompletar(f) ? null : f.bebidas_alcoholicas}
+                />
+              }
             />
             {f.observacion ? (
               <DetailField label="Observación" value={f.observacion} />

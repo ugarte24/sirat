@@ -1,5 +1,10 @@
 import { formatDateEsBo } from "@/lib/date";
-import { notificacionConceptosMarcados } from "@/lib/sirat-forms";
+import {
+  formularioSiNoExport,
+  formularioSuperficieExport,
+  formularioVerificacionSinCompletar,
+  notificacionConceptosMarcados,
+} from "@/lib/sirat-forms";
 import { NOTIFICACION_GESTIONES_ADEUDADAS_LABEL } from "@/lib/sirat-brand";
 
 export type ReporteTipo = "formularios" | "notificaciones" | "contribuyentes";
@@ -24,11 +29,11 @@ export const REPORTE_COLUMNS: Record<ReporteTipo, ReportColumn[]> = {
     { key: "direccion", header: "Dirección" },
     { key: "celular", header: "Celular" },
     { key: "referencia", header: "Referencia" },
-    { key: "coordenadas", header: "Coordenadas" },
     { key: "procedente", header: "Procedente" },
     { key: "padron", header: "Padrón" },
     { key: "bebidas_alcoholicas", header: "Bebidas alcohólicas" },
     { key: "observacion", header: "Observación" },
+    { key: "estado", header: "Estado" },
   ],
   notificaciones: [
     { key: "fecha_emision", header: "Fecha emisión" },
@@ -54,16 +59,15 @@ type FormularioRow = {
   razon_social: string;
   nit: string | null;
   zona: string;
-  superficie: number;
+  superficie: number | null;
   direccion: string;
   celular: string;
   referencia: string;
-  latitud: number | null;
-  longitud: number | null;
   procedente: boolean;
   padron: boolean;
   bebidas_alcoholicas: boolean;
   observacion: string | null;
+  estado: string;
   contribuyente: { nombre_completo: string; ci: string } | null;
 };
 
@@ -91,9 +95,16 @@ type ContribuyenteRow = {
 
 export type ReporteFila = Record<string, string>;
 
+function formularioEstadoLabel(estado: string): string {
+  if (estado === "pendiente_verificacion") return "Pendiente verificación";
+  if (estado === "activo") return "Activo";
+  if (estado === "baja") return "Baja";
+  if (estado === "anulado") return "Anulado";
+  return estado;
+}
+
 function mapFormulario(row: FormularioRow): ReporteFila {
-  const coords =
-    row.latitud != null && row.longitud != null ? `${row.latitud}, ${row.longitud}` : "";
+  const sinVerificar = formularioVerificacionSinCompletar(row);
   return {
     fecha_emision: formatDateEsBo(row.fecha),
     contribuyente_nombre: row.contribuyente?.nombre_completo ?? "",
@@ -101,15 +112,15 @@ function mapFormulario(row: FormularioRow): ReporteFila {
     razon_social: row.razon_social,
     nit: row.nit ?? "",
     zona: row.zona,
-    superficie: String(row.superficie),
+    superficie: formularioSuperficieExport(sinVerificar, row.superficie),
     direccion: row.direccion,
     celular: row.celular,
     referencia: row.referencia,
-    coordenadas: coords,
-    procedente: siNo(row.procedente),
-    padron: siNo(row.padron),
-    bebidas_alcoholicas: siNo(row.bebidas_alcoholicas),
+    procedente: formularioSiNoExport(sinVerificar, row.procedente),
+    padron: formularioSiNoExport(sinVerificar, row.padron),
+    bebidas_alcoholicas: formularioSiNoExport(sinVerificar, row.bebidas_alcoholicas),
     observacion: row.observacion ?? "",
+    estado: formularioEstadoLabel(row.estado),
   };
 }
 
@@ -151,7 +162,7 @@ export function mapReporteRows(tipo: ReporteTipo, rows: unknown[]): ReporteFila[
 export const REPORTE_SELECT: Record<ReporteTipo, string> = {
   formularios: `
     fecha, razon_social, nit, zona, superficie, direccion, celular, referencia,
-    latitud, longitud, procedente, padron, bebidas_alcoholicas, observacion, created_at,
+    procedente, padron, bebidas_alcoholicas, observacion, estado, created_at,
     contribuyente:contribuyentes(nombre_completo, ci)
   `,
   notificaciones: `

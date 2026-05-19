@@ -15,19 +15,20 @@ import {
   type ReporteTipo,
 } from "@/lib/report-export";
 import { downloadStyledReportExcel, downloadStyledReportPDF } from "@/lib/report-format";
+import { FORMULARIO_VERIFICACION_NOMBRE, FORMULARIO_VERIFICACION_SECCION } from "@/lib/sirat-brand";
 
 export const Route = createFileRoute("/_app/reportes")({ component: Reportes });
 
 const REPORTES = [
-  { key: "formularios", label: "Verificación actividades económicas" },
+  { key: "formularios", label: FORMULARIO_VERIFICACION_SECCION },
   { key: "notificaciones", label: "Notificaciones" },
   { key: "contribuyentes", label: "Contribuyentes" },
 ];
 
 const REPORTE_META: Record<ReporteTipo, { titulo: string; subtitulo: string }> = {
   formularios: {
-    titulo: "Formularios de verificación",
-    subtitulo: "Listado de formularios de verificación para actividades económicas",
+    titulo: FORMULARIO_VERIFICACION_NOMBRE,
+    subtitulo: "",
   },
   notificaciones: {
     titulo: "Notificaciones",
@@ -128,35 +129,6 @@ function Reportes() {
             <FileSpreadsheet className="h-4 w-4 mr-1" />
             Excel
           </Button>
-        </div>
-        <div className="pt-2 border-t space-y-2">
-          <Label className="text-muted-foreground">En roadmap (modelo de datos pendiente)</Label>
-          <div className="flex gap-2 flex-wrap">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() =>
-                toast.message(
-                  "Reporte de deudas: requiere definir en base de datos el modelo de deuda y criterios de cálculo.",
-                )
-              }
-            >
-              Deudas
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() =>
-                toast.message(
-                  "Padrones pendientes: requiere criterios de negocio y tablas asociadas al padrón municipal.",
-                )
-              }
-            >
-              Padrones pendientes
-            </Button>
-          </div>
         </div>
       </Card>
     </div>

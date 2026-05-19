@@ -290,9 +290,30 @@ export function formularioStateToUpdate(f: FormularioNuevoState): FormularioUpda
   };
 }
 
+/** Etapa 2 aún no guardada (registro sin verificación). */
+export function formularioVerificacionSinCompletar(
+  row: Pick<FormRow, "estado" | "superficie">,
+): boolean {
+  return row.estado === "pendiente_verificacion" && row.superficie == null;
+}
+
+/** Valor en reportes/PDF cuando el dato de verificación no existe aún. */
+export const FORMULARIO_CAMPO_SIN_VERIFICAR = "—";
+
+export function formularioSiNoExport(sinVerificar: boolean, value: boolean): string {
+  return sinVerificar ? FORMULARIO_CAMPO_SIN_VERIFICAR : value ? "Sí" : "No";
+}
+
+export function formularioSuperficieExport(
+  sinVerificar: boolean,
+  superficie: number | null,
+): string {
+  if (sinVerificar || superficie == null) return FORMULARIO_CAMPO_SIN_VERIFICAR;
+  return String(superficie);
+}
+
 export function formularioRowToState(row: FormRow): FormularioNuevoState {
-  const verificacionSinCompletar =
-    row.estado === "pendiente_verificacion" && row.superficie == null;
+  const verificacionSinCompletar = formularioVerificacionSinCompletar(row);
   return {
     contribuyente_id: row.contribuyente_id,
     razon_social: row.razon_social,
