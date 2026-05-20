@@ -5,7 +5,7 @@
 |-------|-------|
 | **Cliente** | Gobierno Autónomo Municipal de Riberalta — Jefatura de Recaudaciones |
 | **Versión del documento** | 1.2 |
-| **Versión del producto** | 1.0.72 |
+| **Versión del producto** | 1.0.73 |
 | **Fecha** | Mayo 2026 |
 | **Estado** | Basado en el código en producción/desarrollo actual |
 
@@ -239,6 +239,8 @@ Unificar en una sola plataforma web responsive (móvil + escritorio) el ciclo: *
 | NOT-16 | Detalle de notificación alineado a plantilla institucional (secciones Contribuyente / Notificación tributaria / Seguimiento); barra de acciones compacta | Should |
 | NOT-17 | Enlace «Cómo llegar en Google Maps» en mapas de solo lectura (detalle notificación y formulario) | Should |
 | NOT-18 | PDF y vista pública muestran `veces_notificado` (N.º de notificación) además de la fecha límite vigente | Must |
+| NOT-19 | Menú «Más acciones» (operador y admin en `pendiente`): marcar cumplida con confirmación; anular con observación obligatoria | Must |
+| NOT-20 | Reabrir (`cumplido` → `pendiente`): **solo admin** en «Más acciones», con observación obligatoria; el operador conserva PDF, QR, editar y renotificar según estado | Must |
 
 ### 6.6 Mapa (`/mapa`)
 
@@ -389,7 +391,9 @@ flowchart TD
     R --> B
     R --> HIST[INSERT notificacion_historial]
     B --> F{Resolución}
-    F -->|Cumplido| G[estado: cumplido]
+    F -->|Cumplido confirmado| G[estado: cumplido]
+    G --> REAB[Reabrir + observación]
+    REAB --> B
     F -->|Anulado| H[estado: anulado\n+ observación obligatoria]
 ```
 
@@ -552,7 +556,8 @@ Reportes, Usuarios y Perfil accesibles desde el menú lateral.
 | 1.0 | Mayo 2026 | Generado desde análisis de código v1.0.61 | Documento inicial |
 | 1.1 | Mayo 2026 | Actualización de producto v1.0.67 | Dashboard operativo; detalle de contribuyente solo lectura; listas móvil unificadas; filtros por URL (formularios, notificaciones, mapa); filtros Baja/Anulados; reportes y campos pendientes de verificación; QR y vista pública de formulario |
 | 1.2 | Mayo 2026 | Actualización de producto v1.0.72 | Renotificación con historial (`notificacion_historial`, `veces_notificado`); enlace Google Maps en detalle; mejoras de detalle y listado de notificaciones; exportación con N.º de notificaciones; regla Cursor de sincronizar PRD en cada push |
+| 1.2.1 | Mayo 2026 | Detalle notificaciones | Menú «Más acciones»; confirmación para cumplido; reabrir cumplido→pendiente solo admin con observación obligatoria |
 
 ---
 
-*Este PRD refleja el estado del producto según el código fuente del repositorio `sirat` (rama `main`, versión 1.0.72). Ante divergencias entre este documento y el código, prevalece el comportamiento implementado hasta que se actualice el PRD.*
+*Este PRD refleja el estado del producto según el código fuente del repositorio `sirat` (rama `main`, versión 1.0.73). Ante divergencias entre este documento y el código, prevalece el comportamiento implementado hasta que se actualice el PRD.*

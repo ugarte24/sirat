@@ -18,7 +18,23 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { NotificacionEditarForm } from "@/components/forms/NotificacionEditarForm";
-import { ArrowLeft, FileDown, Check, Ban, Pencil, QrCode, BellRing } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ArrowLeft, FileDown, Check, Ban, Pencil, QrCode, BellRing, MoreHorizontal, RotateCcw } from "lucide-react";
 import { RenotificarDialog } from "@/components/RenotificarDialog";
 import {
   notificacionNumeroLabel,
@@ -55,12 +71,15 @@ function notifEstadoBadgeVariant(
 
 function Detalle() {
   const { id } = Route.useParams();
-  const { profile } = useAuth();
+  const { profile, role } = useAuth();
   const [n, setN] = useState<any>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
   const [anularOpen, setAnularOpen] = useState(false);
   const [renotificarOpen, setRenotificarOpen] = useState(false);
+  const [cumplidoOpen, setCumplidoOpen] = useState(false);
+  const [reabrirOpen, setReabrirOpen] = useState(false);
+  const [estadoBusy, setEstadoBusy] = useState(false);
 
   const reload = useCallback(async () => {
     const { data } = await supabase
@@ -104,6 +123,9 @@ function Detalle() {
 
   const historial = (n?.historial ?? []) as NotificacionHistorialRow[];
   const veces = n?.veces_notificado ?? 1;
+  const esAdmin = role === "admin";
+  /** Operador y admin: cumplido/anular en pendiente. Solo admin: reabrir en cumplido. */
+  const showMasAcciones = n?.estado === "pendiente" || (n?.estado === "cumplido" && esAdmin);
 
   if (!n) {
     return (
@@ -148,11 +170,40 @@ function Detalle() {
     await reload();
   };
 
-  const cambiarEstado = async (estado: "cumplido" | "anulado") => {
-    const { error } = await supabase.from("notificaciones").update({ estado }).eq("id", id);
+  const marcarCumplido = async () => {
+    setEstadoBusy(true);
+    try {
+      const { error } = await supabase
+        .from("notificaciones")
+        .update({ estado: "cumplido" })
+        .eq("id", id)
+        .eq("estado", "pendiente");
+      if (error) throw new Error(error.message);
+      setN({ ...n, estado: "cumplido" });
+      toast.success("Notificación marcada como cumplida");
+      setCumplidoOpen(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "No se pudo actualizar el estado");
+    } finally {
+      setEstadoBusy(false);
+    }
+  };
+
+  const reabrirConObservacion = async (observacionNueva: string) => {
+    const observacion_seguimiento = appendObservacionSeguimiento(
+      n.observacion_seguimiento,
+      "REABIERTO",
+      observacionNueva,
+    );
+    const { error } = await supabase
+      .from("notificaciones")
+      .update({ estado: "pendiente", observacion_seguimiento })
+      .eq("id", id)
+      .eq("estado", "cumplido");
     if (error) throw new Error(error.message);
-    setN({ ...n, estado });
-    toast.success(estado === "cumplido" ? "Notificación marcada como cumplida" : "Notificación anulada");
+    setN({ ...n, estado: "pendiente", observacion_seguimiento });
+    toast.success("Notificación reabierta como pendiente");
+    await reload();
   };
 
   const anularConObservacion = async (observacionNueva: string) => {
@@ -231,31 +282,74 @@ function Detalle() {
             <span className="ml-1">Volver a notificar</span>
           </Button>
         )}
-        {n.estado === "pendiente" && (
-          <>
-            <Button
-              variant="outline"
-              size="sm"
-              type="button"
-              className="shrink-0 whitespace-nowrap"
-              onClick={() => void cambiarEstado("cumplido")}
-            >
-              <Check className="h-4 w-4 shrink-0" />
-              <span className="ml-1">Cumplido</span>
-            </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              type="button"
-              className="shrink-0 whitespace-nowrap"
-              onClick={() => setAnularOpen(true)}
-            >
-              <Ban className="h-4 w-4 shrink-0" />
-              <span className="ml-1">Anular</span>
-            </Button>
-          </>
+        {showMasAcciones && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" type="button" className="shrink-0 gap-1.5">
+                <MoreHorizontal className="h-4 w-4 shrink-0" aria-hidden />
+                <span>Más acciones</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
+              {n.estado === "pendiente" && (
+                <>
+                  <DropdownMenuItem onSelect={() => setCumplidoOpen(true)}>
+                    <Check className="h-4 w-4 mr-2 shrink-0" aria-hidden />
+                    Marcar cumplida
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-destructive focus:text-destructive"
+                    onSelect={() => setAnularOpen(true)}
+                  >
+                    <Ban className="h-4 w-4 mr-2 shrink-0" aria-hidden />
+                    Anular
+                  </DropdownMenuItem>
+                </>
+              )}
+              {n.estado === "cumplido" && esAdmin && (
+                <DropdownMenuItem onSelect={() => setReabrirOpen(true)}>
+                  <RotateCcw className="h-4 w-4 mr-2 shrink-0" aria-hidden />
+                  Reabrir (volver a pendiente)
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
       </div>
+
+      <AlertDialog open={cumplidoOpen} onOpenChange={setCumplidoOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Marcar como cumplida?</AlertDialogTitle>
+            <AlertDialogDescription>
+              La notificación dejará de aparecer como pendiente. Podrá reabrirla después si fue un
+              error (con observación en seguimiento).
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={estadoBusy}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={estadoBusy}
+              onClick={(e) => {
+                e.preventDefault();
+                void marcarCumplido();
+              }}
+            >
+              {estadoBusy ? "Guardando…" : "Sí, marcar cumplida"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <ObservacionRequeridaDialog
+        open={reabrirOpen}
+        onOpenChange={setReabrirOpen}
+        title="Reabrir notificación (solo administrador)"
+        description="Registre el motivo. La notificación volverá a estado pendiente y la observación quedará en seguimiento. Esta acción no está disponible para operadores."
+        confirmLabel="Reabrir"
+        confirmVariant="outline"
+        onConfirm={reabrirConObservacion}
+      />
 
       <ObservacionRequeridaDialog
         open={anularOpen}
