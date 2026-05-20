@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Ban, FileDown, Pencil, Printer } from "lucide-react";
 import { toast } from "sonner";
+import { MapDirectionsLink } from "@/components/MapDirectionsLink";
 import { MapPicker } from "@/components/MapPicker";
 import { downloadFormularioFoto } from "@/lib/formulario-fotos";
 import { generateFormularioPDF, generateFormularioFotosPDF } from "@/lib/pdf";
@@ -394,10 +395,11 @@ function Detalle() {
       )}
 
       {f.latitud && (
-        <Card className="p-3">
+        <Card className="p-3 space-y-2">
           <div ref={mapCaptureRef}>
             <MapPicker lat={f.latitud} lng={f.longitud} mapZoom={f.mapa_zoom} readOnly staticPreview />
           </div>
+          <MapDirectionsLink lat={f.latitud} lng={f.longitud} />
         </Card>
       )}
     </div>

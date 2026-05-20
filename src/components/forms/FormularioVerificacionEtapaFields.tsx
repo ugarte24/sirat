@@ -6,13 +6,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Button } from "@/components/ui/button";
-import { Camera, ExternalLink, Images, X } from "lucide-react";
+import { MapDirectionsLink } from "@/components/MapDirectionsLink";
+import { Camera, Images, X } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 import type { FormularioNuevoState } from "@/lib/sirat-forms";
 import { FORMULARIO_FOTO_MAX_LABEL } from "@/lib/formulario-fotos";
 import {
   formularioStateToMapMarker,
-  googleMapsDirectionsUrl,
 } from "@/lib/mapa-actividades";
 
 const MapPicker = lazy(() => import("@/components/MapPicker").then((m) => ({ default: m.MapPicker })));
@@ -95,9 +95,6 @@ export function FormularioVerificacionEtapaFields({
   const totalPhotos = visibleExisting.length + localPhotos.length;
   const canAdd = totalPhotos < maxPhotos && onAddPhotos;
 
-  const gmapsUrl =
-    marker != null ? googleMapsDirectionsUrl(marker.lat, marker.lng) : null;
-
   return (
     <>
       <Card className="p-4 space-y-3 border-0 shadow-none sm:border sm:shadow-sm">
@@ -126,14 +123,7 @@ export function FormularioVerificacionEtapaFields({
             <p className="text-xs text-muted-foreground">
               Lat: {marker.lat.toFixed(6)} • Lng: {marker.lng.toFixed(6)}
             </p>
-            {gmapsUrl ? (
-              <Button type="button" variant="outline" size="sm" className="w-full gap-2" asChild>
-                <a href={gmapsUrl} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="h-4 w-4 shrink-0" aria-hidden />
-                  Cómo llegar en Google Maps
-                </a>
-              </Button>
-            ) : null}
+            <MapDirectionsLink lat={marker.lat} lng={marker.lng} />
           </>
         ) : (
           <p className="text-sm text-muted-foreground">

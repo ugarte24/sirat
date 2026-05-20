@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import {
   DetailField,
   DetailGrid,
@@ -31,6 +32,20 @@ import { appendObservacionSeguimiento } from "@/lib/sirat-forms";
 import { ObservacionRequeridaDialog } from "@/components/ObservacionRequeridaDialog";
 
 export const Route = createFileRoute("/_app/notificaciones/$id")({ component: Detalle });
+
+function notifEstadoBadgeLabel(estado: string): string {
+  if (estado === "cumplido") return "Cumplido";
+  if (estado === "anulado") return "Anulado";
+  return "Pendiente";
+}
+
+function notifEstadoBadgeVariant(
+  estado: string,
+): "default" | "destructive" | "outline" | "secondary" {
+  if (estado === "cumplido") return "default";
+  if (estado === "anulado") return "destructive";
+  return "outline";
+}
 
 function Detalle() {
   const { id } = Route.useParams();
@@ -137,41 +152,62 @@ function Detalle() {
         </Link>
       </Button>
 
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <h1 className="font-display text-2xl font-bold">Notificación</h1>
-        <Badge
-          variant={
-            n.estado === "cumplido" ? "default" : n.estado === "anulado" ? "destructive" : "secondary"
-          }
-        >
-          {n.estado}
-        </Badge>
+      <div className="flex items-start justify-between flex-wrap gap-2">
+        <div>
+          <h1 className="font-display text-2xl font-bold">
+            {n.nombre_actividad?.trim() || contrib?.nombre_completo || "Notificación"}
+          </h1>
+        </div>
+        <Badge variant={notifEstadoBadgeVariant(n.estado)}>{notifEstadoBadgeLabel(n.estado)}</Badge>
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        <Button onClick={() => void pdf()} className="bg-gradient-primary">
-          <FileDown className="h-4 w-4 mr-1" />
-          PDF
+      <div className="flex flex-nowrap items-center gap-1.5 overflow-x-auto pb-0.5 -mx-1 px-1 [&_button]:shrink-0">
+        <Button
+          type="button"
+          size="sm"
+          onClick={() => void pdf()}
+          className="bg-gradient-primary shrink-0"
+        >
+          <FileDown className="h-4 w-4 shrink-0" />
+          <span className="ml-1">PDF</span>
         </Button>
-        <Button variant="outline" type="button" onClick={() => setQrOpen(true)}>
-          <QrCode className="h-4 w-4 mr-1" />
-          QR
+        <Button variant="outline" size="sm" type="button" className="shrink-0" onClick={() => setQrOpen(true)}>
+          <QrCode className="h-4 w-4 shrink-0" />
+          <span className="ml-1">QR</span>
         </Button>
         {n.estado === "pendiente" && (
-          <Button variant="outline" type="button" onClick={() => setEditOpen(true)}>
-            <Pencil className="h-4 w-4 mr-1" />
-            Editar
+          <Button
+            variant="outline"
+            size="sm"
+            type="button"
+            className="shrink-0"
+            onClick={() => setEditOpen(true)}
+          >
+            <Pencil className="h-4 w-4 shrink-0" />
+            <span className="ml-1">Editar</span>
           </Button>
         )}
         {n.estado === "pendiente" && (
           <>
-            <Button variant="outline" onClick={() => void cambiarEstado("cumplido")}>
-              <Check className="h-4 w-4 mr-1" />
-              Cumplido
+            <Button
+              variant="outline"
+              size="sm"
+              type="button"
+              className="shrink-0 whitespace-nowrap"
+              onClick={() => void cambiarEstado("cumplido")}
+            >
+              <Check className="h-4 w-4 shrink-0" />
+              <span className="ml-1">Cumplido</span>
             </Button>
-            <Button variant="destructive" type="button" onClick={() => setAnularOpen(true)}>
-              <Ban className="h-4 w-4 mr-1" />
-              Anular
+            <Button
+              variant="destructive"
+              size="sm"
+              type="button"
+              className="shrink-0 whitespace-nowrap"
+              onClick={() => setAnularOpen(true)}
+            >
+              <Ban className="h-4 w-4 shrink-0" />
+              <span className="ml-1">Anular</span>
             </Button>
           </>
         )}
@@ -188,13 +224,23 @@ function Detalle() {
       />
 
       <DetailTemplate>
-        <DetailSection title="Datos de la notificación" showSeparator={false}>
+        <DetailSection title="Contribuyente" showSeparator={false}>
           <DetailGrid>
             <DetailField label="Fecha emisión" value={formatDateEsBo(n.created_at.slice(0, 10))} />
             <DetailField label="Contribuyente" value={contrib?.nombre_completo ?? "—"} />
+            <DetailField label="C.I." value={contrib?.ci ?? "—"} />
+          </DetailGrid>
+        </DetailSection>
+        <DetailSection title="Notificación tributaria">
+          <DetailGrid>
             <DetailField label="Nombre de la actividad" value={n.nombre_actividad?.trim() || "—"} />
+            <DetailField
+              label="Licencia / placa / inmueble"
+              value={n.numero_identificacion?.trim() || "—"}
+            />
             <DetailField label="Dirección" value={n.direccion} />
             <DetailField label="Conceptos" value={conceptos.join(", ") || "—"} />
+            <DetailField label="Fecha límite" value={formatDateEsBo(n.fecha_limite)} />
             <DetailField
               label={NOTIFICACION_GESTIONES_ADEUDADAS_LABEL}
               className="[&_dt]:w-full sm:[&_dt]:w-52 sm:[&_dt]:leading-snug"
@@ -206,32 +252,33 @@ function Detalle() {
                 )
               }
             />
-            <DetailField label="Fecha límite" value={formatDateEsBo(n.fecha_limite)} />
-            {n.observacion_seguimiento ? (
-              <DetailField
-                label="Observación de seguimiento"
-                value={<span className="whitespace-pre-wrap font-medium">{n.observacion_seguimiento}</span>}
-              />
-            ) : null}
-            <DetailField label="C.I." value={contrib?.ci ?? "—"} />
-            <DetailField
-              label="Licencia / placa / inmueble"
-              value={n.numero_identificacion?.trim() || "—"}
-            />
           </DetailGrid>
         </DetailSection>
+        {n.observacion_seguimiento ? (
+          <DetailSection title="Seguimiento">
+            <DetailGrid>
+              <DetailField
+                label="Observación"
+                value={
+                  <span className="whitespace-pre-wrap font-medium">{n.observacion_seguimiento}</span>
+                }
+              />
+            </DetailGrid>
+          </DetailSection>
+        ) : null}
       </DetailTemplate>
 
       {n.latitud != null && n.longitud != null && (
-        <DetailSection title="Ubicación en mapa" showSeparator={false}>
+        <Card className="p-3">
           <MapPicker
             lat={n.latitud}
             lng={n.longitud}
             mapZoom={n.mapa_zoom}
             readOnly
             staticPreview
+            directionsLink
           />
-        </DetailSection>
+        </Card>
       )}
 
       {qrPayload && (

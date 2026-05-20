@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Button } from "@/components/ui/button";
+import { MapDirectionsLink } from "@/components/MapDirectionsLink";
 import { LocateFixed } from "lucide-react";
 
 // fix default icon paths
@@ -45,6 +46,8 @@ interface Props {
    * Usar solo en vistas de solo lectura (p. ej. detalle de formulario).
    */
   staticPreview?: boolean;
+  /** Muestra enlace «Cómo llegar en Google Maps» debajo del mapa (vistas de solo lectura). */
+  directionsLink?: boolean;
 }
 
 /** Zoom por defecto al abrir el mapa editable sin valor guardado. */
@@ -139,6 +142,7 @@ export function MapPicker({
   onZoomChange,
   openPopupOnLoad = false,
   staticPreview = false,
+  directionsLink = false,
 }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -396,7 +400,7 @@ export function MapPicker({
     );
   };
 
-  return (
+  const mapBlock = (
     <div
       className={`relative rounded-lg overflow-hidden border${staticPreview ? " sirat-map-static-preview" : ""}`}
       style={{ height }}
@@ -414,6 +418,15 @@ export function MapPicker({
           Mi ubicación
         </Button>
       )}
+    </div>
+  );
+
+  if (!directionsLink) return mapBlock;
+
+  return (
+    <div className="space-y-2">
+      {mapBlock}
+      <MapDirectionsLink lat={lat} lng={lng} />
     </div>
   );
 }
