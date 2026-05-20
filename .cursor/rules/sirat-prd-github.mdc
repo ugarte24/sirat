@@ -1,0 +1,30 @@
+---
+description: Mantener el PRD alineado con el producto en cada subida a GitHub
+alwaysApply: true
+---
+
+# PRD y subidas a GitHub
+
+Antes de **commit** o **push** que incluya cambios de producto (rutas, formularios, PDF, Supabase, reportes, UX), actualiza [`docs/PRD-SIRAT.md`](docs/PRD-SIRAT.md) en el **mismo commit** (no dejes el PRD desactualizado en `main`).
+
+## Qué actualizar
+
+1. **Cabecera**: `Versión del producto` = valor de `package.json` (la que verá el usuario tras el pre-commit).
+2. **Requisitos**: secciones 6.x (y 8.x si cambia el modelo de datos) con IDs nuevos o criterios modificados.
+3. **Sección 16 — Control de cambios**: una fila nueva con versión de documento (incrementar patch del PRD, p. ej. 1.1 → 1.2), fecha y resumen breve del cambio.
+4. **Pie del documento**: frase final con rama/versión de producto reflejada.
+
+## Versión del documento PRD
+
+- Independiente del patch de `package.json`; súbela cuando el PRD cambie de forma relevante (1.1, 1.2, …).
+- No dupliques la versión de app en `sirat-brand.ts`; solo en el PRD y en la tabla de control de cambios.
+
+## Si el usuario pide solo «subir a GitHub»
+
+1. Revisa `git diff` frente a lo que ya describe el PRD.
+2. Si hay divergencias, actualiza el PRD primero.
+3. Incluye `docs/PRD-SIRAT.md` en el commit junto al código.
+
+## No editar
+
+- El archivo del plan en `.cursor/plans/` salvo petición explícita del usuario.

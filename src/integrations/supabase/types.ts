@@ -159,6 +159,44 @@ export type Database = {
           },
         ]
       }
+      notificacion_historial: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          fecha_limite: string
+          id: string
+          notificacion_id: string
+          numero: number
+          observacion: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          fecha_limite: string
+          id?: string
+          notificacion_id: string
+          numero: number
+          observacion?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          fecha_limite?: string
+          id?: string
+          notificacion_id?: string
+          numero?: number
+          observacion?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notificacion_historial_notificacion_id_fkey"
+            columns: ["notificacion_id"]
+            isOneToOne: false
+            referencedRelation: "notificaciones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notificaciones: {
         Row: {
           bienes_inmuebles: boolean
@@ -180,6 +218,7 @@ export type Database = {
           padron_municipal: boolean
           permiso_bebidas_alcoholicas: boolean
           updated_at: string
+          veces_notificado: number
           vehiculos: boolean
         }
         Insert: {
@@ -202,6 +241,7 @@ export type Database = {
           padron_municipal?: boolean
           permiso_bebidas_alcoholicas?: boolean
           updated_at?: string
+          veces_notificado?: number
           vehiculos?: boolean
         }
         Update: {
@@ -224,6 +264,7 @@ export type Database = {
           padron_municipal?: boolean
           permiso_bebidas_alcoholicas?: boolean
           updated_at?: string
+          veces_notificado?: number
           vehiculos?: boolean
         }
         Relationships: [

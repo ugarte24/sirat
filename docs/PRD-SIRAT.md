@@ -4,8 +4,8 @@
 | Campo | Valor |
 |-------|-------|
 | **Cliente** | Gobierno Autónomo Municipal de Riberalta — Jefatura de Recaudaciones |
-| **Versión del documento** | 1.1 |
-| **Versión del producto** | 1.0.67 |
+| **Versión del documento** | 1.2 |
+| **Versión del producto** | 1.0.72 |
 | **Fecha** | Mayo 2026 |
 | **Estado** | Basado en el código en producción/desarrollo actual |
 
@@ -234,6 +234,11 @@ Unificar en una sola plataforma web responsive (móvil + escritorio) el ciclo: *
 | NOT-11 | Compatibilidad QR antiguo `/v/notificacion?d=` | Should |
 | NOT-12 | Filtros de lista: Todas / Pendientes / Cumplidas / Anuladas; URL `?estado=` | Must |
 | NOT-13 | Tarjetas en móvil, tabla en escritorio (patrón `DataListCard`) | Must |
+| NOT-14 | **Volver a notificar** solo en estado `pendiente`: registra nueva `fecha_limite`, incrementa `veces_notificado`, mantiene el mismo `id`/QR | Must |
+| NOT-15 | Historial append-only (`notificacion_historial`): cada fecha límite con número, fecha y observación opcional; visible en detalle; edición no cambia fecha (solo renotificar) | Must |
+| NOT-16 | Detalle de notificación alineado a plantilla institucional (secciones Contribuyente / Notificación tributaria / Seguimiento); barra de acciones compacta | Should |
+| NOT-17 | Enlace «Cómo llegar en Google Maps» en mapas de solo lectura (detalle notificación y formulario) | Should |
+| NOT-18 | PDF y vista pública muestran `veces_notificado` (N.º de notificación) además de la fecha límite vigente | Must |
 
 ### 6.6 Mapa (`/mapa`)
 
@@ -332,7 +337,8 @@ formularios ──1:N── formulario_fotos (máx. 2, trigger DB)
 | `contribuyentes` | Padrón municipal (C.I. UNIQUE) |
 | `formularios` | Actividad económica georreferenciada |
 | `formulario_fotos` | Rutas en Storage |
-| `notificaciones` | Notificación tributaria |
+| `notificaciones` | Notificación tributaria (`veces_notificado`, `fecha_limite` vigente) |
+| `notificacion_historial` | Historial de fechas límite por renotificación (append-only) |
 
 ### 8.3 Enumeraciones
 
@@ -375,10 +381,13 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    A[Operador crea notificación] --> B[Estado: pendiente]
+    A[Operador crea notificación] --> B[Estado: pendiente\nveces_notificado = 1]
     B --> C[Genera PDF + QR]
     C --> D[Contribuyente escanea QR]
     D --> E[Vista pública /verificacion/id]
+    B --> R[Volver a notificar\nnueva fecha_limite]
+    R --> B
+    R --> HIST[INSERT notificacion_historial]
     B --> F{Resolución}
     F -->|Cumplido| G[estado: cumplido]
     F -->|Anulado| H[estado: anulado\n+ observación obligatoria]
@@ -542,7 +551,8 @@ Reportes, Usuarios y Perfil accesibles desde el menú lateral.
 |---------|-------|-------|---------|
 | 1.0 | Mayo 2026 | Generado desde análisis de código v1.0.61 | Documento inicial |
 | 1.1 | Mayo 2026 | Actualización de producto v1.0.67 | Dashboard operativo; detalle de contribuyente solo lectura; listas móvil unificadas; filtros por URL (formularios, notificaciones, mapa); filtros Baja/Anulados; reportes y campos pendientes de verificación; QR y vista pública de formulario |
+| 1.2 | Mayo 2026 | Actualización de producto v1.0.72 | Renotificación con historial (`notificacion_historial`, `veces_notificado`); enlace Google Maps en detalle; mejoras de detalle y listado de notificaciones; exportación con N.º de notificaciones; regla Cursor de sincronizar PRD en cada push |
 
 ---
 
-*Este PRD refleja el estado del producto según el código fuente del repositorio `sirat` (rama `main`, versión 1.0.67). Ante divergencias entre este documento y el código, prevalece el comportamiento implementado hasta que se actualice el PRD.*
+*Este PRD refleja el estado del producto según el código fuente del repositorio `sirat` (rama `main`, versión 1.0.72). Ante divergencias entre este documento y el código, prevalece el comportamiento implementado hasta que se actualice el PRD.*

@@ -46,7 +46,7 @@ function parseNotifEstado(raw: unknown): NotifEstadoFiltro | undefined {
 
 type NotifRow = Pick<
   Database["public"]["Tables"]["notificaciones"]["Row"],
-  "id" | "fecha_limite" | "estado" | "nombre_actividad" | "created_at" | "contribuyente_id"
+  "id" | "fecha_limite" | "estado" | "nombre_actividad" | "created_at" | "contribuyente_id" | "veces_notificado"
 > & {
   contribuyente: { nombre_completo: string; ci: string } | null;
 };
@@ -178,7 +178,7 @@ function Lista() {
     let qb = supabase
       .from("notificaciones")
       .select(
-        "id, fecha_limite, estado, nombre_actividad, created_at, contribuyente_id, contribuyente:contribuyentes(nombre_completo, ci)",
+        "id, fecha_limite, estado, nombre_actividad, created_at, contribuyente_id, veces_notificado, contribuyente:contribuyentes(nombre_completo, ci)",
         { count: "exact" },
       )
       .order("created_at", ORDER_CREATED_DESC)
@@ -396,6 +396,7 @@ function Lista() {
                   </p>
                   <p className="col-span-2 text-xs text-muted-foreground">
                     Límite: {formatDateEsBo(n.fecha_limite)}
+                    {(n.veces_notificado ?? 1) > 1 ? ` · ${n.veces_notificado}.ª notif.` : ""}
                   </p>
                   <p className="min-w-0 text-xs text-muted-foreground leading-snug">
                     {n.contribuyente?.nombre_completo ?? "—"}
@@ -415,20 +416,21 @@ function Lista() {
               <DataListTh>Emisión</DataListTh>
               <DataListTh>Notificación</DataListTh>
               <DataListTh>Límite</DataListTh>
+              <DataListTh>N.º</DataListTh>
               <DataListTh>Estado</DataListTh>
               <DataListTh align="center">Acciones</DataListTh>
             </DataListTheadRow>
             <DataListTbody>
               {loading && (
                 <TableRow>
-                  <DataListTd className="py-10 text-center text-muted-foreground" colSpan={5}>
+                  <DataListTd className="py-10 text-center text-muted-foreground" colSpan={6}>
                     Cargando…
                   </DataListTd>
                 </TableRow>
               )}
               {!loading && list.length === 0 && (
                 <TableRow>
-                  <DataListTd className="py-10 text-center text-muted-foreground" colSpan={5}>
+                  <DataListTd className="py-10 text-center text-muted-foreground" colSpan={6}>
                     Sin notificaciones
                   </DataListTd>
                 </TableRow>
@@ -450,6 +452,7 @@ function Lista() {
                       </div>
                     </DataListTd>
                     <DataListTd className="whitespace-nowrap text-muted-foreground">{formatDateEsBo(n.fecha_limite)}</DataListTd>
+                    <DataListTd className="tabular-nums text-muted-foreground">{n.veces_notificado ?? 1}</DataListTd>
                     <DataListTd>
                       <NotifEstadoPill estado={n.estado} />
                     </DataListTd>

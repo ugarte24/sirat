@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ContribuyenteCombobox } from "@/components/ContribuyenteCombobox";
-import { DatePickerField } from "@/components/DatePickerField";
+import { formatDateEsBo } from "@/lib/date";
 import { toast } from "sonner";
 import { Search } from "lucide-react";
 import type { ContribuyenteCatalogRow, NotificacionNuevaState } from "@/lib/sirat-forms";
@@ -120,7 +120,6 @@ export function NotificacionEditarForm({ notificacionId, onSuccess, onCancel }: 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!n) return;
-    if (!n.fecha_limite.trim()) return toast.error("Indique la fecha límite");
     const hasConcepto =
       n.padron_municipal ||
       n.permiso_bebidas_alcoholicas ||
@@ -230,13 +229,11 @@ export function NotificacionEditarForm({ notificacionId, onSuccess, onCancel }: 
           <Input value={n.direccion} onChange={(e) => setN({ ...n, direccion: e.target.value })} required />
         </div>
         <div>
-          <Label htmlFor="notif-edit-fecha-limite">Fecha límite *</Label>
-          <DatePickerField
-            id="notif-edit-fecha-limite"
-            value={n.fecha_limite}
-            onChange={(fecha_limite) => setN({ ...n, fecha_limite })}
-            required
-          />
+          <Label>Fecha límite vigente</Label>
+          <p className="mt-1 text-sm font-medium">{n.fecha_limite ? formatDateEsBo(n.fecha_limite) : "—"}</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Para cambiar la fecha límite use «Volver a notificar» en el detalle de la notificación.
+          </p>
         </div>
         <fieldset className="space-y-2 min-w-0">
           <legend className="text-sm font-medium leading-none">Conceptos *</legend>

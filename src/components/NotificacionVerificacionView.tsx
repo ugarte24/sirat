@@ -40,6 +40,10 @@ export function NotificacionVerificacionView({ data }: { data: NotificacionQrPay
         </div>
         <dl className="px-4 py-1">
           <Field label="Fecha emisión" value={formatDateEsBo(data.fecha_emision)} />
+          <Field
+            label="N.º de notificación"
+            value={String(data.veces_notificado > 0 ? data.veces_notificado : 1)}
+          />
           <Field label="Contribuyente" value={data.contribuyente_nombre} />
           <Field label="Nombre de la actividad" value={data.nombre_actividad} />
           <Field label="Dirección" value={data.direccion} />

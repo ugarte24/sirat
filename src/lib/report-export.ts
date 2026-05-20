@@ -43,6 +43,7 @@ export const REPORTE_COLUMNS: Record<ReporteTipo, ReportColumn[]> = {
     { key: "numero_identificacion", header: "Licencia / placa / inmueble" },
     { key: "direccion", header: "Dirección" },
     { key: "fecha_limite", header: "Fecha límite" },
+    { key: "veces_notificado", header: "N.º notificaciones" },
     { key: "conceptos", header: "Conceptos" },
     { key: "gestiones_adeudadas", header: NOTIFICACION_GESTIONES_ADEUDADAS_LABEL },
   ],
@@ -77,6 +78,7 @@ type NotificacionRow = {
   numero_identificacion: string | null;
   direccion: string;
   fecha_limite: string;
+  veces_notificado: number;
   gestiones_adeudadas: string | null;
   padron_municipal: boolean;
   permiso_bebidas_alcoholicas: boolean;
@@ -134,6 +136,7 @@ function mapNotificacion(row: NotificacionRow): ReporteFila {
     numero_identificacion: row.numero_identificacion ?? "",
     direccion: row.direccion,
     fecha_limite: formatDateEsBo(row.fecha_limite),
+    veces_notificado: String(row.veces_notificado ?? 1),
     conceptos,
     gestiones_adeudadas: row.gestiones_adeudadas ?? "",
   };
@@ -167,7 +170,7 @@ export const REPORTE_SELECT: Record<ReporteTipo, string> = {
   `,
   notificaciones: `
     created_at, nombre_actividad, numero_identificacion, direccion, fecha_limite,
-    gestiones_adeudadas, padron_municipal, permiso_bebidas_alcoholicas, impuestos_patente,
+    veces_notificado, gestiones_adeudadas, padron_municipal, permiso_bebidas_alcoholicas, impuestos_patente,
     bienes_inmuebles, vehiculos,
     contribuyente:contribuyentes(nombre_completo, ci)
   `,

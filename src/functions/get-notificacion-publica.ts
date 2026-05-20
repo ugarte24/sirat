@@ -28,6 +28,7 @@ export const getNotificacionPublicaFn = createServerFn({ method: "POST" })
           numero_identificacion,
           direccion,
           gestiones_adeudadas,
+          veces_notificado,
           padron_municipal,
           permiso_bebidas_alcoholicas,
           impuestos_patente,
@@ -64,6 +65,7 @@ export const getNotificacionPublicaFn = createServerFn({ method: "POST" })
           direccion: row.direccion,
           conceptos,
           gestiones_adeudadas: row.gestiones_adeudadas,
+          veces_notificado: row.veces_notificado,
         }),
       };
     } catch (e) {

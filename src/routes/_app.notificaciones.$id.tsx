@@ -18,7 +18,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { NotificacionEditarForm } from "@/components/forms/NotificacionEditarForm";
-import { ArrowLeft, FileDown, Check, Ban, Pencil, QrCode } from "lucide-react";
+import { ArrowLeft, FileDown, Check, Ban, Pencil, QrCode, BellRing } from "lucide-react";
+import { RenotificarDialog } from "@/components/RenotificarDialog";
+import {
+  notificacionNumeroLabel,
+  registrarRenotificacion,
+  type NotificacionHistorialRow,
+} from "@/lib/notificacion-renotificar";
 import { NotificacionQrDialog } from "@/components/NotificacionQrDialog";
 import { MapPicker } from "@/components/MapPicker";
 import { buildNotificacionQrPayload } from "@/lib/notificacion-qr";
@@ -54,12 +60,16 @@ function Detalle() {
   const [editOpen, setEditOpen] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
   const [anularOpen, setAnularOpen] = useState(false);
+  const [renotificarOpen, setRenotificarOpen] = useState(false);
 
   const reload = useCallback(async () => {
     const { data } = await supabase
       .from("notificaciones")
-      .select("*, contribuyente:contribuyentes(nombre_completo,ci)")
+      .select(
+        "*, contribuyente:contribuyentes(nombre_completo,ci), historial:notificacion_historial(numero, fecha_limite, created_at, observacion)",
+      )
       .eq("id", id)
+      .order("numero", { referencedTable: "notificacion_historial", ascending: false })
       .maybeSingle();
     setN(data);
   }, [id]);
@@ -86,10 +96,14 @@ function Detalle() {
             direccion: n.direccion,
             conceptos,
             gestiones_adeudadas: n.gestiones_adeudadas,
+            veces_notificado: n.veces_notificado ?? 1,
           })
         : null,
     [id, n, conceptos, contrib],
   );
+
+  const historial = (n?.historial ?? []) as NotificacionHistorialRow[];
+  const veces = n?.veces_notificado ?? 1;
 
   if (!n) {
     return (
@@ -117,8 +131,21 @@ function Detalle() {
       fecha_limite: n.fecha_limite,
       conceptos,
       gestiones_adeudadas: n.gestiones_adeudadas,
+      veces_notificado: veces,
       usuario: profile?.full_name ?? profile?.email ?? undefined,
     });
+  };
+
+  const renotificar = async (nuevaFechaLimite: string, observacion: string) => {
+    const { data: u } = await supabase.auth.getUser();
+    await registrarRenotificacion({
+      notificacionId: id,
+      nuevaFechaLimite,
+      observacion: observacion || undefined,
+      userId: u.user?.id,
+    });
+    toast.success("Renotificación registrada");
+    await reload();
   };
 
   const cambiarEstado = async (estado: "cumplido" | "anulado") => {
@@ -158,7 +185,12 @@ function Detalle() {
             {n.nombre_actividad?.trim() || contrib?.nombre_completo || "Notificación"}
           </h1>
         </div>
-        <Badge variant={notifEstadoBadgeVariant(n.estado)}>{notifEstadoBadgeLabel(n.estado)}</Badge>
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="secondary" className="font-normal">
+            {notificacionNumeroLabel(veces)}
+          </Badge>
+          <Badge variant={notifEstadoBadgeVariant(n.estado)}>{notifEstadoBadgeLabel(n.estado)}</Badge>
+        </div>
       </div>
 
       <div className="flex flex-nowrap items-center gap-1.5 overflow-x-auto pb-0.5 -mx-1 px-1 [&_button]:shrink-0">
@@ -185,6 +217,18 @@ function Detalle() {
           >
             <Pencil className="h-4 w-4 shrink-0" />
             <span className="ml-1">Editar</span>
+          </Button>
+        )}
+        {n.estado === "pendiente" && (
+          <Button
+            variant="outline"
+            size="sm"
+            type="button"
+            className="shrink-0 whitespace-nowrap"
+            onClick={() => setRenotificarOpen(true)}
+          >
+            <BellRing className="h-4 w-4 shrink-0" />
+            <span className="ml-1">Volver a notificar</span>
           </Button>
         )}
         {n.estado === "pendiente" && (
@@ -223,6 +267,13 @@ function Detalle() {
         onConfirm={anularConObservacion}
       />
 
+      <RenotificarDialog
+        open={renotificarOpen}
+        onOpenChange={setRenotificarOpen}
+        fechaLimiteActual={n.fecha_limite}
+        onConfirm={renotificar}
+      />
+
       <DetailTemplate>
         <DetailSection title="Contribuyente" showSeparator={false}>
           <DetailGrid>
@@ -243,10 +294,9 @@ function Detalle() {
             <DetailField label="Fecha límite" value={formatDateEsBo(n.fecha_limite)} />
             <DetailField
               label={NOTIFICACION_GESTIONES_ADEUDADAS_LABEL}
-              className="[&_dt]:w-full sm:[&_dt]:w-52 sm:[&_dt]:leading-snug"
               value={
                 n.gestiones_adeudadas?.trim() ? (
-                  <span className="whitespace-pre-wrap font-medium">{n.gestiones_adeudadas.trim()}</span>
+                  <span className="whitespace-pre-wrap">{n.gestiones_adeudadas.trim()}</span>
                 ) : (
                   "—"
                 )
@@ -264,6 +314,36 @@ function Detalle() {
                 }
               />
             </DetailGrid>
+          </DetailSection>
+        ) : null}
+        {historial.length > 0 ? (
+          <DetailSection title="Historial de fechas límite">
+            <div className="overflow-x-auto rounded-md border border-border/60">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b bg-muted/40 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    <th className="px-3 py-2">N.º</th>
+                    <th className="px-3 py-2">Fecha límite</th>
+                    <th className="px-3 py-2">Registrado</th>
+                    <th className="px-3 py-2">Observación</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {historial.map((h) => (
+                    <tr key={h.numero} className="border-b border-border/40 last:border-0">
+                      <td className="px-3 py-2 font-medium">{h.numero}</td>
+                      <td className="px-3 py-2">{formatDateEsBo(h.fecha_limite)}</td>
+                      <td className="px-3 py-2 text-muted-foreground">
+                        {formatDateEsBo(h.created_at.slice(0, 10))}
+                      </td>
+                      <td className="px-3 py-2 text-muted-foreground">
+                        {h.observacion?.trim() || "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </DetailSection>
         ) : null}
       </DetailTemplate>

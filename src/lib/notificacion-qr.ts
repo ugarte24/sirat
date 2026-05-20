@@ -14,6 +14,7 @@ export type NotificacionQrPayload = {
   direccion: string;
   conceptos: string[];
   gestiones_adeudadas: string;
+  veces_notificado: number;
 };
 
 export function buildNotificacionQrPayload(input: {
@@ -27,6 +28,7 @@ export function buildNotificacionQrPayload(input: {
   direccion: string;
   conceptos: string[];
   gestiones_adeudadas: string | null;
+  veces_notificado?: number | null;
 }): NotificacionQrPayload {
   return {
     t: "notificacion",
@@ -41,6 +43,7 @@ export function buildNotificacionQrPayload(input: {
     direccion: input.direccion,
     conceptos: input.conceptos,
     gestiones_adeudadas: input.gestiones_adeudadas?.trim() || "—",
+    veces_notificado: input.veces_notificado != null && input.veces_notificado > 0 ? input.veces_notificado : 1,
   };
 }
 
@@ -69,7 +72,11 @@ export function decodeNotificacionQrPayload(encoded: string): NotificacionQrPayl
     const data = JSON.parse(base64UrlDecode(encoded)) as NotificacionQrPayload;
     if (data?.t !== "notificacion" || data?.v !== NOTIFICACION_QR_VERSION) return null;
     if (!data.id) return null;
-    return data;
+    const veces = data.veces_notificado;
+    return {
+      ...data,
+      veces_notificado: typeof veces === "number" && veces > 0 ? veces : 1,
+    };
   } catch {
     return null;
   }

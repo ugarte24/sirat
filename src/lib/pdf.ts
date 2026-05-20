@@ -341,6 +341,7 @@ export interface NotificacionPdfData {
   fecha_limite: string;
   conceptos: string[];
   gestiones_adeudadas: string | null;
+  veces_notificado?: number;
   usuario?: string;
 }
 
@@ -357,6 +358,7 @@ export function notificacionQrPayloadToPdfData(payload: NotificacionQrPayload): 
     conceptos: payload.conceptos,
     gestiones_adeudadas:
       payload.gestiones_adeudadas === "—" ? null : payload.gestiones_adeudadas,
+    veces_notificado: payload.veces_notificado,
   };
 }
 
@@ -389,8 +391,14 @@ export async function buildNotificacionPdfDoc(d: NotificacionPdfData): Promise<j
 
   y += 10;
 
+  const veces = d.veces_notificado != null && d.veces_notificado > 0 ? d.veces_notificado : 1;
+
   y = drawPdfTablaSection(doc, y, "DATOS DE LA NOTIFICACIÓN", [
     ["Fecha emisión", formatDateEsBo(d.fecha), "Contribuyente", d.contribuyente_nombre],
+    [
+      { content: "N.º de notificación", styles: PDF_LABEL_CELL },
+      { content: String(veces), colSpan: 3 },
+    ],
     [
       { content: "Nombre de la actividad", styles: PDF_LABEL_CELL },
       { content: d.nombre_actividad?.trim() || "—", colSpan: 3 },

@@ -456,14 +456,13 @@ export function notificacionStateToInsert(
   return { ...notificacionStateToRowFields(n), created_by: createdBy ?? null };
 }
 
-/** Payload hacia `notificaciones.update` */
+/** Payload hacia `notificaciones.update` (sin fecha_limite; usar renotificar) */
 export type NotificacionUpdatePayload = Pick<
   Db["notificaciones"]["Update"],
   | "contribuyente_id"
   | "nombre_actividad"
   | "numero_identificacion"
   | "direccion"
-  | "fecha_limite"
   | "latitud"
   | "longitud"
   | "mapa_zoom"
@@ -476,7 +475,8 @@ export type NotificacionUpdatePayload = Pick<
 >;
 
 export function notificacionStateToUpdate(n: NotificacionNuevaState): NotificacionUpdatePayload {
-  return notificacionStateToRowFields(n);
+  const { fecha_limite: _fecha, ...rest } = notificacionStateToRowFields(n);
+  return rest;
 }
 
 export function notificacionRowToState(row: NotifRow): NotificacionNuevaState {
