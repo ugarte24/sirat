@@ -4,7 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Ban, FileDown, Pencil, Printer } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ArrowLeft, Ban, FileDown, MoreHorizontal, Pencil, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { MapDirectionsLink } from "@/components/MapDirectionsLink";
 import { MapPicker } from "@/components/MapPicker";
@@ -31,7 +37,7 @@ export const Route = createFileRoute("/_app/formularios/$id")({ component: Detal
 
 function Detalle() {
   const { id } = Route.useParams();
-  const { role, profile } = useAuth();
+  const { profile } = useAuth();
   const [f, setF] = useState<any>(null);
   const [photos, setPhotos] = useState<{ url: string; storagePath: string; blob?: Blob }[]>([]);
   const [photosLoading, setPhotosLoading] = useState(true);
@@ -222,7 +228,7 @@ function Detalle() {
         </Badge>
       </div>
 
-      <div className="flex flex-nowrap items-center gap-1.5 overflow-x-auto pb-0.5 -mx-1 px-1 [&_button]:shrink-0 [&_a]:shrink-0">
+      <div className="flex w-full flex-nowrap items-center gap-1.5 overflow-x-auto pb-0.5 -mx-1 px-1 [&_button]:shrink-0 [&_a]:shrink-0">
         {f.estado === "activo" && f.superficie != null && (
           <Button
             type="button"
@@ -251,28 +257,29 @@ function Detalle() {
             </Link>
           </Button>
         )}
-        {role === "admin" && f.estado === "activo" && (
-          <>
-            <Button
-              variant="outline"
-              size="sm"
-              type="button"
-              className="shrink-0 whitespace-nowrap"
-              onClick={() => setEstadoDialog("baja")}
-            >
-              Dar de baja
-            </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              type="button"
-              className="shrink-0 whitespace-nowrap"
-              onClick={() => setEstadoDialog("anulado")}
-            >
-              <Ban className="h-4 w-4 shrink-0" />
-              <span className="ml-1">Anular</span>
-            </Button>
-          </>
+        {f.estado === "activo" && (
+          <div className="ml-auto shrink-0">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" type="button" className="gap-1.5">
+                  <MoreHorizontal className="h-4 w-4 shrink-0" aria-hidden />
+                  <span>Más acciones</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuItem onSelect={() => setEstadoDialog("baja")}>
+                  Dar de baja
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="text-destructive focus:text-destructive"
+                  onSelect={() => setEstadoDialog("anulado")}
+                >
+                  <Ban className="h-4 w-4 mr-2 shrink-0" aria-hidden />
+                  Anular
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         )}
       </div>
 
