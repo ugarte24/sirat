@@ -5,7 +5,7 @@
 |-------|-------|
 | **Cliente** | Gobierno Autónomo Municipal de Riberalta — Jefatura de Recaudaciones |
 | **Versión del documento** | 1.2 |
-| **Versión del producto** | 1.0.73 |
+| **Versión del producto** | 1.0.74 |
 | **Fecha** | Mayo 2026 |
 | **Estado** | Basado en el código en producción/desarrollo actual |
 
@@ -557,7 +557,8 @@ Reportes, Usuarios y Perfil accesibles desde el menú lateral.
 | 1.1 | Mayo 2026 | Actualización de producto v1.0.67 | Dashboard operativo; detalle de contribuyente solo lectura; listas móvil unificadas; filtros por URL (formularios, notificaciones, mapa); filtros Baja/Anulados; reportes y campos pendientes de verificación; QR y vista pública de formulario |
 | 1.2 | Mayo 2026 | Actualización de producto v1.0.72 | Renotificación con historial (`notificacion_historial`, `veces_notificado`); enlace Google Maps en detalle; mejoras de detalle y listado de notificaciones; exportación con N.º de notificaciones; regla Cursor de sincronizar PRD en cada push |
 | 1.2.1 | Mayo 2026 | Detalle notificaciones | Menú «Más acciones»; confirmación para cumplido; reabrir cumplido→pendiente solo admin con observación obligatoria |
+| 1.2.2 | Mayo 2026 | PDF notificación | Contribuyente y C.I. en columna propia; orden tributario compacto; menos espacio vertical en tabla |
 
 ---
 
-*Este PRD refleja el estado del producto según el código fuente del repositorio `sirat` (rama `main`, versión 1.0.73). Ante divergencias entre este documento y el código, prevalece el comportamiento implementado hasta que se actualice el PRD.*
+*Este PRD refleja el estado del producto según el código fuente del repositorio `sirat` (rama `main`, versión 1.0.74). Ante divergencias entre este documento y el código, prevalece el comportamiento implementado hasta que se actualice el PRD.*

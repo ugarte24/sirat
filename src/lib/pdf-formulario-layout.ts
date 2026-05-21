@@ -44,18 +44,18 @@ function styleSiNoCell(data: {
   data.cell.styles.textColor = v === "SÍ" ? SI_COLOR : NO_COLOR;
 }
 
-function drawSectionTitle(doc: jsPDF, y: number, title: string): number {
+function drawSectionTitle(doc: jsPDF, y: number, title: string, compact = false): number {
   const w = doc.internal.pageSize.getWidth();
   doc.setFillColor(G.r, G.g, G.b);
   doc.circle(MARGIN + 2, y + 1.5, 1.6, "F");
   doc.setTextColor(C.text.r, C.text.g, C.text.b);
-  doc.setFont("helvetica", "bold").setFontSize(10);
+  doc.setFont("helvetica", "bold").setFontSize(compact ? 9 : 10);
   doc.text(title, MARGIN + 7, y + 2.5);
-  const lineY = y + 5;
+  const lineY = y + (compact ? 4 : 5);
   doc.setDrawColor(G.r, G.g, G.b);
   doc.setLineWidth(0.35);
   doc.line(MARGIN, lineY, w - MARGIN, lineY);
-  return lineY + 4;
+  return lineY + (compact ? 2 : 4);
 }
 
 const DATOS_TABLE_COLUMNS = {
@@ -77,6 +77,8 @@ export async function drawInstitucionalPdfHeader(
     /** QR opcional bajo el logo; con varias líneas de título, el bloque queda centrado al QR */
     qrDataUrl?: string;
     qrSizeMm?: number;
+    /** Espacio (mm) tras el bloque título/QR antes de la siguiente sección (por defecto 6). */
+    trailingGap?: number;
   },
 ): Promise<number> {
   const w = doc.internal.pageSize.getWidth();
@@ -147,7 +149,7 @@ export async function drawInstitucionalPdfHeader(
     }
   }
 
-  return contentBottom + 6;
+  return contentBottom + (opts.trailingGap ?? 6);
 }
 
 export async function drawFormularioPdfHeader(
@@ -168,20 +170,32 @@ export async function drawFormularioPdfHeader(
 
 type PdfTableRow = (string | { content: string; colSpan?: number; styles?: Record<string, unknown> })[];
 
+export type PdfTablaSectionOpts = {
+  /** Menos espacio entre título de sección y tabla, y entre filas. */
+  compact?: boolean;
+};
+
 export function drawPdfTablaSection(
   doc: jsPDF,
   startY: number,
   sectionTitle: string,
   rows: PdfTableRow[],
+  opts?: PdfTablaSectionOpts,
 ): number {
-  const y = drawSectionTitle(doc, startY, sectionTitle);
+  const compact = opts?.compact ?? false;
+  const y = drawSectionTitle(doc, startY, sectionTitle, compact);
   autoTable(doc, {
     startY: y,
     ...TABLE_BASE,
+    styles: {
+      ...TABLE_BASE.styles,
+      cellPadding: compact ? 1.8 : TABLE_BASE.styles.cellPadding,
+      fontSize: compact ? 8 : TABLE_BASE.styles.fontSize,
+    },
     columnStyles: DATOS_TABLE_COLUMNS,
     body: rows,
   });
-  return (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 6;
+  return (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + (compact ? 3 : 6);
 }
 
 export function drawFormularioDatosSection(

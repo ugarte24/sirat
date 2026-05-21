@@ -383,18 +383,34 @@ export async function buildNotificacionPdfDoc(d: NotificacionPdfData): Promise<j
   let y = await drawInstitucionalPdfHeader(doc, {
     usuario: d.usuario,
     titleLines: [NOTIFICACION_TRIBUTARIA_PDF_TITULO],
-    titleFontSize: 17,
-    titleMarginTop: 12,
+    titleFontSize: 16,
+    titleMarginTop: 5,
     qrDataUrl,
-    qrSizeMm: 22,
+    qrSizeMm: 20,
+    trailingGap: 3,
   });
 
-  y += 10;
+  y += 2;
 
   const veces = d.veces_notificado != null && d.veces_notificado > 0 ? d.veces_notificado : 1;
 
-  y = drawPdfTablaSection(doc, y, "DATOS DE LA NOTIFICACIÓN", [
-    ["Fecha emisión", formatDateEsBo(d.fecha), "Contribuyente", d.contribuyente_nombre],
+  y = drawPdfTablaSection(
+    doc,
+    y,
+    "DATOS DE LA NOTIFICACIÓN",
+    [
+    [
+      { content: "Fecha emisión", styles: PDF_LABEL_CELL },
+      { content: formatDateEsBo(d.fecha), colSpan: 3 },
+    ],
+    [
+      { content: "Contribuyente", styles: PDF_LABEL_CELL },
+      { content: d.contribuyente_nombre, colSpan: 3 },
+    ],
+    [
+      { content: "C.I.", styles: PDF_LABEL_CELL },
+      { content: d.contribuyente_ci, colSpan: 3 },
+    ],
     [
       { content: "N.º de notificación", styles: PDF_LABEL_CELL },
       { content: String(veces), colSpan: 3 },
@@ -420,14 +436,12 @@ export async function buildNotificacionPdfDoc(d: NotificacionPdfData): Promise<j
       { content: formatDateEsBo(d.fecha_limite), colSpan: 3 },
     ],
     [
-      { content: "C.I.", styles: PDF_LABEL_CELL },
-      { content: d.contribuyente_ci, colSpan: 3 },
-    ],
-    [
       { content: "Licencia / placa / inmueble", styles: PDF_LABEL_CELL },
       { content: d.numero_identificacion?.trim() || "—", colSpan: 3 },
     ],
-  ]);
+    ],
+    { compact: true },
+  );
 
   return doc;
 }
