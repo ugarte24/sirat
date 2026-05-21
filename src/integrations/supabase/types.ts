@@ -44,6 +44,35 @@ export type Database = {
         }
         Relationships: []
       }
+      formulario_baja_fotos: {
+        Row: {
+          created_at: string
+          formulario_id: string
+          id: string
+          storage_path: string
+        }
+        Insert: {
+          created_at?: string
+          formulario_id: string
+          id?: string
+          storage_path: string
+        }
+        Update: {
+          created_at?: string
+          formulario_id?: string
+          id?: string
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "formulario_baja_fotos_formulario_id_fkey"
+            columns: ["formulario_id"]
+            isOneToOne: false
+            referencedRelation: "formularios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       formulario_fotos: {
         Row: {
           created_at: string
@@ -75,6 +104,8 @@ export type Database = {
       }
       formularios: {
         Row: {
+          baja_at: string | null
+          baja_pdf_path: string | null
           celular: string
           contribuyente_id: string
           created_at: string
@@ -100,6 +131,8 @@ export type Database = {
           zona: Database["public"]["Enums"]["zona_tipo"]
         }
         Insert: {
+          baja_at?: string | null
+          baja_pdf_path?: string | null
           celular: string
           contribuyente_id: string
           created_at?: string
@@ -125,6 +158,8 @@ export type Database = {
           zona: Database["public"]["Enums"]["zona_tipo"]
         }
         Update: {
+          baja_at?: string | null
+          baja_pdf_path?: string | null
           celular?: string
           contribuyente_id?: string
           created_at?: string

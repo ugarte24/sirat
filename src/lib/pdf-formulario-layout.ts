@@ -240,9 +240,27 @@ export function drawFormularioInfoSection(
   return (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 6;
 }
 
-export function drawFormularioFotosPageStart(doc: jsPDF, usuario?: string): number {
+export function drawFormularioFotosPageStart(
+  doc: jsPDF,
+  usuario?: string,
+  sectionTitle = "FOTOS DE LA VERIFICACIÓN",
+): number {
   const y = drawSiratPdfTopBar(doc, { usuario }) + 4;
-  return drawSectionTitle(doc, y, "FOTOS DE LA VERIFICACIÓN");
+  return drawSectionTitle(doc, y, sectionTitle);
+}
+
+/** Sección única de observación de baja (solo línea nueva). */
+export function drawFormularioBajaObservacionSection(
+  doc: jsPDF,
+  startY: number,
+  observacionBaja: string,
+): number {
+  return drawPdfTablaSection(doc, startY, "OBSERVACIÓN DE BAJA", [
+    [
+      { content: "Detalle", styles: { fontStyle: "bold", fillColor: LABEL_FILL } },
+      { content: observacionBaja.trim() || "—", colSpan: 3 },
+    ],
+  ]);
 }
 
 export function drawFormularioUbicacionSection(

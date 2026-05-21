@@ -211,7 +211,8 @@ Unificar en una sola plataforma web responsive (móvil + escritorio) el ciclo: *
 | FORM-14 | Búsqueda por razón social o contribuyente | Must |
 | FORM-15 | Detalle `/formularios/$id` con PDF, fotos, mapa; contribuyente y C.I. en filas separadas | Must |
 | FORM-16 | PDF con QR de verificación pública; solo si `activo` y `superficie` definida | Must |
-| FORM-17 | Baja/anulación: operador y admin en `activo`, observación obligatoria anexada con etiqueta `[BAJA fecha]` o `[ANULADO fecha]` | Must |
+| FORM-17 | Baja: operador y admin en `activo`; observación obligatoria; hasta 2 fotos nuevas (Storage `formulario-baja-fotos`); PDF «BAJA DE ACTIVIDAD ECONÓMICA» guardado en Storage (`formulario-baja-pdf`, sin descarga automática); fecha en PDF = fecha de baja; sin procedente/padrón/bebidas; anulación solo observación | Must |
+| FORM-21 | En detalle `baja`: botones «PDF registro» (verificación, intacto) y «PDF baja» (archivo guardado) | Must |
 | FORM-18 | Tarjetas en móvil, tabla en escritorio (patrón `DataListCard`) | Must |
 | FORM-19 | En móvil, filtros en una sola fila con desplazamiento horizontal | Should |
 | FORM-20 | Campos de verificación no completados (`pendiente_verificacion` y `superficie` nula): mostrar `—` en detalle, PDF y reportes (no valores por defecto de BD) | Must |
@@ -559,6 +560,7 @@ Reportes, Usuarios y Perfil accesibles desde el menú lateral.
 | 1.2.1 | Mayo 2026 | Detalle notificaciones | Menú «Más acciones»; confirmación para cumplido; reabrir cumplido→pendiente solo admin con observación obligatoria |
 | 1.2.2 | Mayo 2026 | PDF notificación | Contribuyente y C.I. en columna propia; orden tributario compacto; menos espacio vertical en tabla |
 | 1.2.3 | Mayo 2026 | Formularios | Dar de baja y anular para operadores (observación); menú «Más acciones» al final de la barra, como en notificaciones |
+| 1.2.4 | Mayo 2026 | Baja documentada | PDF de baja almacenado; fotos de baja (máx. 2); PDF registro y PDF baja visibles en detalle |
 
 ---
 

@@ -40,6 +40,9 @@ export const FORMULARIO_VERIFICACION_SECCION = "Formularios de registro y verifi
 export const FORMULARIO_VERIFICACION_PDF_TITULO =
   "FORMULARIO DE REGISTRO Y VERIFICACIÓN DE ACTIVIDADES ECONÓMICAS";
 
+/** Título en PDF de baja de actividad económica */
+export const FORMULARIO_BAJA_PDF_TITULO = "BAJA DE ACTIVIDAD ECONÓMICA";
+
 /** Encabezado institucional en PDF del formulario de actividades económicas */
 export const GAM_RIBERALTA_NOMBRE = "GOBIERNO AUTONOMO MUNICIPAL DE RIBERALTA";
 export const JEFATURA_RECAUDACIONES = "JEFATURA DE RECAUDACIONES";

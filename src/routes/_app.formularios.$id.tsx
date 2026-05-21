@@ -15,7 +15,11 @@ import { toast } from "sonner";
 import { MapDirectionsLink } from "@/components/MapDirectionsLink";
 import { MapPicker } from "@/components/MapPicker";
 import { downloadFormularioFoto } from "@/lib/formulario-fotos";
-import { generateFormularioPDF, generateFormularioFotosPDF } from "@/lib/pdf";
+import {
+  formularioBajaPdfFilename,
+  generateFormularioPDF,
+  generateFormularioFotosPDF,
+} from "@/lib/pdf";
 import { useAuth } from "@/lib/auth";
 import { FORMULARIO_VERIFICACION_NOMBRE, FORMULARIO_VERIFICACION_SECCION } from "@/lib/sirat-brand";
 import { formatDateEsBo } from "@/lib/date";
@@ -25,6 +29,8 @@ import {
   type FormularioEstadoAccion,
 } from "@/lib/sirat-forms";
 import { ObservacionRequeridaDialog } from "@/components/ObservacionRequeridaDialog";
+import { FormularioBajaDialog } from "@/components/FormularioBajaDialog";
+import { downloadFormularioBajaPdf, ejecutarFormularioBaja } from "@/lib/formulario-baja";
 import {
   DetailBoolean,
   DetailField,
@@ -44,6 +50,8 @@ function Detalle() {
   const [pdfBusy, setPdfBusy] = useState(false);
   const [fotosPdfBusy, setFotosPdfBusy] = useState(false);
   const [estadoDialog, setEstadoDialog] = useState<FormularioEstadoAccion | null>(null);
+  const [bajaDialogOpen, setBajaDialogOpen] = useState(false);
+  const [pdfBajaBusy, setPdfBajaBusy] = useState(false);
   const mapCaptureRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -116,52 +124,6 @@ function Detalle() {
       })),
     );
 
-  const pdf = async () => {
-    if (photosLoading) {
-      toast.info("Espere a que terminen de cargar las fotos.");
-      return;
-    }
-    setPdfBusy(true);
-    try {
-      const { fotosIncluidas, fotosSolicitadas } = await generateFormularioPDF({
-        id: f.id,
-        fecha: f.fecha,
-        razon_social: f.razon_social,
-        contribuyente_nombre: f.contribuyente.nombre_completo,
-        contribuyente_ci: f.contribuyente.ci,
-        nit: f.nit,
-        zona: f.zona,
-        superficie: f.superficie,
-        direccion: f.direccion,
-        celular: f.celular,
-        referencia: f.referencia,
-        latitud: f.latitud,
-        longitud: f.longitud,
-        mapa_zoom: f.mapa_zoom,
-        mapCaptureElement: mapCaptureRef.current,
-        procedente: f.procedente,
-        padron: f.padron,
-        bebidas_alcoholicas: f.bebidas_alcoholicas,
-        observacion: f.observacion,
-        estado: f.estado,
-        photos: await resolvePhotosForPdf(),
-        usuario: profile?.full_name ?? profile?.email ?? undefined,
-      });
-      if (fotosSolicitadas > 0 && fotosIncluidas < fotosSolicitadas) {
-        toast.warning(
-          `PDF generado, pero solo se incluyeron ${fotosIncluidas} de ${fotosSolicitadas} foto(s).`,
-        );
-      }
-    } catch (e) {
-      console.error(e);
-      toast.error(
-        e instanceof Error ? e.message : "No se pudo generar el PDF. Compruebe la conexión.",
-      );
-    } finally {
-      setPdfBusy(false);
-    }
-  };
-
   const pdfFotos = async () => {
     if (photosLoading) {
       toast.info("Espere a que terminen de cargar las fotos.");
@@ -189,16 +151,123 @@ function Detalle() {
     }
   };
 
-  const aplicarCambioEstado = async (accion: FormularioEstadoAccion, observacionNueva: string) => {
-    const observacion = appendObservacionCambioEstado(f.observacion, accion, observacionNueva);
+  const aplicarAnulacion = async (observacionNueva: string) => {
+    const observacion = appendObservacionCambioEstado(f.observacion, "anulado", observacionNueva);
     const { error } = await supabase
       .from("formularios")
-      .update({ estado: accion, observacion })
+      .update({ estado: "anulado", observacion })
       .eq("id", id);
     if (error) throw new Error(error.message);
-    setF({ ...f, estado: accion, observacion });
-    toast.success(accion === "baja" ? "Actividad dada de baja" : "Actividad anulada");
+    setF({ ...f, estado: "anulado", observacion });
+    toast.success("Actividad anulada");
   };
+
+  const aplicarBaja = async (observacionNueva: string, fotoFiles: File[]) => {
+    const usuario = profile?.full_name ?? profile?.email ?? undefined;
+    const result = await ejecutarFormularioBaja(supabase, {
+      formularioId: id,
+      observacionNueva,
+      fotoFiles,
+      observacionActual: f.observacion,
+      mapCaptureElement: mapCaptureRef.current,
+      usuario,
+      pdfBase: {
+        razon_social: f.razon_social,
+        contribuyente_nombre: f.contribuyente.nombre_completo,
+        contribuyente_ci: f.contribuyente.ci,
+        nit: f.nit,
+        zona: f.zona,
+        superficie: f.superficie,
+        direccion: f.direccion,
+        celular: f.celular,
+        referencia: f.referencia,
+        latitud: f.latitud,
+        longitud: f.longitud,
+        mapa_zoom: f.mapa_zoom,
+      },
+    });
+    setF({
+      ...f,
+      estado: "baja",
+      observacion: result.observacion,
+      baja_at: result.baja_at,
+      baja_pdf_path: result.baja_pdf_path,
+    });
+    if (result.fotosSubidas > 0) {
+      toast.success(`Actividad dada de baja. ${result.fotosSubidas} foto(s) registradas.`);
+    } else {
+      toast.success("Actividad dada de baja. PDF de baja guardado.");
+    }
+  };
+
+  const pdfVerificacion = async () => {
+    if (photosLoading) {
+      toast.info("Espere a que terminen de cargar las fotos.");
+      return;
+    }
+    setPdfBusy(true);
+    try {
+      const { fotosIncluidas, fotosSolicitadas } = await generateFormularioPDF({
+        id: f.id,
+        fecha: f.fecha,
+        razon_social: f.razon_social,
+        contribuyente_nombre: f.contribuyente.nombre_completo,
+        contribuyente_ci: f.contribuyente.ci,
+        nit: f.nit,
+        zona: f.zona,
+        superficie: f.superficie,
+        direccion: f.direccion,
+        celular: f.celular,
+        referencia: f.referencia,
+        latitud: f.latitud,
+        longitud: f.longitud,
+        mapa_zoom: f.mapa_zoom,
+        mapCaptureElement: mapCaptureRef.current,
+        procedente: f.procedente,
+        padron: f.padron,
+        bebidas_alcoholicas: f.bebidas_alcoholicas,
+        observacion: f.observacion,
+        estado: f.estado === "baja" ? "activo" : f.estado,
+        photos: await resolvePhotosForPdf(),
+        usuario: profile?.full_name ?? profile?.email ?? undefined,
+      });
+      if (fotosSolicitadas > 0 && fotosIncluidas < fotosSolicitadas) {
+        toast.warning(
+          `PDF generado, pero solo se incluyeron ${fotosIncluidas} de ${fotosSolicitadas} foto(s).`,
+        );
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error(
+        e instanceof Error ? e.message : "No se pudo generar el PDF. Compruebe la conexión.",
+      );
+    } finally {
+      setPdfBusy(false);
+    }
+  };
+
+  const pdfBaja = async () => {
+    if (!f.baja_pdf_path) {
+      toast.error("No hay PDF de baja guardado para esta actividad.");
+      return;
+    }
+    setPdfBajaBusy(true);
+    try {
+      await downloadFormularioBajaPdf(
+        supabase,
+        f.baja_pdf_path,
+        formularioBajaPdfFilename(f.razon_social),
+      );
+    } catch (e) {
+      console.error(e);
+      toast.error(e instanceof Error ? e.message : "No se pudo abrir el PDF de baja.");
+    } finally {
+      setPdfBajaBusy(false);
+    }
+  };
+
+  const puedePdfVerificacion =
+    (f.estado === "activo" || f.estado === "baja") && f.superficie != null;
 
   return (
     <div className="space-y-4 max-w-2xl">
@@ -229,16 +298,31 @@ function Detalle() {
       </div>
 
       <div className="flex w-full flex-nowrap items-center gap-1.5 overflow-x-auto pb-0.5 -mx-1 px-1 [&_button]:shrink-0 [&_a]:shrink-0">
-        {f.estado === "activo" && f.superficie != null && (
+        {puedePdfVerificacion && (
           <Button
             type="button"
             size="sm"
             disabled={pdfBusy || photosLoading}
-            onClick={() => void pdf()}
-            className="bg-gradient-primary"
+            onClick={() => void pdfVerificacion()}
+            className="bg-gradient-primary shrink-0"
           >
             <FileDown className="h-4 w-4 shrink-0" />
-            <span className="ml-1">PDF</span>
+            <span className="ml-1 whitespace-nowrap">
+              {f.estado === "baja" ? "PDF registro" : "PDF"}
+            </span>
+          </Button>
+        )}
+        {f.estado === "baja" && f.baja_pdf_path && (
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={pdfBajaBusy}
+            onClick={() => void pdfBaja()}
+            className="shrink-0"
+          >
+            <FileDown className="h-4 w-4 shrink-0" />
+            <span className="ml-1 whitespace-nowrap">PDF baja</span>
           </Button>
         )}
         {f.estado === "pendiente_verificacion" && (
@@ -267,7 +351,7 @@ function Detalle() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-52">
-                <DropdownMenuItem onSelect={() => setEstadoDialog("baja")}>
+                <DropdownMenuItem onSelect={() => setBajaDialogOpen(true)}>
                   Dar de baja
                 </DropdownMenuItem>
                 <DropdownMenuItem
@@ -283,14 +367,10 @@ function Detalle() {
         )}
       </div>
 
-      <ObservacionRequeridaDialog
-        open={estadoDialog === "baja"}
-        onOpenChange={(open) => !open && setEstadoDialog(null)}
-        title="Dar de baja"
-        description="Registre el motivo. La observación se guardará junto con el cambio de estado."
-        confirmLabel="Guardar baja"
-        confirmVariant="outline"
-        onConfirm={(obs) => aplicarCambioEstado("baja", obs)}
+      <FormularioBajaDialog
+        open={bajaDialogOpen}
+        onOpenChange={setBajaDialogOpen}
+        onConfirm={aplicarBaja}
       />
       <ObservacionRequeridaDialog
         open={estadoDialog === "anulado"}
@@ -299,13 +379,16 @@ function Detalle() {
         description="Registre el motivo de la anulación. La observación se guardará junto con el cambio de estado."
         confirmLabel="Guardar anulación"
         confirmVariant="destructive"
-        onConfirm={(obs) => aplicarCambioEstado("anulado", obs)}
+        onConfirm={aplicarAnulacion}
       />
 
       <DetailTemplate>
         <DetailSection title="Registro" showSeparator={false}>
           <DetailGrid>
             <DetailField label="Fecha" value={formatDateEsBo(f.fecha)} />
+            {f.estado === "baja" && f.baja_at ? (
+              <DetailField label="Fecha de baja" value={formatDateEsBo(f.baja_at.slice(0, 10))} />
+            ) : null}
             <DetailField label="Contribuyente" value={f.contribuyente.nombre_completo} />
             <DetailField label="C.I." value={f.contribuyente.ci} />
           </DetailGrid>

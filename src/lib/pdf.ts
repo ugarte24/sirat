@@ -3,6 +3,7 @@ import QRCode from "qrcode";
 import { formatDateEsBo } from "@/lib/date";
 import { applySiratPdfPageNumbers, downloadBlob, downloadJsPdf } from "@/lib/download-file";
 import {
+  drawFormularioBajaObservacionSection,
   drawFormularioDatosSection,
   drawFormularioFotosPageStart,
   drawFormularioInfoSection,
@@ -20,6 +21,7 @@ import {
 } from "@/lib/formulario-fotos";
 import { captureFormularioMapForPdf } from "@/lib/pdf-map-snapshot";
 import {
+  FORMULARIO_BAJA_PDF_TITULO,
   NOTIFICACION_GESTIONES_ADEUDADAS_LABEL,
   NOTIFICACION_TRIBUTARIA_PDF_TITULO,
 } from "@/lib/sirat-brand";
@@ -163,6 +165,7 @@ async function appendFormularioFotosPages(
     photos: FormularioPdfPhoto[];
     usuario?: string;
     startWithNewPage?: boolean;
+    fotosSectionTitle?: string;
   },
 ): Promise<number> {
   const sources = opts.photos.filter((p) => p.url || p.storagePath || p.blob);
@@ -187,7 +190,7 @@ async function appendFormularioFotosPages(
   const gap = 5;
 
   if (opts.startWithNewPage !== false) doc.addPage();
-  const startY = drawFormularioFotosPageStart(doc, opts.usuario);
+  const startY = drawFormularioFotosPageStart(doc, opts.usuario, opts.fotosSectionTitle);
 
   const { cols, rows } = fotosPdfLayout(images);
   const availableH = Math.max(40, pageH - margin - startY - 12);
@@ -328,6 +331,109 @@ export async function generateFormularioPDF(
   applySiratPdfPageNumbers(doc);
   downloadJsPdf(doc, formularioPdfFilename(d.razon_social));
   return { fotosIncluidas, fotosSolicitadas };
+}
+
+export interface FormularioBajaPdfData {
+  razon_social: string;
+  contribuyente_nombre: string;
+  contribuyente_ci: string;
+  nit?: string | null;
+  zona: string;
+  superficie: number | null;
+  direccion: string;
+  celular: string;
+  referencia: string;
+  latitud?: number | null;
+  longitud?: number | null;
+  mapa_zoom?: number | null;
+  /** Fecha de la baja (ISO local YYYY-MM-DD), no la de registro. */
+  fecha_baja: string;
+  /** Solo la línea `[BAJA fecha]: motivo`. */
+  observacion_baja: string;
+  photos?: FormularioPdfPhoto[];
+  usuario?: string;
+  mapCaptureElement?: HTMLElement | null;
+}
+
+export function formularioBajaPdfFilename(razonSocial: string): string {
+  const base = razonSocial
+    .trim()
+    .replace(/[\\/:*?"<>|]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!base) return "baja-actividad-economica.pdf";
+  return `${base} - baja.pdf`;
+}
+
+export async function buildFormularioBajaPdfDoc(d: FormularioBajaPdfData): Promise<{
+  doc: jsPDF;
+  fotosIncluidas: number;
+  fotosSolicitadas: number;
+}> {
+  const doc = new jsPDF();
+  let y = await drawInstitucionalPdfHeader(doc, {
+    usuario: d.usuario,
+    titleLines: [FORMULARIO_BAJA_PDF_TITULO],
+    titleFontSize: 13,
+  });
+
+  const superficieStr =
+    d.superficie == null ? FORMULARIO_CAMPO_SIN_VERIFICAR : String(d.superficie);
+
+  y = drawFormularioDatosSection(doc, y, [
+    ["Fecha", formatDateEsBo(d.fecha_baja), "Superficie (m²)", superficieStr],
+    ["Contribuyente", d.contribuyente_nombre, "Celular", d.celular],
+    ["C.I.", d.contribuyente_ci, "Dirección", d.direccion],
+    ["Razón social", d.razon_social, "Referencia", d.referencia],
+    ["NIT", d.nit ?? "—", "Zona", d.zona],
+  ]);
+
+  const la = d.latitud != null ? Number(d.latitud) : NaN;
+  const ln = d.longitud != null ? Number(d.longitud) : NaN;
+  if (Number.isFinite(la) && Number.isFinite(ln)) {
+    try {
+      const mapDataUrl = await captureFormularioMapForPdf(
+        la,
+        ln,
+        d.mapa_zoom ?? 17,
+        d.mapCaptureElement,
+      );
+      y = drawFormularioUbicacionSection(doc, y, mapDataUrl);
+    } catch (e) {
+      console.warn("Mapa no incluido en PDF de baja:", e);
+    }
+  }
+
+  y = drawFormularioBajaObservacionSection(doc, y, d.observacion_baja);
+  finalizeFormularioPdfFirstPage(doc, y);
+
+  const photoSources = normalizeFormularioPhotos({ photos: d.photos });
+  let fotosIncluidas = 0;
+  if (photoSources.length) {
+    try {
+      fotosIncluidas = await appendFormularioFotosPages(doc, {
+        photos: photoSources,
+        usuario: d.usuario,
+        startWithNewPage: true,
+        fotosSectionTitle: "FOTOS DE LA BAJA",
+      });
+    } catch (e) {
+      console.warn("Fotos de baja no incluidas en PDF:", e);
+    }
+  }
+
+  return { doc, fotosIncluidas, fotosSolicitadas: photoSources.length };
+}
+
+export async function buildFormularioBajaPdfBlob(
+  d: FormularioBajaPdfData,
+): Promise<{ blob: Blob; filename: string }> {
+  const { doc } = await buildFormularioBajaPdfDoc(d);
+  applySiratPdfPageNumbers(doc);
+  return {
+    blob: doc.output("blob") as Blob,
+    filename: formularioBajaPdfFilename(d.razon_social),
+  };
 }
 
 export interface NotificacionPdfData {
