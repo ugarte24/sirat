@@ -4,14 +4,26 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
-import type { ContribuyenteCatalogRow, FormularioNuevoState } from "@/lib/sirat-forms";
+import type {
+  ContribuyenteCatalogRow,
+  FormularioAmbienteRow,
+  FormularioNuevoState,
+} from "@/lib/sirat-forms";
 import {
+  ambientesRowsForDb,
+  calcAmbientesTotal,
+  emptyAmbienteRow,
   formularioRegistroToUpdate,
   formularioRowToState,
   formularioVerificacionToUpdate,
   validateFormularioRegistro,
   validateFormularioVerificacion,
 } from "@/lib/sirat-forms";
+import {
+  ambienteRecordsToUiRows,
+  fetchFormularioAmbientes,
+  replaceFormularioAmbientes,
+} from "@/lib/formulario-ambientes";
 import { FORMULARIO_VERIFICACION_NOMBRE } from "@/lib/sirat-brand";
 import {
   formatFileSize,
@@ -67,6 +79,7 @@ export function FormularioGestionForm({
   const newPhotosRef = useRef<VerificacionPhotoLocal[]>([]);
   newPhotosRef.current = newPhotos;
   const [photoBusy, setPhotoBusy] = useState(false);
+  const [ambientes, setAmbientes] = useState<FormularioAmbienteRow[]>([emptyAmbienteRow()]);
 
   useEffect(() => setTab(initialTab), [initialTab, formularioId]);
 
@@ -89,6 +102,7 @@ export function FormularioGestionForm({
     setRemovedPhotoIds([]);
     revokeLocalPhotos(newPhotosRef.current);
     setNewPhotos([]);
+    setAmbientes([emptyAmbienteRow()]);
 
     void (async () => {
       try {
@@ -114,6 +128,13 @@ export function FormularioGestionForm({
 
         setF(formularioRowToState(row));
         setEstado(row.estado);
+
+        const ambRecords = await fetchFormularioAmbientes(supabase, formularioId);
+        if (ambRecords.length) {
+          setAmbientes(ambienteRecordsToUiRows(ambRecords));
+        } else {
+          setAmbientes([emptyAmbienteRow()]);
+        }
 
         const { data: fotos } = await supabase
           .from("formulario_fotos")
@@ -220,9 +241,15 @@ export function FormularioGestionForm({
     toast.success("Datos de registro actualizados");
   };
 
+  const handleAmbientesChange = (rows: FormularioAmbienteRow[]) => {
+    setAmbientes(rows);
+    const total = calcAmbientesTotal(rows);
+    setF((prev) => (prev ? { ...prev, superficie: total > 0 ? String(total) : "" } : prev));
+  };
+
   const saveVerificacion = async (completar: boolean) => {
     if (!f || !estado) return;
-    const err = validateFormularioVerificacion(f);
+    const err = validateFormularioVerificacion(f, ambientes);
     if (err) return toast.error(err);
 
     const pendiente = estado === "pendiente_verificacion";
@@ -231,22 +258,27 @@ export function FormularioGestionForm({
     }
 
     setBusyVerificacion(true);
-    const { data: u } = await supabase.auth.getUser();
-    const { error } = await supabase
-      .from("formularios")
-      .update(
-        formularioVerificacionToUpdate(f, {
-          completar: completar && pendiente,
-          userId: u.user?.id,
-        }),
-      )
-      .eq("id", formularioId);
-    if (error) {
-      setBusyVerificacion(false);
-      return toast.error(error.message);
-    }
+    try {
+      const total = calcAmbientesTotal(ambientes);
+      const fConTotal = { ...f, superficie: String(total) };
+      const { data: u } = await supabase.auth.getUser();
+      const { error } = await supabase
+        .from("formularios")
+        .update(
+          formularioVerificacionToUpdate(fConTotal, {
+            completar: completar && pendiente,
+            userId: u.user?.id,
+          }),
+        )
+        .eq("id", formularioId);
+      if (error) throw new Error(error.message);
 
-    await syncPhotos();
+      await replaceFormularioAmbientes(supabase, formularioId, ambientesRowsForDb(ambientes));
+      await syncPhotos();
+    } catch (e) {
+      setBusyVerificacion(false);
+      return toast.error(e instanceof Error ? e.message : "No se pudo guardar la verificación");
+    }
 
     if (completar && pendiente) {
       setEstado("activo");
@@ -311,6 +343,8 @@ export function FormularioGestionForm({
             contribs.find((c) => c.id === f.contribuyente_id)?.nombre_completo ?? null
           }
           idPrefix={`gest-ver-${formularioId}`}
+          ambientes={ambientes}
+          onAmbientesChange={handleAmbientesChange}
           existingPhotos={existingPhotos}
           removedPhotoIds={removedPhotoIds}
           onRemoveExisting={(id) => setRemovedPhotoIds((ids) => [...ids, id])}

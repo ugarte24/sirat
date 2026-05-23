@@ -32,6 +32,12 @@ import { ObservacionRequeridaDialog } from "@/components/ObservacionRequeridaDia
 import { FormularioBajaDialog } from "@/components/FormularioBajaDialog";
 import { downloadFormularioBajaPdf, ejecutarFormularioBaja } from "@/lib/formulario-baja";
 import {
+  ambienteRecordsToPdfRows,
+  fetchFormularioAmbientes,
+  type FormularioAmbienteRecord,
+} from "@/lib/formulario-ambientes";
+import { FormularioAmbientesDetalle } from "@/components/FormularioAmbientesDetalle";
+import {
   DetailBoolean,
   DetailField,
   DetailGrid,
@@ -53,12 +59,14 @@ function Detalle() {
   const [bajaDialogOpen, setBajaDialogOpen] = useState(false);
   const [pdfBajaBusy, setPdfBajaBusy] = useState(false);
   const mapCaptureRef = useRef<HTMLDivElement>(null);
+  const [ambientes, setAmbientes] = useState<FormularioAmbienteRecord[]>([]);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       setPhotosLoading(true);
       setPhotos([]);
+      setAmbientes([]);
       const { data } = await supabase
         .from("formularios")
         .select("*, contribuyente:contribuyentes(nombre_completo,ci)")
@@ -66,6 +74,13 @@ function Detalle() {
         .maybeSingle();
       if (cancelled) return;
       setF(data);
+
+      try {
+        const amb = await fetchFormularioAmbientes(supabase, id);
+        if (!cancelled) setAmbientes(amb);
+      } catch {
+        /* tabla puede no existir aún en entornos sin migrar */
+      }
 
       const { data: fotos } = await supabase
         .from("formulario_fotos")
@@ -230,6 +245,7 @@ function Detalle() {
         estado: f.estado === "baja" ? "activo" : f.estado,
         photos: await resolvePhotosForPdf(),
         usuario: profile?.full_name ?? profile?.email ?? undefined,
+        ambientes: ambienteRecordsToPdfRows(ambientes),
       });
       if (fotosSolicitadas > 0 && fotosIncluidas < fotosSolicitadas) {
         toast.warning(
@@ -413,6 +429,11 @@ function Detalle() {
             <DetailField label="Celular" value={f.celular || "—"} />
           </DetailGrid>
         </DetailSection>
+        {ambientes.length > 0 ? (
+          <DetailSection title="Medición de ambientes">
+            <FormularioAmbientesDetalle rows={ambientes} />
+          </DetailSection>
+        ) : null}
         <DetailSection title="Ubicación">
           <DetailGrid>
             <DetailField label="Dirección" value={f.direccion} />

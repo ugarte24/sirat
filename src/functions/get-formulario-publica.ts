@@ -48,6 +48,12 @@ export const getFormularioPublicaFn = createServerFn({ method: "POST" })
         return { ok: false as const };
       }
 
+      const { data: ambientes } = await supabaseAdmin
+        .from("formulario_ambientes")
+        .select("orden, ambiente, largo, ancho")
+        .eq("formulario_id", data.id)
+        .order("orden", { ascending: true });
+
       const contribRaw = row.contribuyente;
       const contrib = (Array.isArray(contribRaw) ? contribRaw[0] : contribRaw) as
         | { nombre_completo: string; ci: string }
@@ -76,6 +82,13 @@ export const getFormularioPublicaFn = createServerFn({ method: "POST" })
           bebidas_alcoholicas: row.bebidas_alcoholicas,
           observacion: row.observacion,
           estado: row.estado,
+          ambientes:
+            ambientes?.map((a) => ({
+              orden: a.orden,
+              ambiente: a.ambiente,
+              largo: Number(a.largo),
+              ancho: Number(a.ancho),
+            })) ?? [],
         }),
       };
     } catch (e) {

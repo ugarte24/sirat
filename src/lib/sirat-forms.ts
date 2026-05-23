@@ -68,6 +68,78 @@ export interface FormularioNuevoState {
   observacion: string;
 }
 
+/** Fila de desglose de superficie en etapa verificación */
+export type FormularioAmbienteRow = {
+  id?: string;
+  ambiente: string;
+  largo: string;
+  ancho: string;
+};
+
+export function emptyAmbienteRow(): FormularioAmbienteRow {
+  return { ambiente: "", largo: "", ancho: "" };
+}
+
+export function parseAmbienteMedida(value: string): number | null {
+  const n = Number.parseFloat(value.replace(",", ".").trim());
+  if (!Number.isFinite(n) || n <= 0) return null;
+  return n;
+}
+
+export function calcAmbienteSuperficie(largo: string, ancho: string): number | null {
+  const l = parseAmbienteMedida(largo);
+  const a = parseAmbienteMedida(ancho);
+  if (l == null || a == null) return null;
+  return Math.round(l * a * 100) / 100;
+}
+
+export function calcAmbientesTotal(rows: FormularioAmbienteRow[]): number {
+  return rows.reduce((sum, row) => {
+    const s = calcAmbienteSuperficie(row.largo, row.ancho);
+    return sum + (s ?? 0);
+  }, 0);
+}
+
+export function formatAmbienteSuperficieM2(value: number): string {
+  const rounded = Math.round(value * 100) / 100;
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(2);
+}
+
+export function ambientesRowsForDb(
+  rows: FormularioAmbienteRow[],
+): Array<{ ambiente: string; largo: number; ancho: number }> {
+  return rows.map((row) => {
+    const largo = parseAmbienteMedida(row.largo);
+    const ancho = parseAmbienteMedida(row.ancho);
+    const nombre = row.ambiente.trim();
+    if (!nombre || largo == null || ancho == null) {
+      throw new Error("Fila de ambiente incompleta");
+    }
+    return {
+      ambiente: nombre.toLocaleUpperCase(UPPER_LOCALE),
+      largo,
+      ancho,
+    };
+  });
+}
+
+export function validateFormularioAmbientes(rows: FormularioAmbienteRow[]): string | null {
+  if (!rows.length) return "Agregue al menos un ambiente";
+  for (let i = 0; i < rows.length; i++) {
+    const n = i + 1;
+    if (!rows[i].ambiente.trim()) return `Indique el nombre del ambiente en la fila ${n}`;
+    if (parseAmbienteMedida(rows[i].largo) == null) {
+      return `Indique un largo válido (> 0) en la fila ${n}`;
+    }
+    if (parseAmbienteMedida(rows[i].ancho) == null) {
+      return `Indique un ancho válido (> 0) en la fila ${n}`;
+    }
+  }
+  const total = calcAmbientesTotal(rows);
+  if (total <= 0) return "La superficie total debe ser mayor que 0";
+  return null;
+}
+
 export function emptyFormularioNuevo(): FormularioNuevoState {
   return {
     contribuyente_id: "",
@@ -246,9 +318,12 @@ export function validateFormularioRegistro(f: FormularioNuevoState): string | nu
   return null;
 }
 
-export function validateFormularioVerificacion(f: FormularioNuevoState): string | null {
-  const sup = Number.parseFloat(f.superficie);
-  if (!Number.isFinite(sup) || sup <= 0) return "Indica una superficie válida (m²)";
+export function validateFormularioVerificacion(
+  f: FormularioNuevoState,
+  ambientes: FormularioAmbienteRow[],
+): string | null {
+  const ambErr = validateFormularioAmbientes(ambientes);
+  if (ambErr) return ambErr;
   if (f.procedente === null) return "Seleccione Procedente o No procedente";
   if (!f.padron && !f.bebidas_alcoholicas) {
     return "Marque al menos una opción: Padrón o Bebidas alcohólicas";

@@ -44,6 +44,44 @@ export type Database = {
         }
         Relationships: []
       }
+      formulario_ambientes: {
+        Row: {
+          ambiente: string
+          ancho: number
+          created_at: string
+          formulario_id: string
+          id: string
+          largo: number
+          orden: number
+        }
+        Insert: {
+          ambiente: string
+          ancho: number
+          created_at?: string
+          formulario_id: string
+          id?: string
+          largo: number
+          orden: number
+        }
+        Update: {
+          ambiente?: string
+          ancho?: number
+          created_at?: string
+          formulario_id?: string
+          id?: string
+          largo?: number
+          orden?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "formulario_ambientes_formulario_id_fkey"
+            columns: ["formulario_id"]
+            isOneToOne: false
+            referencedRelation: "formularios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       formulario_baja_fotos: {
         Row: {
           created_at: string

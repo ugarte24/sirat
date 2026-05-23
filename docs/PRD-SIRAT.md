@@ -216,6 +216,7 @@ Unificar en una sola plataforma web responsive (móvil + escritorio) el ciclo: *
 | FORM-18 | Tarjetas en móvil, tabla en escritorio (patrón `DataListCard`) | Must |
 | FORM-19 | En móvil, filtros en una sola fila con desplazamiento horizontal | Should |
 | FORM-20 | Campos de verificación no completados (`pendiente_verificacion` y `superficie` nula): mostrar `—` en detalle, PDF y reportes (no valores por defecto de BD) | Must |
+| FORM-22 | Etapa 2: tabla dinámica de ambientes (ambiente, largo, ancho, superficie calculada, total); `formulario_ambientes`; total en `formularios.superficie`; tabla en PDF, detalle y QR | Must |
 | FORM-21 | Vista pública `/verificacion-formulario/$id` y QR en PDF del formulario | Must |
 
 ### 6.5 Notificaciones (`/notificaciones`)
@@ -561,6 +562,7 @@ Reportes, Usuarios y Perfil accesibles desde el menú lateral.
 | 1.2.2 | Mayo 2026 | PDF notificación | Contribuyente y C.I. en columna propia; orden tributario compacto; menos espacio vertical en tabla |
 | 1.2.3 | Mayo 2026 | Formularios | Dar de baja y anular para operadores (observación); menú «Más acciones» al final de la barra, como en notificaciones |
 | 1.2.4 | Mayo 2026 | Baja documentada | PDF de baja almacenado; fotos de baja (máx. 2); PDF registro y PDF baja visibles en detalle |
+| 1.2.5 | Mayo 2026 | Medición de ambientes | Tabla de ambientes en verificación; PDF y detalle con desglose; superficie total en formulario |
 
 ---
 

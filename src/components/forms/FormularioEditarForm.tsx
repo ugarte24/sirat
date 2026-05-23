@@ -11,8 +11,25 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ContribuyenteCombobox } from "@/components/ContribuyenteCombobox";
 import { toast } from "sonner";
 import { Camera, Images, X } from "lucide-react";
-import type { ContribuyenteCatalogRow, FormularioNuevoState } from "@/lib/sirat-forms";
-import { formularioRowToState, formularioStateToUpdate } from "@/lib/sirat-forms";
+import type {
+  ContribuyenteCatalogRow,
+  FormularioAmbienteRow,
+  FormularioNuevoState,
+} from "@/lib/sirat-forms";
+import {
+  ambientesRowsForDb,
+  calcAmbientesTotal,
+  emptyAmbienteRow,
+  formularioRowToState,
+  formularioStateToUpdate,
+  validateFormularioAmbientes,
+} from "@/lib/sirat-forms";
+import {
+  ambienteRecordsToUiRows,
+  fetchFormularioAmbientes,
+  replaceFormularioAmbientes,
+} from "@/lib/formulario-ambientes";
+import { FormularioAmbientesTable } from "@/components/forms/FormularioAmbientesTable";
 import { FORMULARIO_VERIFICACION_NOMBRE } from "@/lib/sirat-brand";
 import {
   FORMULARIO_FOTO_MAX_LABEL,
@@ -67,6 +84,7 @@ export function FormularioEditarForm({ formularioId, onSuccess, onCancel }: Form
   const [busy, setBusy] = useState(false);
   const [catalogLoaded, setCatalogLoaded] = useState(false);
   const [photoBusy, setPhotoBusy] = useState(false);
+  const [ambientes, setAmbientes] = useState<FormularioAmbienteRow[]>([emptyAmbienteRow()]);
 
   useEffect(() => {
     return () => revokeLocalPhotos(newPhotosRef.current);
@@ -79,6 +97,7 @@ export function FormularioEditarForm({ formularioId, onSuccess, onCancel }: Form
     setRemovedPhotoIds([]);
     revokeLocalPhotos(newPhotosRef.current);
     setNewPhotos([]);
+    setAmbientes([emptyAmbienteRow()]);
 
     void (async () => {
       try {
@@ -105,6 +124,11 @@ export function FormularioEditarForm({ formularioId, onSuccess, onCancel }: Form
         }
 
         setF(formularioRowToState(formRes.data));
+
+        const ambRecords = await fetchFormularioAmbientes(supabase, formularioId);
+        if (ambRecords.length) {
+          setAmbientes(ambienteRecordsToUiRows(ambRecords));
+        }
 
         const { data: fotos } = await supabase
           .from("formulario_fotos")
@@ -181,10 +205,8 @@ export function FormularioEditarForm({ formularioId, onSuccess, onCancel }: Form
     e.preventDefault();
     if (!f) return;
     if (!f.contribuyente_id) return toast.error("Selecciona un contribuyente");
-    const sup = Number.parseFloat(f.superficie);
-    if (!Number.isFinite(sup) || sup <= 0) {
-      return toast.error("Indica una superficie válida (m²).");
-    }
+    const ambErr = validateFormularioAmbientes(ambientes);
+    if (ambErr) return toast.error(ambErr);
     if (!f.padron && !f.bebidas_alcoholicas) {
       return toast.error("Marque al menos una opción: Padrón o Bebidas alcohólicas.");
     }
@@ -198,13 +220,19 @@ export function FormularioEditarForm({ formularioId, onSuccess, onCancel }: Form
     }
 
     setBusy(true);
-    const { error } = await supabase
-      .from("formularios")
-      .update(formularioStateToUpdate(f))
-      .eq("id", formularioId);
-    if (error) {
+    try {
+      const total = calcAmbientesTotal(ambientes);
+      const fConTotal = { ...f, superficie: String(total) };
+      const { error } = await supabase
+        .from("formularios")
+        .update(formularioStateToUpdate(fConTotal))
+        .eq("id", formularioId);
+      if (error) throw new Error(error.message);
+
+      await replaceFormularioAmbientes(supabase, formularioId, ambientesRowsForDb(ambientes));
+    } catch (e) {
       setBusy(false);
-      return toast.error(error.message);
+      return toast.error(e instanceof Error ? e.message : "No se pudo guardar");
     }
 
     for (const photoId of removedPhotoIds) {
@@ -261,7 +289,7 @@ export function FormularioEditarForm({ formularioId, onSuccess, onCancel }: Form
             <Input value={f.nit} onChange={(e) => setF({ ...f, nit: e.target.value })} />
           </div>
         </div>
-        <div className="grid sm:grid-cols-3 gap-3">
+        <div className="grid sm:grid-cols-2 gap-3">
           <div>
             <Label>Zona *</Label>
             <Select value={f.zona} onValueChange={(v) => setF({ ...f, zona: v as FormularioNuevoState["zona"] })}>
@@ -278,16 +306,6 @@ export function FormularioEditarForm({ formularioId, onSuccess, onCancel }: Form
             </Select>
           </div>
           <div>
-            <Label>Superficie (m²) *</Label>
-            <Input
-              type="number"
-              step="0.01"
-              value={f.superficie}
-              onChange={(e) => setF({ ...f, superficie: e.target.value })}
-              required
-            />
-          </div>
-          <div>
             <Label>Celular *</Label>
             <Input value={f.celular} onChange={(e) => setF({ ...f, celular: e.target.value })} required />
           </div>
@@ -300,6 +318,18 @@ export function FormularioEditarForm({ formularioId, onSuccess, onCancel }: Form
           <Label>Referencia *</Label>
           <Input value={f.referencia} onChange={(e) => setF({ ...f, referencia: e.target.value })} required />
         </div>
+      </Card>
+
+      <Card className="p-5 border-0 shadow-none sm:border sm:shadow-sm">
+        <FormularioAmbientesTable
+          rows={ambientes}
+          onChange={(rows) => {
+            setAmbientes(rows);
+            const total = calcAmbientesTotal(rows);
+            setF((prev) => (prev ? { ...prev, superficie: total > 0 ? String(total) : "" } : prev));
+          }}
+          disabled={busy}
+        />
       </Card>
 
       <Card className="p-5 space-y-3 border-0 shadow-none sm:border sm:shadow-sm">

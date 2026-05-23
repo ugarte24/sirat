@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { MapDirectionsLink } from "@/components/MapDirectionsLink";
 import { Camera, Images, X } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
-import type { FormularioNuevoState } from "@/lib/sirat-forms";
+import type { FormularioAmbienteRow, FormularioNuevoState } from "@/lib/sirat-forms";
+import { FormularioAmbientesTable } from "@/components/forms/FormularioAmbientesTable";
 import { FORMULARIO_FOTO_MAX_LABEL } from "@/lib/formulario-fotos";
 import {
   formularioStateToMapMarker,
@@ -49,6 +50,9 @@ export type FormularioVerificacionEtapaFieldsProps = {
   onAddPhotos?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   photoBusy?: boolean;
   maxPhotos?: number;
+  ambientes: FormularioAmbienteRow[];
+  onAmbientesChange: (rows: FormularioAmbienteRow[]) => void;
+  ambientesDisabled?: boolean;
 };
 
 export function FormularioVerificacionEtapaFields({
@@ -65,6 +69,9 @@ export function FormularioVerificacionEtapaFields({
   onAddPhotos,
   photoBusy = false,
   maxPhotos = 2,
+  ambientes,
+  onAmbientesChange,
+  ambientesDisabled = false,
 }: FormularioVerificacionEtapaFieldsProps) {
   const marker = useMemo(
     () =>
@@ -133,16 +140,11 @@ export function FormularioVerificacionEtapaFields({
       </Card>
 
       <Card className="p-5 space-y-4 border-0 shadow-none sm:border sm:shadow-sm">
-        <div>
-          <Label>Superficie (m²) *</Label>
-          <Input
-            type="number"
-            step="0.01"
-            value={f.superficie}
-            onChange={(e) => setF({ ...f, superficie: e.target.value })}
-            required
-          />
-        </div>
+        <FormularioAmbientesTable
+          rows={ambientes}
+          onChange={onAmbientesChange}
+          disabled={ambientesDisabled}
+        />
         <fieldset className="space-y-2 min-w-0">
           <legend className="text-sm font-medium text-foreground">Procedencia *</legend>
           <p className="text-xs text-muted-foreground">Debe seleccionar una de las dos opciones.</p>

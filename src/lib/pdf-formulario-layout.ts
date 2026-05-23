@@ -201,20 +201,86 @@ export function drawPdfTablaSection(
 export function drawFormularioDatosSection(
   doc: jsPDF,
   startY: number,
-  rows: string[][],
+  rows: PdfTableRow[],
 ): number {
   return drawPdfTablaSection(doc, startY, "DATOS GENERALES", rows);
+}
+
+export type FormularioAmbientePdfRow = {
+  orden: number;
+  ambiente: string;
+  largo: number;
+  ancho: number;
+  superficieM2: number;
+};
+
+export function drawFormularioInspeccionSuperficiesSection(
+  doc: jsPDF,
+  startY: number,
+  rows: FormularioAmbientePdfRow[],
+  totalLabel: string,
+): number {
+  let y = drawSectionTitle(doc, startY, "MEDICIÓN DE AMBIENTES");
+  const body: PdfTableRow[] = rows.map((r) => [
+    String(r.orden),
+    r.ambiente,
+    String(r.largo),
+    String(r.ancho),
+    `${r.superficieM2} m²`,
+  ]);
+  body.push([
+    "",
+    { content: "TOTAL", styles: { fontStyle: "bold", fillColor: LABEL_FILL } },
+    "",
+    "",
+    { content: totalLabel, styles: { fontStyle: "bold" } },
+  ]);
+
+  autoTable(doc, {
+    startY: y,
+    ...TABLE_BASE,
+    styles: { ...TABLE_BASE.styles, fontSize: 8, cellPadding: 2 },
+    columnStyles: {
+      0: { cellWidth: 10, halign: "center" },
+      1: { cellWidth: 52 },
+      2: { cellWidth: 22, halign: "right" },
+      3: { cellWidth: 22, halign: "right" },
+      4: { cellWidth: 28, halign: "right" },
+    },
+    head: [["N°", "Ambiente", "Largo", "Ancho", "Superficie"]],
+    body,
+  });
+  return (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 6;
 }
 
 export function drawFormularioInfoSection(
   doc: jsPDF,
   startY: number,
+  superficieSoloTotal: string | null,
   procedente: string,
   padron: string,
   bebidas: string,
   observacion: string,
 ): number {
   let y = drawSectionTitle(doc, startY, "INFORMACIÓN ADICIONAL");
+  const body: PdfTableRow[] = [];
+  if (superficieSoloTotal != null) {
+    body.push([
+      { content: "Superficie (m²)", styles: { fontStyle: "bold", fillColor: LABEL_FILL } },
+      { content: superficieSoloTotal, colSpan: 3 },
+    ]);
+  }
+  body.push(
+    ["Procedente", procedente, "Padrón", padron],
+    [
+      { content: "Bebidas alcohólicas", styles: { fontStyle: "bold", fillColor: LABEL_FILL } },
+      { content: bebidas, colSpan: 3 },
+    ],
+    [
+      { content: "Observación", styles: { fontStyle: "bold", fillColor: LABEL_FILL } },
+      { content: observacion, colSpan: 3 },
+    ],
+  );
   autoTable(doc, {
     startY: y,
     ...TABLE_BASE,
@@ -224,17 +290,7 @@ export function drawFormularioInfoSection(
       2: { fontStyle: "bold", fillColor: LABEL_FILL, cellWidth: 42 },
       3: { fillColor: [255, 255, 255] },
     },
-    body: [
-      ["Procedente", procedente, "Padrón", padron],
-      [
-        { content: "Bebidas alcohólicas", styles: { fontStyle: "bold", fillColor: LABEL_FILL } },
-        { content: bebidas, colSpan: 3 },
-      ],
-      [
-        { content: "Observación", styles: { fontStyle: "bold", fillColor: LABEL_FILL } },
-        { content: observacion, colSpan: 3 },
-      ],
-    ],
+    body,
     didParseCell: styleSiNoCell,
   });
   return (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 6;

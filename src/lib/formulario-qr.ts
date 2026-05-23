@@ -25,6 +25,14 @@ export type FormularioQrPayload = {
   bebidas_alcoholicas: boolean;
   observacion: string;
   estado: string;
+  ambientes: FormularioQrAmbiente[];
+};
+
+export type FormularioQrAmbiente = {
+  orden: number;
+  ambiente: string;
+  largo: number;
+  ancho: number;
 };
 
 export function buildFormularioQrPayload(input: {
@@ -47,6 +55,7 @@ export function buildFormularioQrPayload(input: {
   bebidas_alcoholicas: boolean;
   observacion: string | null;
   estado: string;
+  ambientes?: FormularioQrAmbiente[];
 }): FormularioQrPayload {
   return {
     t: "formulario",
@@ -70,6 +79,7 @@ export function buildFormularioQrPayload(input: {
     bebidas_alcoholicas: input.bebidas_alcoholicas,
     observacion: input.observacion?.trim() || "—",
     estado: input.estado,
+    ambientes: input.ambientes ?? [],
   };
 }
 

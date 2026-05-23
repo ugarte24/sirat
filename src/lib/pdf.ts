@@ -7,11 +7,13 @@ import {
   drawFormularioDatosSection,
   drawFormularioFotosPageStart,
   drawFormularioInfoSection,
+  drawFormularioInspeccionSuperficiesSection,
   drawFormularioPdfHeader,
   drawFormularioUbicacionSection,
   drawInstitucionalPdfHeader,
   drawPdfTablaSection,
   finalizeFormularioPdfFirstPage,
+  type FormularioAmbientePdfRow,
 } from "@/lib/pdf-formulario-layout";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -31,6 +33,7 @@ import {
 } from "@/lib/formulario-qr";
 import {
   FORMULARIO_CAMPO_SIN_VERIFICAR,
+  formatAmbienteSuperficieM2,
   formularioVerificacionSinCompletar,
 } from "@/lib/sirat-forms";
 import {
@@ -80,6 +83,8 @@ interface FormularioData {
   usuario?: string;
   /** Contenedor del MapPicker visible (captura idéntica a la vista de registro). */
   mapCaptureElement?: HTMLElement | null;
+  /** Filas de medición de ambientes (tabla en PDF si hay datos). */
+  ambientes?: FormularioAmbientePdfRow[];
 }
 
 export type FormularioPdfPhoto = {
@@ -233,6 +238,15 @@ export function formularioQrPayloadToPdfData(p: FormularioQrPayload): Formulario
     bebidas_alcoholicas: p.bebidas_alcoholicas,
     observacion: p.observacion === "—" ? null : p.observacion,
     estado: p.estado,
+    ambientes: p.ambientes.length
+      ? p.ambientes.map((a) => ({
+          orden: a.orden,
+          ambiente: a.ambiente,
+          largo: a.largo,
+          ancho: a.ancho,
+          superficieM2: Math.round(a.largo * a.ancho * 100) / 100,
+        }))
+      : undefined,
   };
 }
 
@@ -256,22 +270,33 @@ export async function buildFormularioPdfDoc(d: FormularioData): Promise<{
   });
   const siNoPdf = (v: boolean) => (sinVerificar ? FORMULARIO_CAMPO_SIN_VERIFICAR : v ? "SÍ" : "NO");
 
+  const superficiePdf =
+    sinVerificar || d.superficie == null ? FORMULARIO_CAMPO_SIN_VERIFICAR : String(d.superficie);
+  const ambientesPdf = d.ambientes?.length ? d.ambientes : null;
+
   y = drawFormularioDatosSection(doc, y, [
-    [
-      "Fecha",
-      formatDateEsBo(d.fecha),
-      "Superficie (m²)",
-      sinVerificar || d.superficie == null ? FORMULARIO_CAMPO_SIN_VERIFICAR : String(d.superficie),
-    ],
+    ["Fecha", formatDateEsBo(d.fecha), "Zona", d.zona],
     ["Contribuyente", d.contribuyente_nombre, "Celular", d.celular],
     ["C.I.", d.contribuyente_ci, "Dirección", d.direccion],
     ["Razón social", d.razon_social, "Referencia", d.referencia],
-    ["NIT", d.nit ?? "—", "Zona", d.zona],
+    [
+      { content: "NIT", styles: { fontStyle: "bold", fillColor: [232, 236, 245] } },
+      { content: d.nit ?? "—", colSpan: 3 },
+    ],
   ]);
+
+  if (ambientesPdf) {
+    const totalLabel =
+      sinVerificar || d.superficie == null
+        ? FORMULARIO_CAMPO_SIN_VERIFICAR
+        : `${formatAmbienteSuperficieM2(d.superficie)} m²`;
+    y = drawFormularioInspeccionSuperficiesSection(doc, y, ambientesPdf, totalLabel);
+  }
 
   y = drawFormularioInfoSection(
     doc,
     y,
+    ambientesPdf ? null : superficiePdf,
     siNoPdf(d.procedente),
     siNoPdf(d.padron),
     siNoPdf(d.bebidas_alcoholicas),
