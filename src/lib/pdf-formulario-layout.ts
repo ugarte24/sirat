@@ -284,14 +284,7 @@ export function drawFormularioInfoSection(
   }
   body.push(
     ["Procedente", procedente, "Padrón", padron],
-    [
-      { content: "Bebidas alcohólicas", styles: { fontStyle: "bold", fillColor: LABEL_FILL } },
-      { content: bebidas, colSpan: 3 },
-    ],
-    [
-      { content: "Observación", styles: { fontStyle: "bold", fillColor: LABEL_FILL } },
-      { content: observacion, colSpan: 3 },
-    ],
+    ["Bebidas alcohólicas", bebidas, "Observación", observacion],
   );
   autoTable(doc, {
     startY: y,
