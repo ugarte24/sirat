@@ -310,6 +310,33 @@ export type FormularioInfoData = {
   observacion: string;
 };
 
+function drawSplitSectionTitles(
+  doc: jsPDF,
+  y: number,
+  leftTitle: string,
+  rightTitle: string,
+  splitX: number,
+): number {
+  const w = doc.internal.pageSize.getWidth();
+  doc.setFillColor(G.r, G.g, G.b);
+  doc.circle(MARGIN + 2, y + 1.5, 1.6, "F");
+  doc.setTextColor(C.text.r, C.text.g, C.text.b);
+  doc.setFont("helvetica", "bold").setFontSize(9);
+  doc.text(leftTitle, MARGIN + 7, y + 2.5);
+
+  doc.setFillColor(G.r, G.g, G.b);
+  doc.circle(splitX + 2, y + 1.5, 1.6, "F");
+  doc.setTextColor(C.text.r, C.text.g, C.text.b);
+  doc.setFont("helvetica", "bold").setFontSize(9);
+  doc.text(rightTitle, splitX + 7, y + 2.5);
+
+  const lineY = y + 5;
+  doc.setDrawColor(G.r, G.g, G.b);
+  doc.setLineWidth(0.35);
+  doc.line(MARGIN, lineY, w - MARGIN, lineY);
+  return lineY + 3;
+}
+
 /** Ambientes (izquierda) e información adicional (derecha) lado a lado. */
 export function drawFormularioAmbientesYInfoSideBySide(
   doc: jsPDF,
@@ -325,9 +352,7 @@ export function drawFormularioAmbientesYInfoSideBySide(
   const rightX = MARGIN + leftW + gap;
 
   let y = ensureSpace(doc, startY, 30, usuario);
-
-  const leftTitleY = drawSectionTitle(doc, y, "MEDICIÓN DE AMBIENTES");
-  const rightTitleY = drawSectionTitle(doc, y, "INFORMACIÓN ADICIONAL");
+  const tableY = drawSplitSectionTitles(doc, y, "MEDICIÓN DE AMBIENTES", "INFORMACIÓN ADICIONAL", rightX);
 
   const ambBody: PdfTableRow[] = ambientes.map((r) => [
     String(r.orden),
@@ -345,7 +370,7 @@ export function drawFormularioAmbientesYInfoSideBySide(
   ]);
 
   autoTable(doc, {
-    startY: leftTitleY,
+    startY: tableY,
     ...TABLE_BASE,
     tableWidth: leftW,
     margin: { left: MARGIN, right: w - MARGIN - leftW, top: TOP_BAR_CONTENT_Y },
@@ -378,7 +403,7 @@ export function drawFormularioAmbientesYInfoSideBySide(
   );
 
   autoTable(doc, {
-    startY: rightTitleY,
+    startY: tableY,
     ...TABLE_BASE,
     margin: { left: rightX, right: MARGIN, top: TOP_BAR_CONTENT_Y },
     styles: { ...TABLE_BASE.styles, fontSize: 7.5, cellPadding: 1.8 },
