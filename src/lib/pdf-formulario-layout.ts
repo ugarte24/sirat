@@ -134,7 +134,7 @@ export async function drawInstitucionalPdfHeader(
   doc.setDrawColor(G.r, G.g, G.b);
   doc.setLineWidth(0.4);
   doc.line(w / 2 - 42, y, w / 2 + 42, y);
-  const titleAreaY = y + 4;
+  const titleAreaY = y + 7;
 
   doc.setFont("helvetica", "bold");
   doc.setTextColor(G.r, G.g, G.b);
