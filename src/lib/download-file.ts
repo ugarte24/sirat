@@ -9,21 +9,30 @@ const SUCCESS: Record<DownloadKind, string> = {
   excel: "Excel descargado correctamente",
 };
 
-/** Descarga un archivo, intenta abrirlo y muestra confirmación. */
+/** Abre el documento en una nueva pestaña (PDF) o descarga directa (Excel). */
 export function downloadBlob(blob: Blob, filename: string, kind: DownloadKind): void {
   const url = URL.createObjectURL(blob);
 
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  link.rel = "noopener";
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-
-  const opened = window.open(url, "_blank", "noopener,noreferrer");
-  if (!opened) {
-    toast.message("Si el documento no se abrió, búsquelo en la carpeta de descargas.");
+  if (kind === "pdf") {
+    const opened = window.open(url, "_blank", "noopener,noreferrer");
+    if (!opened) {
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      link.rel = "noopener";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      toast.message("Si el documento no se abrió, búsquelo en la carpeta de descargas.");
+    }
+  } else {
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    link.rel = "noopener";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
   }
 
   setTimeout(() => URL.revokeObjectURL(url), 120_000);
