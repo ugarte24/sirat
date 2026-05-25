@@ -375,6 +375,8 @@ export function drawFormularioUbicacionSection(
   return yMap + mapH + 6;
 }
 
+const SIGNATURES_HEIGHT = 24;
+
 export function drawFormularioPdfSignatures(
   doc: jsPDF,
   startY: number,
@@ -395,7 +397,11 @@ export function drawFormularioPdfSignatures(
     doc.setFont("helvetica", "normal").setFontSize(7.5);
     doc.text(label, x + sigW / 2, startY + 19, { align: "center" });
   });
-  return startY + 24;
+  return startY + SIGNATURES_HEIGHT;
+}
+
+export function ensureSpaceForSignatures(doc: jsPDF, currentY: number, usuario?: string): number {
+  return ensureSpace(doc, currentY, SIGNATURES_HEIGHT + 8, usuario);
 }
 
 /** Pie de declaración jurada siempre al final de la página 1. */
@@ -421,15 +427,3 @@ export function finalizeFormularioPdfFirstPage(doc: jsPDF, startY: number): void
   drawFormularioPdfFooter(doc, y, 1);
 }
 
-/** Página dedicada para firmas (se usa como página 2 del formulario). */
-export function drawFormularioFirmasPage(
-  doc: jsPDF,
-  usuario?: string,
-): void {
-  doc.addPage();
-  const topY = drawSiratPdfTopBar(doc, { usuario }) + 6;
-  const pageH = doc.internal.pageSize.getHeight();
-  const sigY = topY + (pageH - topY) * 0.25;
-  drawFormularioPdfSignatures(doc, sigY);
-  drawFormularioPdfFooter(doc, sigY + 30, doc.getCurrentPageInfo().pageNumber);
-}
