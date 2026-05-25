@@ -3,6 +3,7 @@ import QRCode from "qrcode";
 import { formatDateEsBo } from "@/lib/date";
 import { applySiratPdfPageNumbers, downloadBlob, downloadJsPdf } from "@/lib/download-file";
 import {
+  drawFormularioAmbientesYInfoSideBySide,
   drawFormularioBajaObservacionSection,
   drawFormularioDatosSection,
   drawFormularioFotosPageStart,
@@ -293,19 +294,24 @@ export async function buildFormularioPdfDoc(d: FormularioData): Promise<{
       sinVerificar || d.superficie == null
         ? FORMULARIO_CAMPO_SIN_VERIFICAR
         : `${formatAmbienteSuperficieM2(d.superficie)} m²`;
-    y = drawFormularioInspeccionSuperficiesSection(doc, y, ambientesPdf, totalLabel, d.usuario);
+    y = drawFormularioAmbientesYInfoSideBySide(doc, y, ambientesPdf, totalLabel, {
+      procedente: siNoPdf(d.procedente),
+      padron: siNoPdf(d.padron),
+      bebidas: siNoPdf(d.bebidas_alcoholicas),
+      observacion: d.observacion?.trim() || "—",
+    }, d.usuario);
+  } else {
+    y = drawFormularioInfoSection(
+      doc,
+      y,
+      superficiePdf,
+      siNoPdf(d.procedente),
+      siNoPdf(d.padron),
+      siNoPdf(d.bebidas_alcoholicas),
+      d.observacion?.trim() || "—",
+      d.usuario,
+    );
   }
-
-  y = drawFormularioInfoSection(
-    doc,
-    y,
-    ambientesPdf ? null : superficiePdf,
-    siNoPdf(d.procedente),
-    siNoPdf(d.padron),
-    siNoPdf(d.bebidas_alcoholicas),
-    d.observacion?.trim() || "—",
-    d.usuario,
-  );
 
   const la = d.latitud != null ? Number(d.latitud) : NaN;
   const ln = d.longitud != null ? Number(d.longitud) : NaN;

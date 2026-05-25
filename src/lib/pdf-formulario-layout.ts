@@ -302,6 +302,98 @@ export function drawFormularioInfoSection(
   return (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 6;
 }
 
+export type FormularioInfoData = {
+  superficieSoloTotal?: string | null;
+  procedente: string;
+  padron: string;
+  bebidas: string;
+  observacion: string;
+};
+
+/** Ambientes (izquierda) e información adicional (derecha) lado a lado. */
+export function drawFormularioAmbientesYInfoSideBySide(
+  doc: jsPDF,
+  startY: number,
+  ambientes: FormularioAmbientePdfRow[],
+  totalLabel: string,
+  info: FormularioInfoData,
+  usuario?: string,
+): number {
+  const w = doc.internal.pageSize.getWidth();
+  const gap = 4;
+  const leftW = (w - 2 * MARGIN - gap) * 0.58;
+  const rightX = MARGIN + leftW + gap;
+
+  let y = ensureSpace(doc, startY, 30, usuario);
+
+  const leftTitleY = drawSectionTitle(doc, y, "MEDICIÓN DE AMBIENTES");
+  const rightTitleY = drawSectionTitle(doc, y, "INFORMACIÓN ADICIONAL");
+
+  const ambBody: PdfTableRow[] = ambientes.map((r) => [
+    String(r.orden),
+    r.ambiente,
+    String(r.largo),
+    String(r.ancho),
+    `${r.superficieM2} m²`,
+  ]);
+  ambBody.push([
+    "",
+    { content: "TOTAL", styles: { fontStyle: "bold", fillColor: LABEL_FILL } },
+    "",
+    "",
+    { content: totalLabel, styles: { fontStyle: "bold" } },
+  ]);
+
+  autoTable(doc, {
+    startY: leftTitleY,
+    ...TABLE_BASE,
+    tableWidth: leftW,
+    margin: { left: MARGIN, right: w - MARGIN - leftW, top: TOP_BAR_CONTENT_Y },
+    styles: { ...TABLE_BASE.styles, fontSize: 7.5, cellPadding: 1.8 },
+    columnStyles: {
+      0: { cellWidth: 7, halign: "center" },
+      1: { cellWidth: leftW * 0.32 },
+      2: { cellWidth: leftW * 0.17, halign: "right" },
+      3: { cellWidth: leftW * 0.17, halign: "right" },
+      4: { cellWidth: leftW * 0.22, halign: "right" },
+    },
+    head: [["N°", "Ambiente", "Largo", "Ancho", "Superficie"]],
+    body: ambBody,
+    didDrawPage: makeAutoTablePageHook(doc, usuario),
+  });
+  const leftFinalY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY;
+
+  const infoBody: PdfTableRow[] = [];
+  if (info.superficieSoloTotal != null) {
+    infoBody.push([
+      { content: "Superficie", styles: { fontStyle: "bold", fillColor: LABEL_FILL } },
+      info.superficieSoloTotal,
+    ]);
+  }
+  infoBody.push(
+    [{ content: "Procedente", styles: { fontStyle: "bold", fillColor: LABEL_FILL } }, info.procedente],
+    [{ content: "Padrón", styles: { fontStyle: "bold", fillColor: LABEL_FILL } }, info.padron],
+    [{ content: "Bebidas alcohólicas", styles: { fontStyle: "bold", fillColor: LABEL_FILL } }, info.bebidas],
+    [{ content: "Observación", styles: { fontStyle: "bold", fillColor: LABEL_FILL } }, info.observacion],
+  );
+
+  autoTable(doc, {
+    startY: rightTitleY,
+    ...TABLE_BASE,
+    margin: { left: rightX, right: MARGIN, top: TOP_BAR_CONTENT_Y },
+    styles: { ...TABLE_BASE.styles, fontSize: 7.5, cellPadding: 1.8 },
+    columnStyles: {
+      0: { fontStyle: "bold", fillColor: LABEL_FILL, cellWidth: 32 },
+      1: { fillColor: [255, 255, 255] },
+    },
+    body: infoBody,
+    didParseCell: styleSiNoCell,
+  });
+  const rightFinalY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY;
+
+  return Math.max(leftFinalY, rightFinalY) + 6;
+}
+
 export function drawFormularioFotosPageStart(
   doc: jsPDF,
   usuario?: string,
