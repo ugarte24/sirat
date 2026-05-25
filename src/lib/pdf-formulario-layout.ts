@@ -19,6 +19,8 @@ const MARGIN = 12;
 const LABEL_FILL: [number, number, number] = [232, 236, 245];
 const SI_COLOR: [number, number, number] = [G.r, G.g, G.b];
 const NO_COLOR: [number, number, number] = [220, 38, 38];
+const TOP_BAR_CONTENT_Y = 26;
+const BOTTOM_MARGIN = 15;
 
 const TABLE_BASE = {
   theme: "plain" as const,
@@ -29,8 +31,24 @@ const TABLE_BASE = {
     lineColor: [218, 222, 230] as [number, number, number],
     lineWidth: 0.15,
   },
-  margin: { left: MARGIN, right: MARGIN },
+  margin: { left: MARGIN, right: MARGIN, top: TOP_BAR_CONTENT_Y },
 };
+
+function ensureSpace(doc: jsPDF, currentY: number, neededMm: number, usuario?: string): number {
+  const pageH = doc.internal.pageSize.getHeight();
+  if (currentY + neededMm > pageH - BOTTOM_MARGIN) {
+    doc.addPage();
+    return drawSiratPdfTopBar(doc, { usuario }) + 4;
+  }
+  return currentY;
+}
+
+function makeAutoTablePageHook(doc: jsPDF, usuario?: string) {
+  return (data: { pageNumber: number }) => {
+    if (data.pageNumber <= 1) return;
+    drawSiratPdfTopBar(doc, { usuario });
+  };
+}
 
 function styleSiNoCell(data: {
   section: string;
@@ -173,6 +191,8 @@ type PdfTableRow = (string | { content: string; colSpan?: number; styles?: Recor
 export type PdfTablaSectionOpts = {
   /** Menos espacio entre título de sección y tabla, y entre filas. */
   compact?: boolean;
+  /** Usuario para redibujar la barra SIRAT en páginas de continuación. */
+  usuario?: string;
 };
 
 export function drawPdfTablaSection(
@@ -183,7 +203,8 @@ export function drawPdfTablaSection(
   opts?: PdfTablaSectionOpts,
 ): number {
   const compact = opts?.compact ?? false;
-  const y = drawSectionTitle(doc, startY, sectionTitle, compact);
+  let y = ensureSpace(doc, startY, 30, opts?.usuario);
+  y = drawSectionTitle(doc, y, sectionTitle, compact);
   autoTable(doc, {
     startY: y,
     ...TABLE_BASE,
@@ -194,6 +215,7 @@ export function drawPdfTablaSection(
     },
     columnStyles: DATOS_TABLE_COLUMNS,
     body: rows,
+    didDrawPage: makeAutoTablePageHook(doc, opts?.usuario),
   });
   return (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + (compact ? 3 : 6);
 }
@@ -202,8 +224,9 @@ export function drawFormularioDatosSection(
   doc: jsPDF,
   startY: number,
   rows: PdfTableRow[],
+  usuario?: string,
 ): number {
-  return drawPdfTablaSection(doc, startY, "DATOS GENERALES", rows);
+  return drawPdfTablaSection(doc, startY, "DATOS GENERALES", rows, { usuario });
 }
 
 export type FormularioAmbientePdfRow = {
@@ -219,8 +242,10 @@ export function drawFormularioInspeccionSuperficiesSection(
   startY: number,
   rows: FormularioAmbientePdfRow[],
   totalLabel: string,
+  usuario?: string,
 ): number {
-  let y = drawSectionTitle(doc, startY, "MEDICIÓN DE AMBIENTES");
+  let y = ensureSpace(doc, startY, 30, usuario);
+  y = drawSectionTitle(doc, y, "MEDICIÓN DE AMBIENTES");
   const body: PdfTableRow[] = rows.map((r) => [
     String(r.orden),
     r.ambiente,
@@ -249,6 +274,7 @@ export function drawFormularioInspeccionSuperficiesSection(
     },
     head: [["N°", "Ambiente", "Largo", "Ancho", "Superficie"]],
     body,
+    didDrawPage: makeAutoTablePageHook(doc, usuario),
   });
   return (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 6;
 }
@@ -261,8 +287,10 @@ export function drawFormularioInfoSection(
   padron: string,
   bebidas: string,
   observacion: string,
+  usuario?: string,
 ): number {
-  let y = drawSectionTitle(doc, startY, "INFORMACIÓN ADICIONAL");
+  let y = ensureSpace(doc, startY, 30, usuario);
+  y = drawSectionTitle(doc, y, "INFORMACIÓN ADICIONAL");
   const body: PdfTableRow[] = [];
   if (superficieSoloTotal != null) {
     body.push([
@@ -292,6 +320,7 @@ export function drawFormularioInfoSection(
     },
     body,
     didParseCell: styleSiNoCell,
+    didDrawPage: makeAutoTablePageHook(doc, usuario),
   });
   return (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 6;
 }
@@ -310,24 +339,27 @@ export function drawFormularioBajaObservacionSection(
   doc: jsPDF,
   startY: number,
   observacionBaja: string,
+  usuario?: string,
 ): number {
   return drawPdfTablaSection(doc, startY, "OBSERVACIÓN DE BAJA", [
     [
       { content: "Detalle", styles: { fontStyle: "bold", fillColor: LABEL_FILL } },
       { content: observacionBaja.trim() || "—", colSpan: 3 },
     ],
-  ]);
+  ], { usuario });
 }
 
 export function drawFormularioUbicacionSection(
   doc: jsPDF,
   startY: number,
   mapDataUrl: string,
+  usuario?: string,
 ): number {
   const w = doc.internal.pageSize.getWidth();
-  let y = drawSectionTitle(doc, startY, "UBICACIÓN");
   const mapW = w - 2 * MARGIN;
   const mapH = 50;
+  let y = ensureSpace(doc, startY, mapH + 12, usuario);
+  y = drawSectionTitle(doc, y, "UBICACIÓN");
   const x = MARGIN;
   const yMap = y;
 

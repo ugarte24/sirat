@@ -564,8 +564,8 @@ Reportes, Usuarios y Perfil accesibles desde el menú lateral.
 | 1.2.4 | Mayo 2026 | Baja documentada | PDF de baja almacenado; fotos de baja (máx. 2); PDF registro y PDF baja visibles en detalle |
 | 1.2.5 | Mayo 2026 | Medición de ambientes | Tabla de ambientes en verificación; PDF y detalle con desglose; superficie total en formulario |
 | 1.2.6 | Mayo 2026 | UX móvil verificación | Tabla de ambientes en tarjetas apiladas en móvil; radio/checkbox con áreas táctiles amplias; fotos en grid 3 columnas; botones de acción más grandes; padding adaptativo |
-| 1.2.7 | Mayo 2026 | PDF formulario paginado | Firmas en página 2 dedicada; fotos en página 3; página 1 solo contenido informativo |
+| 1.2.7 | Mayo 2026 | PDF formulario paginado | Firmas en página 2 dedicada; fotos en página 3; paginación automática con barra SIRAT cuando la tabla de ambientes o secciones desbordan la página |
 
 ---
 
-*Este PRD refleja el estado del producto según el código fuente del repositorio `sirat` (rama `main`, versión 1.0.81). Ante divergencias entre este documento y el código, prevalece el comportamiento implementado hasta que se actualice el PRD.*
+*Este PRD refleja el estado del producto según el código fuente del repositorio `sirat` (rama `main`, versión 1.0.82). Ante divergencias entre este documento y el código, prevalece el comportamiento implementado hasta que se actualice el PRD.*

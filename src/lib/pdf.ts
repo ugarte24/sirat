@@ -285,14 +285,14 @@ export async function buildFormularioPdfDoc(d: FormularioData): Promise<{
       { content: "NIT", styles: { fontStyle: "bold", fillColor: [232, 236, 245] } },
       { content: d.nit ?? "—", colSpan: 3 },
     ],
-  ]);
+  ], d.usuario);
 
   if (ambientesPdf) {
     const totalLabel =
       sinVerificar || d.superficie == null
         ? FORMULARIO_CAMPO_SIN_VERIFICAR
         : `${formatAmbienteSuperficieM2(d.superficie)} m²`;
-    y = drawFormularioInspeccionSuperficiesSection(doc, y, ambientesPdf, totalLabel);
+    y = drawFormularioInspeccionSuperficiesSection(doc, y, ambientesPdf, totalLabel, d.usuario);
   }
 
   y = drawFormularioInfoSection(
@@ -303,6 +303,7 @@ export async function buildFormularioPdfDoc(d: FormularioData): Promise<{
     siNoPdf(d.padron),
     siNoPdf(d.bebidas_alcoholicas),
     d.observacion?.trim() || "—",
+    d.usuario,
   );
 
   const la = d.latitud != null ? Number(d.latitud) : NaN;
@@ -315,13 +316,13 @@ export async function buildFormularioPdfDoc(d: FormularioData): Promise<{
         d.mapa_zoom ?? 17,
         d.mapCaptureElement,
       );
-      y = drawFormularioUbicacionSection(doc, y, mapDataUrl);
+      y = drawFormularioUbicacionSection(doc, y, mapDataUrl, d.usuario);
     } catch (e) {
       console.warn("Mapa no incluido en PDF:", e);
     }
   }
 
-  drawFormularioPdfFooter(doc, y, 1);
+  drawFormularioPdfFooter(doc, y, doc.getCurrentPageInfo().pageNumber);
 
   drawFormularioFirmasPage(doc, d.usuario);
 
@@ -415,7 +416,7 @@ export async function buildFormularioBajaPdfDoc(d: FormularioBajaPdfData): Promi
     ["C.I.", d.contribuyente_ci, "Dirección", d.direccion],
     ["Razón social", d.razon_social, "Referencia", d.referencia],
     ["NIT", d.nit ?? "—", "Zona", d.zona],
-  ]);
+  ], d.usuario);
 
   const la = d.latitud != null ? Number(d.latitud) : NaN;
   const ln = d.longitud != null ? Number(d.longitud) : NaN;
@@ -427,13 +428,13 @@ export async function buildFormularioBajaPdfDoc(d: FormularioBajaPdfData): Promi
         d.mapa_zoom ?? 17,
         d.mapCaptureElement,
       );
-      y = drawFormularioUbicacionSection(doc, y, mapDataUrl);
+      y = drawFormularioUbicacionSection(doc, y, mapDataUrl, d.usuario);
     } catch (e) {
       console.warn("Mapa no incluido en PDF de baja:", e);
     }
   }
 
-  y = drawFormularioBajaObservacionSection(doc, y, d.observacion_baja);
+  y = drawFormularioBajaObservacionSection(doc, y, d.observacion_baja, d.usuario);
   finalizeFormularioPdfFirstPage(doc, y);
 
   const photoSources = normalizeFormularioPhotos({ photos: d.photos });
@@ -575,7 +576,7 @@ export async function buildNotificacionPdfDoc(d: NotificacionPdfData): Promise<j
       { content: d.numero_identificacion?.trim() || "—", colSpan: 3 },
     ],
     ],
-    { compact: true },
+    { compact: true, usuario: d.usuario },
   );
 
   return doc;
