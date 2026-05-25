@@ -5,7 +5,7 @@
 |-------|-------|
 | **Cliente** | Gobierno Autónomo Municipal de Riberalta — Jefatura de Recaudaciones |
 | **Versión del documento** | 1.2 |
-| **Versión del producto** | 1.0.74 |
+| **Versión del producto** | 1.0.80 |
 | **Fecha** | Mayo 2026 |
 | **Estado** | Basado en el código en producción/desarrollo actual |
 
@@ -563,7 +563,8 @@ Reportes, Usuarios y Perfil accesibles desde el menú lateral.
 | 1.2.3 | Mayo 2026 | Formularios | Dar de baja y anular para operadores (observación); menú «Más acciones» al final de la barra, como en notificaciones |
 | 1.2.4 | Mayo 2026 | Baja documentada | PDF de baja almacenado; fotos de baja (máx. 2); PDF registro y PDF baja visibles en detalle |
 | 1.2.5 | Mayo 2026 | Medición de ambientes | Tabla de ambientes en verificación; PDF y detalle con desglose; superficie total en formulario |
+| 1.2.6 | Mayo 2026 | UX móvil verificación | Tabla de ambientes en tarjetas apiladas en móvil; radio/checkbox con áreas táctiles amplias; fotos en grid 3 columnas; botones de acción más grandes; padding adaptativo |
 
 ---
 
-*Este PRD refleja el estado del producto según el código fuente del repositorio `sirat` (rama `main`, versión 1.0.74). Ante divergencias entre este documento y el código, prevalece el comportamiento implementado hasta que se actualice el PRD.*
+*Este PRD refleja el estado del producto según el código fuente del repositorio `sirat` (rama `main`, versión 1.0.80). Ante divergencias entre este documento y el código, prevalece el comportamiento implementado hasta que se actualice el PRD.*

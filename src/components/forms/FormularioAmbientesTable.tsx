@@ -42,8 +42,9 @@ export function FormularioAmbientesTable({ rows, onChange, disabled }: Formulari
         </p>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border">
-        <table className="w-full min-w-[520px] text-sm">
+      {/* Desktop: tabla clásica */}
+      <div className="hidden sm:block overflow-x-auto rounded-lg border">
+        <table className="w-full text-sm">
           <thead>
             <tr className="border-b bg-muted/40">
               <th className="px-2 py-2 text-left font-medium w-10">N°</th>
@@ -127,11 +128,91 @@ export function FormularioAmbientesTable({ rows, onChange, disabled }: Formulari
         </table>
       </div>
 
+      {/* Móvil: tarjetas apiladas */}
+      <div className="sm:hidden space-y-3">
+        {rows.map((row, index) => {
+          const sup = calcAmbienteSuperficie(row.largo, row.ancho);
+          return (
+            <div
+              key={row.id ?? `card-${index}`}
+              className="rounded-lg border bg-card p-3 space-y-2.5"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-muted-foreground">
+                  Ambiente {index + 1}
+                </span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-destructive -mr-1"
+                  disabled={disabled || rows.length <= 1}
+                  onClick={() => removeRow(index)}
+                  aria-label={`Quitar ambiente ${index + 1}`}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+              <Input
+                value={row.ambiente}
+                onChange={(e) => updateRow(index, { ambiente: e.target.value })}
+                placeholder="Nombre del ambiente (ej. Oficina)"
+                disabled={disabled}
+                className="h-10"
+              />
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Largo (m)</Label>
+                  <Input
+                    type="number"
+                    inputMode="decimal"
+                    step="0.01"
+                    min="0"
+                    value={row.largo}
+                    onChange={(e) => updateRow(index, { largo: e.target.value })}
+                    placeholder="0.00"
+                    disabled={disabled}
+                    className="h-10"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Ancho (m)</Label>
+                  <Input
+                    type="number"
+                    inputMode="decimal"
+                    step="0.01"
+                    min="0"
+                    value={row.ancho}
+                    onChange={(e) => updateRow(index, { ancho: e.target.value })}
+                    placeholder="0.00"
+                    disabled={disabled}
+                    className="h-10"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center justify-between rounded-md bg-muted/40 px-3 py-1.5">
+                <span className="text-xs font-medium text-muted-foreground">Superficie</span>
+                <span className="text-sm font-semibold tabular-nums">
+                  {sup != null ? `${formatAmbienteSuperficieM2(sup)} m²` : "—"}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+
+        <div className="flex items-center justify-between rounded-lg border bg-muted/20 px-4 py-3">
+          <span className="text-sm font-semibold">TOTAL</span>
+          <span className="text-sm font-bold tabular-nums">
+            {total > 0 ? `${formatAmbienteSuperficieM2(total)} m²` : "—"}
+          </span>
+        </div>
+      </div>
+
       <Button
         type="button"
         variant="outline"
         size="sm"
-        className="gap-1.5"
+        className="gap-1.5 w-full sm:w-auto"
         disabled={disabled}
         onClick={addRow}
       >

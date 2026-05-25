@@ -361,14 +361,14 @@ export function FormularioGestionForm({
         />
         <div className="flex flex-col gap-2 sm:flex-row">
           {onCancel ? (
-            <Button type="button" variant="outline" onClick={onCancel} disabled={busyVerificacion}>
+            <Button type="button" variant="outline" className="h-12 sm:h-11" onClick={onCancel} disabled={busyVerificacion}>
               Cancelar
             </Button>
           ) : null}
           {pendiente ? (
             <Button
               type="button"
-              className="flex-1 h-11 bg-gradient-primary"
+              className="flex-1 h-12 sm:h-11 bg-gradient-primary text-base sm:text-sm"
               disabled={busyVerificacion}
               onClick={() => void saveVerificacion(true)}
             >
@@ -377,7 +377,7 @@ export function FormularioGestionForm({
           ) : (
             <Button
               type="button"
-              className="flex-1 h-11 bg-gradient-primary"
+              className="flex-1 h-12 sm:h-11 bg-gradient-primary text-base sm:text-sm"
               disabled={busyVerificacion}
               onClick={() => void saveVerificacion(false)}
             >
