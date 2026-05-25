@@ -103,25 +103,29 @@ export async function drawInstitucionalPdfHeader(
   const [logo, escudo] = await Promise.all([loadSiratLogoDataUrl(), loadEscudoRiberaltaDataUrl()]);
   let y = drawSiratPdfTopBar(doc, { usuario: opts.usuario }) + 5;
 
+  const logoZoneH = 20;
+
   if (escudo) {
-    doc.addImage(escudo, "PNG", MARGIN, y, 24, 28);
+    const escudoH = logoZoneH;
+    const escudoW = escudoH * (24 / 28);
+    doc.addImage(escudo, "PNG", MARGIN, y, escudoW, escudoH);
   }
 
-  const logoH = 26;
+  const siratLogoH = logoZoneH - 1;
   let logoBottomY = y;
   if (logo) {
-    const logoW = logoH * SIRAT_LOGO_ASPECT;
-    doc.addImage(logo, "PNG", w - MARGIN - logoW, y + 1, logoW, logoH);
-    logoBottomY = y + 1 + logoH;
+    const logoW = siratLogoH * SIRAT_LOGO_ASPECT;
+    doc.addImage(logo, "PNG", w - MARGIN - logoW, y + 1, logoW, siratLogoH);
+    logoBottomY = y + 1 + siratLogoH;
   }
 
   doc.setTextColor(C.text.r, C.text.g, C.text.b);
   doc.setFont("helvetica", "bold").setFontSize(9);
-  doc.text(GAM_RIBERALTA_NOMBRE, w / 2, y + 10, { align: "center" });
+  doc.text(GAM_RIBERALTA_NOMBRE, w / 2, y + 8, { align: "center" });
   doc.setFont("helvetica", "normal").setFontSize(8);
-  doc.text(JEFATURA_RECAUDACIONES, w / 2, y + 15, { align: "center" });
+  doc.text(JEFATURA_RECAUDACIONES, w / 2, y + 13, { align: "center" });
 
-  y += 20;
+  y += logoZoneH;
   doc.setDrawColor(G.r, G.g, G.b);
   doc.setLineWidth(0.4);
   doc.line(w / 2 - 42, y, w / 2 + 42, y);
