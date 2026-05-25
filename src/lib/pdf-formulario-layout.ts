@@ -388,3 +388,16 @@ export function finalizeFormularioPdfFirstPage(doc: jsPDF, startY: number): void
   const y = drawFormularioPdfSignatures(doc, startY);
   drawFormularioPdfFooter(doc, y, 1);
 }
+
+/** Página dedicada para firmas (se usa como página 2 del formulario). */
+export function drawFormularioFirmasPage(
+  doc: jsPDF,
+  usuario?: string,
+): void {
+  doc.addPage();
+  const topY = drawSiratPdfTopBar(doc, { usuario }) + 6;
+  const pageH = doc.internal.pageSize.getHeight();
+  const sigY = topY + (pageH - topY) * 0.25;
+  drawFormularioPdfSignatures(doc, sigY);
+  drawFormularioPdfFooter(doc, sigY + 30, doc.getCurrentPageInfo().pageNumber);
+}

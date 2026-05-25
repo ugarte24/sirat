@@ -5,9 +5,11 @@ import { applySiratPdfPageNumbers, downloadBlob, downloadJsPdf } from "@/lib/dow
 import {
   drawFormularioBajaObservacionSection,
   drawFormularioDatosSection,
+  drawFormularioFirmasPage,
   drawFormularioFotosPageStart,
   drawFormularioInfoSection,
   drawFormularioInspeccionSuperficiesSection,
+  drawFormularioPdfFooter,
   drawFormularioPdfHeader,
   drawFormularioUbicacionSection,
   drawInstitucionalPdfHeader,
@@ -319,7 +321,9 @@ export async function buildFormularioPdfDoc(d: FormularioData): Promise<{
     }
   }
 
-  finalizeFormularioPdfFirstPage(doc, y);
+  drawFormularioPdfFooter(doc, y, 1);
+
+  drawFormularioFirmasPage(doc, d.usuario);
 
   const photoSources = normalizeFormularioPhotos(d);
   let fotosIncluidas = 0;
