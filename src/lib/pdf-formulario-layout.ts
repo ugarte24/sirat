@@ -333,7 +333,8 @@ function drawSplitSectionTitles(
   const lineY = y + 5;
   doc.setDrawColor(G.r, G.g, G.b);
   doc.setLineWidth(0.35);
-  doc.line(MARGIN, lineY, w - MARGIN, lineY);
+  doc.line(MARGIN, lineY, splitX - 2, lineY);
+  doc.line(splitX, lineY, w - MARGIN, lineY);
   return lineY + 3;
 }
 
