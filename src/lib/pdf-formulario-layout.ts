@@ -104,19 +104,25 @@ export async function drawInstitucionalPdfHeader(
   let y = drawSiratPdfTopBar(doc, { usuario: opts.usuario }) + 5;
 
   const logoZoneH = 20;
+  let leftEdge = MARGIN;
 
   if (escudo) {
     const escudoH = logoZoneH;
     const escudoW = escudoH * (24 / 28);
-    doc.addImage(escudo, "PNG", MARGIN, y, escudoW, escudoH);
+    doc.addImage(escudo, "PNG", leftEdge, y, escudoW, escudoH);
+    leftEdge += escudoW + 3;
   }
 
-  const siratLogoH = logoZoneH - 1;
-  let logoBottomY = y;
   if (logo) {
+    const siratLogoH = logoZoneH - 1;
     const logoW = siratLogoH * SIRAT_LOGO_ASPECT;
-    doc.addImage(logo, "PNG", w - MARGIN - logoW, y + 1, logoW, siratLogoH);
-    logoBottomY = y + 1 + siratLogoH;
+    doc.addImage(logo, "PNG", leftEdge, y + 1, logoW, siratLogoH);
+  }
+
+  if (opts.qrDataUrl) {
+    const qrSize = opts.qrSizeMm ?? 22;
+    const qrH = Math.min(qrSize, logoZoneH);
+    doc.addImage(opts.qrDataUrl, "PNG", w - MARGIN - qrH, y, qrH, qrH);
   }
 
   doc.setTextColor(C.text.r, C.text.g, C.text.b);
@@ -138,37 +144,11 @@ export async function drawInstitucionalPdfHeader(
   doc.setFontSize(titleSize);
 
   let contentBottom = titleAreaY;
-
-  if (opts.qrDataUrl) {
-    const qrSize = opts.qrSizeMm ?? 22;
-    const blockSpan = titleLineGap * Math.max(0, opts.titleLines.length - 1);
-
-    if (opts.titleLines.length > 1) {
-      const qrY = logo ? logoBottomY + 3 : titleAreaY;
-      const qrCenterY = qrY + qrSize / 2;
-      doc.addImage(opts.qrDataUrl, "PNG", w - MARGIN - qrSize, qrY, qrSize, qrSize);
-
-      const titleStartY = Math.max(qrCenterY - blockSpan / 2, titleAreaY);
-      for (let i = 0; i < opts.titleLines.length; i++) {
-        doc.text(opts.titleLines[i], w / 2, titleStartY + i * titleLineGap, { align: "center" });
-      }
-      contentBottom = Math.max(qrY + qrSize, titleStartY + blockSpan + titleSize * 0.25);
-    } else {
-      const titleStartY = titleAreaY + (opts.titleMarginTop ?? 0);
-      const titleMidY = titleStartY - titleSize * 0.35;
-      let qrY = titleMidY - qrSize / 2;
-      if (logo) qrY = Math.max(qrY, logoBottomY + 3);
-      doc.addImage(opts.qrDataUrl, "PNG", w - MARGIN - qrSize, qrY, qrSize, qrSize);
-      doc.text(opts.titleLines[0], w / 2, titleStartY, { align: "center" });
-      contentBottom = Math.max(qrY + qrSize, titleStartY + titleSize * 0.25);
-    }
-  } else {
-    let lineY = titleAreaY + (opts.titleMarginTop ?? 0);
-    for (const line of opts.titleLines) {
-      doc.text(line, w / 2, lineY, { align: "center" });
-      lineY += titleLineGap;
-      contentBottom = lineY;
-    }
+  let lineY = titleAreaY + (opts.titleMarginTop ?? 0);
+  for (const line of opts.titleLines) {
+    doc.text(line, w / 2, lineY, { align: "center" });
+    lineY += titleLineGap;
+    contentBottom = lineY;
   }
 
   return contentBottom + (opts.trailingGap ?? 6);
