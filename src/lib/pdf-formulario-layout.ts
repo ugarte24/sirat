@@ -104,25 +104,24 @@ export async function drawInstitucionalPdfHeader(
   let y = drawSiratPdfTopBar(doc, { usuario: opts.usuario }) + 5;
 
   const logoZoneH = 20;
-  let leftEdge = MARGIN;
 
   if (escudo) {
     const escudoH = logoZoneH;
     const escudoW = escudoH * (24 / 28);
-    doc.addImage(escudo, "PNG", leftEdge, y, escudoW, escudoH);
-    leftEdge += escudoW + 3;
+    doc.addImage(escudo, "PNG", MARGIN, y, escudoW, escudoH);
   }
 
+  let rightEdge = w - MARGIN;
+  if (opts.qrDataUrl) {
+    const qrH = Math.min(opts.qrSizeMm ?? 22, logoZoneH);
+    rightEdge -= qrH;
+    doc.addImage(opts.qrDataUrl, "PNG", rightEdge, y, qrH, qrH);
+    rightEdge -= 2;
+  }
   if (logo) {
     const siratLogoH = logoZoneH - 1;
     const logoW = siratLogoH * SIRAT_LOGO_ASPECT;
-    doc.addImage(logo, "PNG", leftEdge, y + 1, logoW, siratLogoH);
-  }
-
-  if (opts.qrDataUrl) {
-    const qrSize = opts.qrSizeMm ?? 22;
-    const qrH = Math.min(qrSize, logoZoneH);
-    doc.addImage(opts.qrDataUrl, "PNG", w - MARGIN - qrH, y, qrH, qrH);
+    doc.addImage(logo, "PNG", rightEdge - logoW, y + 1, logoW, siratLogoH);
   }
 
   doc.setTextColor(C.text.r, C.text.g, C.text.b);
@@ -135,23 +134,24 @@ export async function drawInstitucionalPdfHeader(
   doc.setDrawColor(G.r, G.g, G.b);
   doc.setLineWidth(0.4);
   doc.line(w / 2 - 42, y, w / 2 + 42, y);
-  const titleAreaY = y + 6;
+  const titleAreaY = y + 4;
 
   doc.setFont("helvetica", "bold");
   doc.setTextColor(G.r, G.g, G.b);
-  const titleSize = opts.titleFontSize ?? 11;
-  const titleLineGap = titleSize * 0.42;
-  doc.setFontSize(titleSize);
 
-  let contentBottom = titleAreaY;
-  let lineY = titleAreaY + (opts.titleMarginTop ?? 0);
-  for (const line of opts.titleLines) {
-    doc.text(line, w / 2, lineY, { align: "center" });
-    lineY += titleLineGap;
-    contentBottom = lineY;
+  const fullTitle = opts.titleLines.join(" ");
+  const maxTitleW = w - 2 * MARGIN - 4;
+  let titleSize = opts.titleFontSize ?? 11;
+  doc.setFontSize(titleSize);
+  while (titleSize > 7 && doc.getTextWidth(fullTitle) > maxTitleW) {
+    titleSize -= 0.5;
+    doc.setFontSize(titleSize);
   }
 
-  return contentBottom + (opts.trailingGap ?? 6);
+  doc.text(fullTitle, w / 2, titleAreaY + (opts.titleMarginTop ?? 0), { align: "center" });
+  const contentBottom = titleAreaY + titleSize * 0.35;
+
+  return contentBottom + (opts.trailingGap ?? 4);
 }
 
 export async function drawFormularioPdfHeader(
