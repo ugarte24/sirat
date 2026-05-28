@@ -33,6 +33,7 @@ import { FormularioAmbientesTable } from "@/components/forms/FormularioAmbientes
 import { FORMULARIO_VERIFICACION_NOMBRE } from "@/lib/sirat-brand";
 import {
   FORMULARIO_FOTO_MAX_LABEL,
+  FORMULARIO_FOTOS_MAX_COUNT,
   formatFileSize,
   formularioFotoUploadWarning,
   prepareFormularioFotoFile,
@@ -165,7 +166,7 @@ export function FormularioEditarForm({ formularioId, onSuccess, onCancel }: Form
     const files = Array.from(e.target.files ?? []);
     e.target.value = "";
     if (!files.length) return;
-    const slotsLeft = 2 - visibleExisting.length;
+    const slotsLeft = FORMULARIO_FOTOS_MAX_COUNT - visibleExisting.length;
     void (async () => {
       setPhotoBusy(true);
       const pending: LocalPhoto[] = [];
@@ -186,7 +187,7 @@ export function FormularioEditarForm({ formularioId, onSuccess, onCancel }: Form
           setNewPhotos((prev) => {
             const next = [...prev];
             for (const p of pending) {
-              if (visibleExisting.length + next.length >= 2) {
+              if (visibleExisting.length + next.length >= FORMULARIO_FOTOS_MAX_COUNT) {
                 URL.revokeObjectURL(p.previewUrl);
                 continue;
               }
@@ -407,9 +408,9 @@ export function FormularioEditarForm({ formularioId, onSuccess, onCancel }: Form
       </Card>
 
       <Card className="p-5 space-y-3 border-0 shadow-none sm:border sm:shadow-sm">
-        <Label>Fotografías (máximo 2)</Label>
+        <Label>Fotografías (máximo {FORMULARIO_FOTOS_MAX_COUNT})</Label>
         <p className="text-xs text-muted-foreground">
-          Máximo 2 fotos; si superan {FORMULARIO_FOTO_MAX_LABEL} se comprimen automáticamente.
+          Máximo {FORMULARIO_FOTOS_MAX_COUNT} fotos; si superan {FORMULARIO_FOTO_MAX_LABEL} se comprimen automáticamente.
           {photoBusy ? " Comprimiendo…" : ""}
         </p>
         <div className="flex gap-2 flex-wrap">
@@ -440,7 +441,7 @@ export function FormularioEditarForm({ formularioId, onSuccess, onCancel }: Form
               </button>
             </div>
           ))}
-          {totalPhotos < 2 && (
+          {totalPhotos < FORMULARIO_FOTOS_MAX_COUNT && (
             <div className="flex gap-2 flex-wrap">
               <label className="h-24 w-24 rounded-lg border-2 border-dashed flex flex-col items-center justify-center text-muted-foreground cursor-pointer hover:bg-muted shrink-0">
                 <Camera className="h-5 w-5" aria-hidden />

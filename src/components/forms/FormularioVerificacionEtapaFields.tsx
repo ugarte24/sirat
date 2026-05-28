@@ -11,7 +11,7 @@ import { Camera, Images, X } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 import type { FormularioAmbienteRow, FormularioNuevoState } from "@/lib/sirat-forms";
 import { FormularioAmbientesTable } from "@/components/forms/FormularioAmbientesTable";
-import { FORMULARIO_FOTO_MAX_LABEL } from "@/lib/formulario-fotos";
+import { FORMULARIO_FOTO_MAX_LABEL, FORMULARIO_FOTOS_MAX_COUNT } from "@/lib/formulario-fotos";
 import {
   formularioStateToMapMarker,
 } from "@/lib/mapa-actividades";
@@ -68,7 +68,7 @@ export function FormularioVerificacionEtapaFields({
   onRemoveLocal,
   onAddPhotos,
   photoBusy = false,
-  maxPhotos = 2,
+  maxPhotos = FORMULARIO_FOTOS_MAX_COUNT,
   ambientes,
   onAmbientesChange,
   ambientesDisabled = false,

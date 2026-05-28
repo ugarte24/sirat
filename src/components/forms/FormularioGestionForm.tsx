@@ -26,6 +26,7 @@ import {
 } from "@/lib/formulario-ambientes";
 import { FORMULARIO_VERIFICACION_NOMBRE } from "@/lib/sirat-brand";
 import {
+  FORMULARIO_FOTOS_MAX_COUNT,
   formatFileSize,
   formularioFotoUploadWarning,
   prepareFormularioFotoFile,
@@ -170,7 +171,7 @@ export function FormularioGestionForm({
     const files = Array.from(e.target.files ?? []);
     e.target.value = "";
     if (!files.length) return;
-    const slotsLeft = 2 - visibleExisting.length;
+    const slotsLeft = FORMULARIO_FOTOS_MAX_COUNT - visibleExisting.length;
     void (async () => {
       setPhotoBusy(true);
       const pending: VerificacionPhotoLocal[] = [];
@@ -191,7 +192,7 @@ export function FormularioGestionForm({
           setNewPhotos((prev) => {
             const next = [...prev];
             for (const p of pending) {
-              if (visibleExisting.length + next.length >= 2) {
+              if (visibleExisting.length + next.length >= FORMULARIO_FOTOS_MAX_COUNT) {
                 URL.revokeObjectURL(p.previewUrl);
                 continue;
               }
@@ -358,6 +359,7 @@ export function FormularioGestionForm({
           }}
           onAddPhotos={addPhoto}
           photoBusy={photoBusy}
+          maxPhotos={FORMULARIO_FOTOS_MAX_COUNT}
         />
         <div className="flex flex-col gap-2 sm:flex-row">
           {onCancel ? (

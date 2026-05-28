@@ -135,7 +135,7 @@ FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 CREATE INDEX idx_formularios_contribuyente ON public.formularios(contribuyente_id);
 CREATE INDEX idx_formularios_estado ON public.formularios(estado);
 
--- Fotos de formulario (max 2)
+-- Fotos de formulario (max 3)
 CREATE TABLE public.formulario_fotos (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   formulario_id UUID NOT NULL REFERENCES public.formularios(id) ON DELETE CASCADE,
@@ -148,8 +148,8 @@ CREATE INDEX idx_fotos_formulario ON public.formulario_fotos(formulario_id);
 CREATE OR REPLACE FUNCTION public.check_max_fotos()
 RETURNS TRIGGER LANGUAGE plpgsql SET search_path = public AS $$
 BEGIN
-  IF (SELECT COUNT(*) FROM public.formulario_fotos WHERE formulario_id = NEW.formulario_id) >= 2 THEN
-    RAISE EXCEPTION 'Máximo 2 fotos por formulario';
+  IF (SELECT COUNT(*) FROM public.formulario_fotos WHERE formulario_id = NEW.formulario_id) >= 3 THEN
+    RAISE EXCEPTION 'Máximo 3 fotos por formulario';
   END IF;
   RETURN NEW;
 END;

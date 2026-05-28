@@ -4,8 +4,8 @@
 | Campo | Valor |
 |-------|-------|
 | **Cliente** | Gobierno Autónomo Municipal de Riberalta — Jefatura de Recaudaciones |
-| **Versión del documento** | 1.2 |
-| **Versión del producto** | 1.0.80 |
+| **Versión del documento** | 1.2.8 |
+| **Versión del producto** | 1.0.93 |
 | **Fecha** | Mayo 2026 |
 | **Estado** | Basado en el código en producción/desarrollo actual |
 
@@ -87,7 +87,7 @@ Unificar en una sola plataforma web responsive (móvil + escritorio) el ciclo: *
 - Autenticación por correo y contraseña (Supabase Auth).
 - Gestión de contribuyentes con C.I. única.
 - Formularios de actividades económicas en **dos etapas** (registro → verificación).
-- Hasta 2 fotos por formulario verificado (almacenamiento privado).
+- Hasta 3 fotos por formulario verificado (almacenamiento privado).
 - Notificaciones tributarias con conceptos múltiples, PDF, QR y vista pública.
 - Mapa Leaflet de actividades con coordenadas.
 - Reportes exportables (formularios, notificaciones, contribuyentes).
@@ -192,7 +192,7 @@ Unificar en una sola plataforma web responsive (móvil + escritorio) el ciclo: *
 | FORM-07 | Superficie > 0 m² | Must |
 | FORM-08 | Campo `procedente` (sí/no) obligatorio | Must |
 | FORM-09 | Al menos uno de: `padron` o `bebidas_alcoholicas` | Must |
-| FORM-10 | Hasta 2 fotos (máx. 500 KB c/u, compresión cliente) | Must |
+| FORM-10 | Hasta 3 fotos (máx. 500 KB c/u, compresión cliente) | Must |
 | FORM-11 | Al completar: `estado = activo`, `verificado_por`, `verificado_at` | Must |
 | FORM-12 | Edición por pestañas Registro / Verificación en diálogo | Must |
 
@@ -329,7 +329,7 @@ auth.users ──1:N── user_roles
 contribuyentes ──1:N── formularios
 contribuyentes ──0:N── notificaciones (contribuyente_id nullable)
 
-formularios ──1:N── formulario_fotos (máx. 2, trigger DB)
+formularios ──1:N── formulario_fotos (máx. 3, trigger DB)
 ```
 
 ### 8.2 Tablas principales
@@ -358,7 +358,7 @@ zona_tipo:           A | B | C | D | E
 - `contribuyentes.ci` UNIQUE.
 - `formularios(contribuyente_id, razon_social)` UNIQUE.
 - DELETE `contribuyentes` solo sin formularios ni notificaciones vinculadas.
-- Máximo 2 filas en `formulario_fotos` por `formulario_id` (trigger).
+- Máximo 3 filas en `formulario_fotos` por `formulario_id` (trigger).
 
 ---
 
@@ -565,7 +565,8 @@ Reportes, Usuarios y Perfil accesibles desde el menú lateral.
 | 1.2.5 | Mayo 2026 | Medición de ambientes | Tabla de ambientes en verificación; PDF y detalle con desglose; superficie total en formulario |
 | 1.2.6 | Mayo 2026 | UX móvil verificación | Tabla de ambientes en tarjetas apiladas en móvil; radio/checkbox con áreas táctiles amplias; fotos en grid 3 columnas; botones de acción más grandes; padding adaptativo |
 | 1.2.7 | Mayo 2026 | PDF formulario paginado | Firmas en página 2 dedicada; fotos en página 3; paginación automática con barra SIRAT cuando la tabla de ambientes o secciones desbordan la página |
+| 1.2.8 | Mayo 2026 | Fotos formulario | Límite de fotos de verificación sube de 2 a 3 en formularios (alta/edición/gestión), texto de UI y trigger de base de datos |
 
 ---
 
-*Este PRD refleja el estado del producto según el código fuente del repositorio `sirat` (rama `main`, versión 1.0.82). Ante divergencias entre este documento y el código, prevalece el comportamiento implementado hasta que se actualice el PRD.*
+*Este PRD refleja el estado del producto según el código fuente del repositorio `sirat` (rama `main`, versión 1.0.93). Ante divergencias entre este documento y el código, prevalece el comportamiento implementado hasta que se actualice el PRD.*

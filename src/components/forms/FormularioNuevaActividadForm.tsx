@@ -16,6 +16,7 @@ import { emptyFormularioNuevo, formularioStateToInsert } from "@/lib/sirat-forms
 import { FORMULARIO_VERIFICACION_NOMBRE } from "@/lib/sirat-brand";
 import {
   FORMULARIO_FOTO_MAX_LABEL,
+  FORMULARIO_FOTOS_MAX_COUNT,
   formatFileSize,
   formularioFotoUploadWarning,
   prepareFormularioFotoFile,
@@ -121,7 +122,7 @@ export function FormularioNuevaActividadForm({
       const pending: LocalPhoto[] = [];
       try {
         for (const raw of files) {
-          if (photosRef.current.length + pending.length >= 2) break;
+          if (photosRef.current.length + pending.length >= FORMULARIO_FOTOS_MAX_COUNT) break;
           try {
             const { file, compressed } = await prepareFormularioFotoFile(raw);
             if (compressed) {
@@ -136,7 +137,7 @@ export function FormularioNuevaActividadForm({
           setPhotos((prev) => {
             const next = [...prev];
             for (const p of pending) {
-              if (next.length >= 2) {
+              if (next.length >= FORMULARIO_FOTOS_MAX_COUNT) {
                 URL.revokeObjectURL(p.previewUrl);
                 continue;
               }
@@ -355,9 +356,9 @@ export function FormularioNuevaActividadForm({
 
       <Card className="p-5 space-y-3 border-0 shadow-none sm:border sm:shadow-sm">
         <div>
-          <Label>Fotografías (máximo 2)</Label>
+          <Label>Fotografías (máximo {FORMULARIO_FOTOS_MAX_COUNT})</Label>
           <p className="text-xs text-muted-foreground mt-1">
-            Máximo 2 fotos; si superan {FORMULARIO_FOTO_MAX_LABEL} se comprimen automáticamente.
+            Máximo {FORMULARIO_FOTOS_MAX_COUNT} fotos; si superan {FORMULARIO_FOTO_MAX_LABEL} se comprimen automáticamente.
             {photoBusy ? " Comprimiendo…" : ""}
           </p>
         </div>
@@ -377,7 +378,7 @@ export function FormularioNuevaActividadForm({
               </button>
             </div>
           ))}
-          {photos.length < 2 && (
+          {photos.length < FORMULARIO_FOTOS_MAX_COUNT && (
             <div className="flex gap-2 flex-wrap">
               <label className="h-24 w-24 rounded-lg border-2 border-dashed flex flex-col items-center justify-center text-muted-foreground cursor-pointer hover:bg-muted shrink-0">
                 <Camera className="h-5 w-5" aria-hidden />

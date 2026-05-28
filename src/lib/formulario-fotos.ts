@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 /** Tamaño máximo por foto de verificación (500 KB). */
 export const FORMULARIO_FOTO_MAX_BYTES = 500 * 1024;
 export const FORMULARIO_FOTO_MAX_LABEL = "500 KB";
+export const FORMULARIO_FOTOS_MAX_COUNT = 3;
 
 export const FORMULARIO_FOTOS_BUCKET = "formulario-fotos";
 
