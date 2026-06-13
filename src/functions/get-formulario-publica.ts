@@ -37,7 +37,8 @@ export const getFormularioPublicaFn = createServerFn({ method: "POST" })
           bebidas_alcoholicas,
           observacion,
           estado,
-          contribuyente:contribuyentes(nombre_completo, ci)
+          contribuyente:contribuyentes(nombre_completo, ci),
+          tipo_tramite:tipos_tramite(nombre)
         `,
         )
         .eq("id", data.id)
@@ -60,6 +61,12 @@ export const getFormularioPublicaFn = createServerFn({ method: "POST" })
         | null
         | undefined;
 
+      const tipoRaw = row.tipo_tramite;
+      const tipo = (Array.isArray(tipoRaw) ? tipoRaw[0] : tipoRaw) as
+        | { nombre: string }
+        | null
+        | undefined;
+
       return {
         ok: true as const,
         payload: buildFormularioQrPayload({
@@ -68,6 +75,7 @@ export const getFormularioPublicaFn = createServerFn({ method: "POST" })
           razon_social: row.razon_social,
           contribuyente_nombre: contrib?.nombre_completo ?? "—",
           contribuyente_ci: contrib?.ci ?? "—",
+          tipo_tramite_nombre: tipo?.nombre,
           nit: row.nit,
           zona: row.zona,
           superficie: row.superficie,

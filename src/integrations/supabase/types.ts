@@ -140,6 +140,28 @@ export type Database = {
           },
         ]
       }
+      }
+      tipos_tramite: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          nombre: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          nombre: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          nombre?: string
+        }
+        Relationships: []
+      }
       formularios: {
         Row: {
           baja_at: string | null
@@ -163,6 +185,7 @@ export type Database = {
           razon_social: string
           referencia: string
           superficie: number | null
+          tipo_tramite_id: string
           updated_at: string
           verificado_at: string | null
           verificado_por: string | null
@@ -190,6 +213,7 @@ export type Database = {
           razon_social: string
           referencia: string
           superficie?: number | null
+          tipo_tramite_id: string
           updated_at?: string
           verificado_at?: string | null
           verificado_por?: string | null
@@ -217,6 +241,7 @@ export type Database = {
           razon_social?: string
           referencia?: string
           superficie?: number | null
+          tipo_tramite_id?: string
           updated_at?: string
           verificado_at?: string | null
           verificado_por?: string | null
@@ -228,6 +253,13 @@ export type Database = {
             columns: ["contribuyente_id"]
             isOneToOne: false
             referencedRelation: "contribuyentes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "formularios_tipo_tramite_id_fkey"
+            columns: ["tipo_tramite_id"]
+            isOneToOne: false
+            referencedRelation: "tipos_tramite"
             referencedColumns: ["id"]
           },
         ]

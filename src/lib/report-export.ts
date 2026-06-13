@@ -22,6 +22,7 @@ export const REPORTE_COLUMNS: Record<ReporteTipo, ReportColumn[]> = {
     { key: "fecha_emision", header: "Fecha emisión" },
     { key: "contribuyente_nombre", header: "Contribuyente" },
     { key: "contribuyente_ci", header: "C.I." },
+    { key: "tipo_tramite", header: "Tipo de trámite" },
     { key: "razon_social", header: "Razón social" },
     { key: "nit", header: "NIT" },
     { key: "zona", header: "Zona" },
@@ -70,6 +71,7 @@ type FormularioRow = {
   observacion: string | null;
   estado: string;
   contribuyente: { nombre_completo: string; ci: string } | null;
+  tipo_tramite: { nombre: string } | null;
 };
 
 type NotificacionRow = {
@@ -111,6 +113,7 @@ function mapFormulario(row: FormularioRow): ReporteFila {
     fecha_emision: formatDateEsBo(row.fecha),
     contribuyente_nombre: row.contribuyente?.nombre_completo ?? "",
     contribuyente_ci: row.contribuyente?.ci ?? "",
+    tipo_tramite: row.tipo_tramite?.nombre ?? "",
     razon_social: row.razon_social,
     nit: row.nit ?? "",
     zona: row.zona,
@@ -166,7 +169,8 @@ export const REPORTE_SELECT: Record<ReporteTipo, string> = {
   formularios: `
     fecha, razon_social, nit, zona, superficie, direccion, celular, referencia,
     procedente, padron, bebidas_alcoholicas, observacion, estado, created_at,
-    contribuyente:contribuyentes(nombre_completo, ci)
+    contribuyente:contribuyentes(nombre_completo, ci),
+    tipo_tramite:tipos_tramite(nombre)
   `,
   notificaciones: `
     created_at, nombre_actividad, numero_identificacion, direccion, fecha_limite,

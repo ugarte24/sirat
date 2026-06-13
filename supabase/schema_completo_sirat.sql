@@ -103,10 +103,26 @@ ALTER TABLE public.contribuyentes ENABLE ROW LEVEL SECURITY;
 CREATE TRIGGER contribuyentes_updated BEFORE UPDATE ON public.contribuyentes
 FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
+-- Tipos de trámite (etapa 1 formularios)
+CREATE TABLE public.tipos_tramite (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  nombre TEXT NOT NULL UNIQUE,
+  created_by UUID REFERENCES auth.users(id),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+ALTER TABLE public.tipos_tramite ENABLE ROW LEVEL SECURITY;
+
+INSERT INTO public.tipos_tramite (nombre) VALUES
+  ('Inscripción'),
+  ('Renovación'),
+  ('Modificación'),
+  ('Otros');
+
 -- Formularios
 CREATE TABLE public.formularios (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   contribuyente_id UUID NOT NULL REFERENCES public.contribuyentes(id) ON DELETE RESTRICT,
+  tipo_tramite_id UUID NOT NULL REFERENCES public.tipos_tramite(id),
   razon_social TEXT NOT NULL,
   nit TEXT,
   fecha DATE NOT NULL DEFAULT CURRENT_DATE,
@@ -193,6 +209,9 @@ CREATE POLICY "Roles: read own" ON public.user_roles FOR SELECT TO authenticated
 CREATE POLICY "Roles: admin all" ON public.user_roles FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin')) WITH CHECK (public.has_role(auth.uid(), 'admin'));
 
 CREATE POLICY "Contrib: read auth" ON public.contribuyentes FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Tipo trámite: read auth" ON public.tipos_tramite FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Tipo trámite: insert auth" ON public.tipos_tramite FOR INSERT TO authenticated WITH CHECK (auth.uid() IS NOT NULL);
+CREATE POLICY "Tipo trámite: update auth" ON public.tipos_tramite FOR UPDATE TO authenticated USING (auth.uid() IS NOT NULL);
 CREATE POLICY "Contrib: insert auth" ON public.contribuyentes FOR INSERT TO authenticated WITH CHECK (auth.uid() IS NOT NULL);
 CREATE POLICY "Contrib: update auth" ON public.contribuyentes FOR UPDATE TO authenticated USING (auth.uid() IS NOT NULL);
 CREATE POLICY "Contrib: delete admin" ON public.contribuyentes FOR DELETE TO authenticated USING (public.has_role(auth.uid(), 'admin'));

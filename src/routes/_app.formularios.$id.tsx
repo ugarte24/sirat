@@ -69,7 +69,7 @@ function Detalle() {
       setAmbientes([]);
       const { data } = await supabase
         .from("formularios")
-        .select("*, contribuyente:contribuyentes(nombre_completo,ci)")
+        .select("*, contribuyente:contribuyentes(nombre_completo,ci), tipo_tramite:tipos_tramite(nombre)")
         .eq("id", id)
         .maybeSingle();
       if (cancelled) return;
@@ -228,6 +228,7 @@ function Detalle() {
         razon_social: f.razon_social,
         contribuyente_nombre: f.contribuyente.nombre_completo,
         contribuyente_ci: f.contribuyente.ci,
+        tipo_tramite_nombre: f.tipo_tramite?.nombre,
         nit: f.nit,
         zona: f.zona,
         superficie: f.superficie,
@@ -407,6 +408,7 @@ function Detalle() {
             ) : null}
             <DetailField label="Contribuyente" value={f.contribuyente.nombre_completo} />
             <DetailField label="C.I." value={f.contribuyente.ci} />
+            <DetailField label="Tipo de trámite" value={f.tipo_tramite?.nombre ?? "—"} />
           </DetailGrid>
         </DetailSection>
         <DetailSection title="Actividad económica">

@@ -13,6 +13,7 @@ import {
 import { FormularioRegistroCreateForm } from "@/components/forms/FormularioRegistroCreateForm";
 import { FormularioGestionForm } from "@/components/forms/FormularioGestionForm";
 import { ContribuyenteAltaForm } from "@/components/forms/ContribuyenteAltaForm";
+import { TipoTramiteAltaForm } from "@/components/forms/TipoTramiteAltaForm";
 import {
   DataListCard,
   DataListTable,
@@ -39,7 +40,7 @@ import {
   FORMULARIO_VERIFICACION_SECCION,
   FORMULARIO_VERIFICACION_TITULO_NUEVO,
 } from "@/lib/sirat-brand";
-import type { ContribuyenteCatalogRow } from "@/lib/sirat-forms";
+import type { ContribuyenteCatalogRow, TipoTramiteCatalogRow } from "@/lib/sirat-forms";
 import { formatDateEsBo } from "@/lib/date";
 import { cn } from "@/lib/utils";
 import { REOPEN_VERIFICAR_STORAGE_KEY } from "@/lib/formulario-navigation";
@@ -171,10 +172,11 @@ function Lista() {
   const [dialogMode, setDialogMode] = useState<"create" | "edit" | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
   const [gestionTab, setGestionTab] = useState<"registro" | "verificacion">("registro");
-  const [subvista, setSubvista] = useState<"formulario" | "contrib">("formulario");
+  const [subvista, setSubvista] = useState<"formulario" | "contrib" | "tipo_tramite">("formulario");
   const [formKey, setFormKey] = useState(0);
   const [catalogRefreshKey, setCatalogRefreshKey] = useState(0);
   const [contribRecien, setContribRecien] = useState<ContribuyenteCatalogRow | null>(null);
+  const [tipoTramiteRecien, setTipoTramiteRecien] = useState<TipoTramiteCatalogRow | null>(null);
   const dialogModeRef = useRef(dialogMode);
   const editIdRef = useRef(editId);
   const gestionTabRef = useRef(gestionTab);
@@ -285,6 +287,7 @@ function Lista() {
   const openCreate = () => {
     setSubvista("formulario");
     setContribRecien(null);
+    setTipoTramiteRecien(null);
     setFormKey((k) => k + 1);
     setEditId(null);
     setGestionTab("registro");
@@ -293,6 +296,8 @@ function Lista() {
 
   const openEdit = (id: string, tab: "registro" | "verificacion" = "registro") => {
     setSubvista("formulario");
+    setContribRecien(null);
+    setTipoTramiteRecien(null);
     setEditId(id);
     setGestionTab(tab);
     setDialogMode("edit");
@@ -303,6 +308,7 @@ function Lista() {
     setEditId(null);
     setSubvista("formulario");
     setContribRecien(null);
+    setTipoTramiteRecien(null);
     setGestionTab("registro");
   };
 
@@ -339,14 +345,18 @@ function Lista() {
         : FORMULARIO_ETAPA_REGISTRO_TITULO
       : subvista === "contrib"
         ? "Nuevo contribuyente"
-        : FORMULARIO_VERIFICACION_TITULO_NUEVO;
+        : subvista === "tipo_tramite"
+          ? "Nuevo tipo de trámite"
+          : FORMULARIO_VERIFICACION_TITULO_NUEVO;
 
   const dialogDescription =
     dialogMode === "edit"
       ? "Puede editar el registro y la verificación en cualquier momento; los cambios se guardan por etapa."
       : subvista === "contrib"
         ? `Registre el contribuyente y continúe con el ${FORMULARIO_VERIFICACION_NOMBRE.toLowerCase()}.`
-        : "Complete la etapa 1 (registro). Otro usuario o usted mismo podrá completar la verificación después.";
+        : subvista === "tipo_tramite"
+          ? "Registre el tipo de trámite y continúe con el formulario."
+          : "Complete la etapa 1 (registro). Otro usuario o usted mismo podrá completar la verificación después.";
 
   return (
     <div className="space-y-4">
@@ -361,7 +371,11 @@ function Lista() {
       <Dialog
         open={dialogMode !== null}
         onOpenChange={(open) => {
-          if (!open && dialogMode === "create" && subvista === "contrib") {
+          if (!open && subvista === "contrib") {
+            setSubvista("formulario");
+            return;
+          }
+          if (!open && subvista === "tipo_tramite") {
             setSubvista("formulario");
             return;
           }
@@ -376,15 +390,18 @@ function Lista() {
 
           {dialogMode === "edit" && editId ? (
             <>
-              <div className={subvista === "contrib" ? "hidden" : undefined}>
+              <div className={subvista !== "formulario" ? "hidden" : undefined}>
                 <FormularioGestionForm
                   key={editId}
                   formularioId={editId}
                   initialTab={gestionTab}
                   catalogRefreshKey={catalogRefreshKey}
                   contribuyenteRecienRegistrado={contribRecien}
+                  tipoTramiteRecienRegistrado={tipoTramiteRecien}
                   onContribuyentePreseleccionado={() => setContribRecien(null)}
+                  onTipoTramitePreseleccionado={() => setTipoTramiteRecien(null)}
                   onPedirAltaContribuyente={() => setSubvista("contrib")}
+                  onPedirAltaTipoTramite={() => setSubvista("tipo_tramite")}
                   onSuccess={() => {
                     closeDialog();
                     void load();
@@ -401,16 +418,28 @@ function Lista() {
                   }}
                 />
               </div>
+              <div className={subvista !== "tipo_tramite" ? "hidden" : undefined}>
+                <TipoTramiteAltaForm
+                  onSuccess={(tipo) => {
+                    setTipoTramiteRecien(tipo);
+                    setCatalogRefreshKey((k) => k + 1);
+                    setSubvista("formulario");
+                  }}
+                />
+              </div>
             </>
           ) : (
             <>
-              <div className={subvista === "contrib" ? "hidden" : undefined}>
+              <div className={subvista !== "formulario" ? "hidden" : undefined}>
                 <FormularioRegistroCreateForm
                   key={formKey}
                   catalogRefreshKey={catalogRefreshKey}
                   contribuyenteRecienRegistrado={contribRecien}
+                  tipoTramiteRecienRegistrado={tipoTramiteRecien}
                   onContribuyentePreseleccionado={() => setContribRecien(null)}
+                  onTipoTramitePreseleccionado={() => setTipoTramiteRecien(null)}
                   onPedirAltaContribuyente={() => setSubvista("contrib")}
+                  onPedirAltaTipoTramite={() => setSubvista("tipo_tramite")}
                   onSuccess={() => {
                     closeDialog();
                     void load();
@@ -421,6 +450,15 @@ function Lista() {
                 <ContribuyenteAltaForm
                   onSuccess={(contribuyente) => {
                     setContribRecien(contribuyente);
+                    setCatalogRefreshKey((k) => k + 1);
+                    setSubvista("formulario");
+                  }}
+                />
+              </div>
+              <div className={subvista !== "tipo_tramite" ? "hidden" : undefined}>
+                <TipoTramiteAltaForm
+                  onSuccess={(tipo) => {
+                    setTipoTramiteRecien(tipo);
                     setCatalogRefreshKey((k) => k + 1);
                     setSubvista("formulario");
                   }}

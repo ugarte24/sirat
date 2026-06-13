@@ -63,6 +63,7 @@ interface FormularioData {
   razon_social: string;
   contribuyente_nombre: string;
   contribuyente_ci: string;
+  tipo_tramite_nombre?: string;
   nit?: string | null;
   zona: string;
   superficie: number | null;
@@ -228,6 +229,7 @@ export function formularioQrPayloadToPdfData(p: FormularioQrPayload): Formulario
     razon_social: p.razon_social,
     contribuyente_nombre: p.contribuyente_nombre,
     contribuyente_ci: p.contribuyente_ci,
+    tipo_tramite_nombre: p.tipo_tramite_nombre,
     nit: p.nit === "—" ? null : p.nit,
     zona: p.zona,
     superficie: p.superficie,
@@ -281,11 +283,13 @@ export async function buildFormularioPdfDoc(d: FormularioData): Promise<{
   y = drawFormularioDatosSection(doc, y, [
     ["Fecha", formatDateEsBo(d.fecha), "Zona", d.zona],
     ["Contribuyente", d.contribuyente_nombre, "Celular", d.celular],
-    ["C.I.", d.contribuyente_ci, "Dirección", d.direccion],
+    ["C.I.", d.contribuyente_ci, "Tipo de trámite", d.tipo_tramite_nombre ?? "—"],
     ["Razón social", d.razon_social, "Referencia", d.referencia],
     [
       { content: "NIT", styles: { fontStyle: "bold", fillColor: [232, 236, 245] } },
-      { content: d.nit ?? "—", colSpan: 3 },
+      { content: d.nit ?? "—", colSpan: 1 },
+      { content: "Dirección", styles: { fontStyle: "bold", fillColor: [232, 236, 245] } },
+      { content: d.direccion, colSpan: 1 },
     ],
   ], d.usuario);
 

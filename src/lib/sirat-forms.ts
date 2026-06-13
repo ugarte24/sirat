@@ -32,6 +32,22 @@ function formularioTextFieldsForDb(f: FormularioNuevoState) {
 /** Fila para selects (contribuyente) */
 export type ContribuyenteCatalogRow = Pick<ContribRow, "id" | "ci" | "nombre_completo">;
 
+type TipoTramiteRow = Db["tipos_tramite"]["Row"];
+
+/** Fila para selects (tipo de trámite) */
+export type TipoTramiteCatalogRow = Pick<TipoTramiteRow, "id" | "nombre">;
+
+/** Campos del formulario HTML antes de insertar tipo de trámite */
+export interface TipoTramiteNuevoForm {
+  nombre: string;
+}
+
+/** Payload hacia `tipos_tramite.insert` */
+export type TipoTramiteInsertPayload = Pick<
+  Db["tipos_tramite"]["Insert"],
+  "nombre" | "created_by"
+>;
+
 export type ZonaTipo = Database["public"]["Enums"]["zona_tipo"];
 
 /** Campos del formulario HTML antes de insertar contribuyente */
@@ -50,6 +66,7 @@ export type ContribuyenteInsertPayload = Pick<
 /** Estado local del wizard “nuevo formulario” (superficie en string hasta parsear) */
 export interface FormularioNuevoState {
   contribuyente_id: string;
+  tipo_tramite_id: string;
   razon_social: string;
   nit: string;
   zona: ZonaTipo;
@@ -143,6 +160,7 @@ export function validateFormularioAmbientes(rows: FormularioAmbienteRow[]): stri
 export function emptyFormularioNuevo(): FormularioNuevoState {
   return {
     contribuyente_id: "",
+    tipo_tramite_id: "",
     razon_social: "",
     nit: "",
     zona: "A",
@@ -164,6 +182,7 @@ export function emptyFormularioNuevo(): FormularioNuevoState {
 export type FormularioInsertPayload = Pick<
   Db["formularios"]["Insert"],
   | "contribuyente_id"
+  | "tipo_tramite_id"
   | "razon_social"
   | "nit"
   | "zona"
@@ -187,6 +206,7 @@ export function formularioStateToInsert(
   const text = formularioTextFieldsForDb(f);
   return {
     contribuyente_id: f.contribuyente_id,
+    tipo_tramite_id: f.tipo_tramite_id,
     ...text,
     zona: f.zona,
     superficie: Number.parseFloat(f.superficie),
@@ -203,6 +223,7 @@ export function formularioStateToInsert(
 export type FormularioRegistroPayload = Pick<
   FormularioInsertPayload,
   | "contribuyente_id"
+  | "tipo_tramite_id"
   | "razon_social"
   | "nit"
   | "zona"
@@ -222,6 +243,7 @@ export function formularioRegistroToInsert(
   const text = formularioTextFieldsForDb(f);
   return {
     contribuyente_id: f.contribuyente_id,
+    tipo_tramite_id: f.tipo_tramite_id,
     razon_social: text.razon_social,
     nit: text.nit,
     zona: f.zona,
@@ -240,6 +262,7 @@ export function formularioRegistroToInsert(
 export type FormularioRegistroUpdatePayload = Pick<
   FormularioUpdatePayload,
   | "contribuyente_id"
+  | "tipo_tramite_id"
   | "razon_social"
   | "nit"
   | "zona"
@@ -255,6 +278,7 @@ export function formularioRegistroToUpdate(f: FormularioNuevoState): FormularioR
   const text = formularioTextFieldsForDb(f);
   return {
     contribuyente_id: f.contribuyente_id,
+    tipo_tramite_id: f.tipo_tramite_id,
     razon_social: text.razon_social,
     nit: text.nit,
     zona: f.zona,
@@ -303,6 +327,7 @@ export function formularioVerificacionToUpdate(
 
 export function validateFormularioRegistro(f: FormularioNuevoState): string | null {
   if (!f.contribuyente_id) return "Selecciona un contribuyente";
+  if (!f.tipo_tramite_id) return "Selecciona un tipo de trámite";
   if (!f.razon_social.trim()) return "Indica la razón social";
   if (!f.celular.trim()) return "Indica el celular";
   if (!f.direccion.trim()) return "Indica la dirección";
@@ -391,6 +416,7 @@ export function formularioRowToState(row: FormRow): FormularioNuevoState {
   const verificacionSinCompletar = formularioVerificacionSinCompletar(row);
   return {
     contribuyente_id: row.contribuyente_id,
+    tipo_tramite_id: row.tipo_tramite_id,
     razon_social: row.razon_social,
     nit: row.nit ?? "",
     zona: row.zona,
@@ -508,6 +534,16 @@ export function contribuyenteFormToInsert(
     ci: form.ci.trim(),
     nombre_completo: trimUpper(form.nombre_completo),
     telefono: form.telefono.trim() || null,
+    created_by: createdBy ?? null,
+  };
+}
+
+export function tipoTramiteFormToInsert(
+  form: TipoTramiteNuevoForm,
+  createdBy: string | null | undefined,
+): TipoTramiteInsertPayload {
+  return {
+    nombre: trimUpper(form.nombre),
     created_by: createdBy ?? null,
   };
 }

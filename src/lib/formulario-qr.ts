@@ -11,6 +11,7 @@ export type FormularioQrPayload = {
   razon_social: string;
   contribuyente_nombre: string;
   contribuyente_ci: string;
+  tipo_tramite_nombre: string;
   nit: string;
   zona: string;
   superficie: number | null;
@@ -41,6 +42,7 @@ export function buildFormularioQrPayload(input: {
   razon_social: string;
   contribuyente_nombre: string;
   contribuyente_ci: string;
+  tipo_tramite_nombre?: string;
   nit: string | null;
   zona: string;
   superficie: number | null;
@@ -65,6 +67,7 @@ export function buildFormularioQrPayload(input: {
     razon_social: input.razon_social,
     contribuyente_nombre: input.contribuyente_nombre,
     contribuyente_ci: input.contribuyente_ci,
+    tipo_tramite_nombre: input.tipo_tramite_nombre?.trim() || "—",
     nit: input.nit?.trim() || "—",
     zona: input.zona,
     superficie: input.superficie,

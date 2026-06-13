@@ -5,9 +5,14 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ContribuyenteCombobox } from "@/components/ContribuyenteCombobox";
+import { TipoTramiteCombobox } from "@/components/TipoTramiteCombobox";
 import { toast } from "sonner";
 import { ClipboardPaste } from "lucide-react";
-import type { ContribuyenteCatalogRow, FormularioNuevoState } from "@/lib/sirat-forms";
+import type {
+  ContribuyenteCatalogRow,
+  FormularioNuevoState,
+  TipoTramiteCatalogRow,
+} from "@/lib/sirat-forms";
 import { isLikelyBoliviaBounds } from "@/lib/parse-map-location";
 import { resolveMapLocationFromText } from "@/lib/resolve-map-location-client";
 
@@ -31,7 +36,10 @@ export type FormularioRegistroEtapaFieldsProps = {
   setF: React.Dispatch<React.SetStateAction<FormularioNuevoState>>;
   contribs: ContribuyenteCatalogRow[];
   catalogLoaded: boolean;
+  tiposTramite: TipoTramiteCatalogRow[];
+  tiposTramiteLoaded: boolean;
   onPedirAltaContribuyente?: () => void;
+  onPedirAltaTipoTramite?: () => void;
   onLocateError?: (msg: string) => void;
   idPrefix?: string;
 };
@@ -41,7 +49,10 @@ export function FormularioRegistroEtapaFields({
   setF,
   contribs,
   catalogLoaded,
+  tiposTramite,
+  tiposTramiteLoaded,
   onPedirAltaContribuyente,
+  onPedirAltaTipoTramite,
   onLocateError,
   idPrefix = "reg",
 }: FormularioRegistroEtapaFieldsProps) {
@@ -95,6 +106,27 @@ export function FormularioRegistroEtapaFields({
               onClick={onPedirAltaContribuyente}
             >
               + Registrar nuevo contribuyente
+            </Button>
+          ) : null}
+        </div>
+        <div>
+          <Label>Tipo de trámite *</Label>
+          <TipoTramiteCombobox
+            tipos={tiposTramite}
+            value={f.tipo_tramite_id}
+            onValueChange={(v) => setF({ ...f, tipo_tramite_id: v })}
+            disabled={!tiposTramiteLoaded}
+            placeholder={tiposTramiteLoaded ? "Seleccionar tipo de trámite" : "Cargando…"}
+          />
+          {onPedirAltaTipoTramite ? (
+            <Button
+              type="button"
+              variant="link"
+              size="sm"
+              className="px-0 h-auto mt-1"
+              onClick={onPedirAltaTipoTramite}
+            >
+              + Registrar nuevo tipo de trámite
             </Button>
           ) : null}
         </div>

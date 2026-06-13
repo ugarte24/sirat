@@ -8,6 +8,7 @@ import type {
   ContribuyenteCatalogRow,
   FormularioAmbienteRow,
   FormularioNuevoState,
+  TipoTramiteCatalogRow,
 } from "@/lib/sirat-forms";
 import {
   ambientesRowsForDb,
@@ -33,6 +34,7 @@ import {
   uploadFormularioFotos,
 } from "@/lib/formulario-fotos";
 import { useContribuyentesCatalog } from "@/hooks/useContribuyentesCatalog";
+import { useTiposTramiteCatalog } from "@/hooks/useTiposTramiteCatalog";
 import { FormularioRegistroEtapaFields } from "@/components/forms/FormularioRegistroEtapaFields";
 import {
   FormularioVerificacionEtapaFields,
@@ -52,9 +54,12 @@ export type FormularioGestionFormProps = {
   onSuccess: () => void;
   onCancel?: () => void;
   onPedirAltaContribuyente?: () => void;
+  onPedirAltaTipoTramite?: () => void;
   catalogRefreshKey?: number;
   contribuyenteRecienRegistrado?: ContribuyenteCatalogRow | null;
+  tipoTramiteRecienRegistrado?: TipoTramiteCatalogRow | null;
   onContribuyentePreseleccionado?: () => void;
+  onTipoTramitePreseleccionado?: () => void;
 };
 
 export function FormularioGestionForm({
@@ -63,11 +68,16 @@ export function FormularioGestionForm({
   onSuccess,
   onCancel,
   onPedirAltaContribuyente,
+  onPedirAltaTipoTramite,
   catalogRefreshKey = 0,
   contribuyenteRecienRegistrado = null,
+  tipoTramiteRecienRegistrado = null,
   onContribuyentePreseleccionado,
+  onTipoTramitePreseleccionado,
 }: FormularioGestionFormProps) {
   const { contribs, catalogLoaded, mergeContrib } = useContribuyentesCatalog(catalogRefreshKey);
+  const { tiposTramite, catalogLoaded: tiposTramiteLoaded, mergeTipoTramite } =
+    useTiposTramiteCatalog(catalogRefreshKey);
   const [tab, setTab] = useState(initialTab);
   const [f, setF] = useState<FormularioNuevoState | null>(null);
   const [estado, setEstado] = useState<FormEstado | null>(null);
@@ -90,6 +100,13 @@ export function FormularioGestionForm({
     mergeContrib(contribuyenteRecienRegistrado);
     onContribuyentePreseleccionado?.();
   }, [contribuyenteRecienRegistrado, mergeContrib, onContribuyentePreseleccionado]);
+
+  useEffect(() => {
+    if (!tipoTramiteRecienRegistrado) return;
+    setF((prev) => (prev ? { ...prev, tipo_tramite_id: tipoTramiteRecienRegistrado.id } : prev));
+    mergeTipoTramite(tipoTramiteRecienRegistrado);
+    onTipoTramitePreseleccionado?.();
+  }, [tipoTramiteRecienRegistrado, mergeTipoTramite, onTipoTramitePreseleccionado]);
 
   useEffect(() => {
     return () => revokeLocalPhotos(newPhotosRef.current);
@@ -314,7 +331,10 @@ export function FormularioGestionForm({
           setF={setF}
           contribs={contribs}
           catalogLoaded={catalogLoaded}
+          tiposTramite={tiposTramite}
+          tiposTramiteLoaded={tiposTramiteLoaded}
           onPedirAltaContribuyente={onPedirAltaContribuyente}
+          onPedirAltaTipoTramite={onPedirAltaTipoTramite}
           onLocateError={(msg) => toast.error(msg)}
           idPrefix={`gest-${formularioId}`}
         />

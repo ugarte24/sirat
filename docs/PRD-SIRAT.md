@@ -5,7 +5,7 @@
 |-------|-------|
 | **Cliente** | Gobierno Autónomo Municipal de Riberalta — Jefatura de Recaudaciones |
 | **Versión del documento** | 1.2.8 |
-| **Versión del producto** | 1.0.93 |
+| **Versión del producto** | 1.0.94 |
 | **Fecha** | Mayo 2026 |
 | **Estado** | Basado en el código en producción/desarrollo actual |
 
@@ -179,6 +179,7 @@ Unificar en una sola plataforma web responsive (móvil + escritorio) el ciclo: *
 | ID | Requisito | Prioridad |
 |----|-----------|-----------|
 | FORM-01 | Vincular contribuyente existente o dar de alta uno nuevo desde el flujo | Must |
+| FORM-23 | Campo **Tipo de trámite** obligatorio en etapa 1: selección desde catálogo o alta de nuevo tipo (operador y admin) | Must |
 | FORM-02 | Campos: razón social, NIT opcional, zona (A–E), dirección, celular, referencia | Must |
 | FORM-03 | Ubicación obligatoria: latitud, longitud, zoom de mapa | Must |
 | FORM-04 | Resolver coordenadas desde enlace WhatsApp/Google Maps | Should |
@@ -339,6 +340,7 @@ formularios ──1:N── formulario_fotos (máx. 3, trigger DB)
 | `profiles` | Perfil extendido del usuario Auth |
 | `user_roles` | Rol: `admin` \| `operador` |
 | `contribuyentes` | Padrón municipal (C.I. UNIQUE) |
+| `tipos_tramite` | Catálogo de tipos de trámite (etapa 1 formularios) |
 | `formularios` | Actividad económica georreferenciada |
 | `formulario_fotos` | Rutas en Storage |
 | `notificaciones` | Notificación tributaria (`veces_notificado`, `fecha_limite` vigente) |
@@ -566,7 +568,8 @@ Reportes, Usuarios y Perfil accesibles desde el menú lateral.
 | 1.2.6 | Mayo 2026 | UX móvil verificación | Tabla de ambientes en tarjetas apiladas en móvil; radio/checkbox con áreas táctiles amplias; fotos en grid 3 columnas; botones de acción más grandes; padding adaptativo |
 | 1.2.7 | Mayo 2026 | PDF formulario paginado | Firmas en página 2 dedicada; fotos en página 3; paginación automática con barra SIRAT cuando la tabla de ambientes o secciones desbordan la página |
 | 1.2.8 | Mayo 2026 | Fotos formulario | Límite de fotos de verificación sube de 2 a 3 en formularios (alta/edición/gestión), texto de UI y trigger de base de datos |
+| 1.2.9 | Jun 2026 | Tipo de trámite | Catálogo `tipos_tramite`; campo obligatorio en etapa 1 con alta desde el flujo; detalle, PDF, reportes y QR |
 
 ---
 
-*Este PRD refleja el estado del producto según el código fuente del repositorio `sirat` (rama `main`, versión 1.0.93). Ante divergencias entre este documento y el código, prevalece el comportamiento implementado hasta que se actualice el PRD.*
+*Este PRD refleja el estado del producto según el código fuente del repositorio `sirat` (rama `main`, versión 1.0.94). Ante divergencias entre este documento y el código, prevalece el comportamiento implementado hasta que se actualice el PRD.*
