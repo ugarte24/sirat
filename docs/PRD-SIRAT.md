@@ -4,8 +4,8 @@
 | Campo | Valor |
 |-------|-------|
 | **Cliente** | Gobierno Autónomo Municipal de Riberalta — Jefatura de Recaudaciones |
-| **Versión del documento** | 1.2.8 |
-| **Versión del producto** | 1.0.96 |
+| **Versión del documento** | 1.3.1 |
+| **Versión del producto** | 1.0.97 |
 | **Fecha** | Mayo 2026 |
 | **Estado** | Basado en el código en producción/desarrollo actual |
 
@@ -169,6 +169,15 @@ Unificar en una sola plataforma web responsive (móvil + escritorio) el ciclo: *
 | CONT-08 | Eliminar solo si no tiene formularios ni notificaciones (RLS; sin UI de borrado) | Could |
 | CONT-09 | Lista: tarjetas en móvil, tabla en escritorio; acciones lápiz (editar) y menú (Editar datos / Ver detalle) | Must |
 | CONT-10 | Clic en nombre del contribuyente navega al detalle; la fila no abre el editor | Must |
+
+### 6.3.1 Tipos de trámite (`/tipos-tramite`)
+
+| ID | Requisito | Prioridad |
+|----|-----------|-----------|
+| FORM-24 | Listado con búsqueda por nombre; alta y edición en diálogo (patrón contribuyentes) | Must |
+| TRAM-01 | Indicador de uso: cantidad de formularios vinculados por tipo | Should |
+| TRAM-02 | Entrada en menú lateral «Tipos de trámite» (operador y admin) | Must |
+| TRAM-03 | Orden manual con flechas arriba/abajo; columna `orden` en BD; nuevos al final del listado | Must |
 
 ### 6.4 Formularios — Actividades económicas (`/formularios`)
 
@@ -467,6 +476,7 @@ sequenceDiagram
 |------|--------|
 | `/` | Dashboard |
 | `/contribuyentes`, `/contribuyentes/$id` | Contribuyentes |
+| `/tipos-tramite` | Tipos de trámite (catálogo) |
 | `/formularios`, `/formularios/$id` | Formularios |
 | `/notificaciones`, `/notificaciones/$id` | Notificaciones |
 | `/mapa` | Mapa |
@@ -569,7 +579,9 @@ Reportes, Usuarios y Perfil accesibles desde el menú lateral.
 | 1.2.7 | Mayo 2026 | PDF formulario paginado | Firmas en página 2 dedicada; fotos en página 3; paginación automática con barra SIRAT cuando la tabla de ambientes o secciones desbordan la página |
 | 1.2.8 | Mayo 2026 | Fotos formulario | Límite de fotos de verificación sube de 2 a 3 en formularios (alta/edición/gestión), texto de UI y trigger de base de datos |
 | 1.2.9 | Jun 2026 | Tipo de trámite | Catálogo `tipos_tramite`; campo obligatorio en etapa 1 con alta desde el flujo; detalle, PDF, reportes y QR |
+| 1.3.0 | Jun 2026 | CRUD tipos de trámite | Pantalla `/tipos-tramite` con listado, alta y edición; menú lateral; edición fuera del diálogo de formulario |
+| 1.3.1 | Jun 2026 | Orden tipos de trámite | Campo `orden`; reordenar con flechas; altas al final; combobox y listado por orden |
 
 ---
 
-*Este PRD refleja el estado del producto según el código fuente del repositorio `sirat` (rama `main`, versión 1.0.96). Ante divergencias entre este documento y el código, prevalece el comportamiento implementado hasta que se actualice el PRD.*
+*Este PRD refleja el estado del producto según el código fuente del repositorio `sirat` (rama `main`, versión 1.0.97). Ante divergencias entre este documento y el código, prevalece el comportamiento implementado hasta que se actualice el PRD.*

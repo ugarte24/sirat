@@ -35,7 +35,7 @@ export type ContribuyenteCatalogRow = Pick<ContribRow, "id" | "ci" | "nombre_com
 type TipoTramiteRow = Db["tipos_tramite"]["Row"];
 
 /** Fila para selects (tipo de trámite) */
-export type TipoTramiteCatalogRow = Pick<TipoTramiteRow, "id" | "nombre">;
+export type TipoTramiteCatalogRow = Pick<TipoTramiteRow, "id" | "nombre" | "orden">;
 
 /** Campos del formulario HTML antes de insertar tipo de trámite */
 export interface TipoTramiteNuevoForm {
@@ -45,7 +45,7 @@ export interface TipoTramiteNuevoForm {
 /** Payload hacia `tipos_tramite.insert` */
 export type TipoTramiteInsertPayload = Pick<
   Db["tipos_tramite"]["Insert"],
-  "nombre" | "created_by"
+  "nombre" | "created_by" | "orden"
 >;
 
 export type ZonaTipo = Database["public"]["Enums"]["zona_tipo"];
@@ -541,10 +541,20 @@ export function contribuyenteFormToInsert(
 export function tipoTramiteFormToInsert(
   form: TipoTramiteNuevoForm,
   createdBy: string | null | undefined,
+  orden: number,
 ): TipoTramiteInsertPayload {
   return {
     nombre: trimUpper(form.nombre),
     created_by: createdBy ?? null,
+    orden,
+  };
+}
+
+export function tipoTramiteToUpdatePayload(
+  form: TipoTramiteNuevoForm,
+): Pick<TipoTramiteRow, "nombre"> {
+  return {
+    nombre: trimUpper(form.nombre),
   };
 }
 

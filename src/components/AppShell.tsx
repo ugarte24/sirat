@@ -11,6 +11,7 @@ import {
   LogOut,
   Menu,
   KeyRound,
+  Tags,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,7 @@ type Role = "admin" | "operador";
 const NAV: { to: string; label: string; icon: any; roles: Role[] }[] = [
   { to: "/", label: "Inicio", icon: LayoutDashboard, roles: ["admin", "operador"] },
   { to: "/contribuyentes", label: "Contribuyentes", icon: Users, roles: ["admin", "operador"] },
+  { to: "/tipos-tramite", label: "Tipos de trámite", icon: Tags, roles: ["admin", "operador"] },
   { to: "/formularios", label: "Formulario", icon: ClipboardList, roles: ["admin", "operador"] },
   { to: "/notificaciones", label: "Notificaciones", icon: Bell, roles: ["admin", "operador"] },
   { to: "/mapa", label: "Mapa", icon: MapIcon, roles: ["admin", "operador"] },

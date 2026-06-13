@@ -107,16 +107,19 @@ FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 CREATE TABLE public.tipos_tramite (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   nombre TEXT NOT NULL UNIQUE,
+  orden INTEGER NOT NULL,
   created_by UUID REFERENCES auth.users(id),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.tipos_tramite ENABLE ROW LEVEL SECURITY;
 
-INSERT INTO public.tipos_tramite (nombre) VALUES
-  ('Inscripción'),
-  ('Renovación'),
-  ('Modificación'),
-  ('Otros');
+CREATE UNIQUE INDEX idx_tipos_tramite_orden ON public.tipos_tramite(orden);
+
+INSERT INTO public.tipos_tramite (nombre, orden) VALUES
+  ('Inscripción', 1),
+  ('Renovación', 2),
+  ('Modificación', 3),
+  ('Otros', 4);
 
 -- Formularios
 CREATE TABLE public.formularios (

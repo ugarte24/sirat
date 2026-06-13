@@ -17,12 +17,14 @@ import { Route as VerificacionIdRouteImport } from './routes/verificacion.$id'
 import { Route as VerificacionFormularioIdRouteImport } from './routes/verificacion-formulario.$id'
 import { Route as VNotificacionRouteImport } from './routes/v.notificacion'
 import { Route as AppUsuariosRouteImport } from './routes/_app.usuarios'
+import { Route as AppTiposTramiteRouteImport } from './routes/_app.tipos-tramite'
 import { Route as AppReportesRouteImport } from './routes/_app.reportes'
 import { Route as AppPerfilRouteImport } from './routes/_app.perfil'
 import { Route as AppNotificacionesRouteImport } from './routes/_app.notificaciones'
 import { Route as AppMapaRouteImport } from './routes/_app.mapa'
 import { Route as AppFormulariosRouteImport } from './routes/_app.formularios'
 import { Route as AppContribuyentesRouteImport } from './routes/_app.contribuyentes'
+import { Route as AppTiposTramiteIndexRouteImport } from './routes/_app.tipos-tramite.index'
 import { Route as AppNotificacionesIndexRouteImport } from './routes/_app.notificaciones.index'
 import { Route as AppFormulariosIndexRouteImport } from './routes/_app.formularios.index'
 import { Route as AppContribuyentesIndexRouteImport } from './routes/_app.contribuyentes.index'
@@ -71,6 +73,11 @@ const AppUsuariosRoute = AppUsuariosRouteImport.update({
   path: '/usuarios',
   getParentRoute: () => AppRoute,
 } as any)
+const AppTiposTramiteRoute = AppTiposTramiteRouteImport.update({
+  id: '/tipos-tramite',
+  path: '/tipos-tramite',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppReportesRoute = AppReportesRouteImport.update({
   id: '/reportes',
   path: '/reportes',
@@ -100,6 +107,11 @@ const AppContribuyentesRoute = AppContribuyentesRouteImport.update({
   id: '/contribuyentes',
   path: '/contribuyentes',
   getParentRoute: () => AppRoute,
+} as any)
+const AppTiposTramiteIndexRoute = AppTiposTramiteIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppTiposTramiteRoute,
 } as any)
 const AppNotificacionesIndexRoute = AppNotificacionesIndexRouteImport.update({
   id: '/',
@@ -147,6 +159,7 @@ export interface FileRoutesByFullPath {
   '/notificaciones': typeof AppNotificacionesRouteWithChildren
   '/perfil': typeof AppPerfilRoute
   '/reportes': typeof AppReportesRoute
+  '/tipos-tramite': typeof AppTiposTramiteRouteWithChildren
   '/usuarios': typeof AppUsuariosRoute
   '/v/notificacion': typeof VNotificacionRoute
   '/verificacion-formulario/$id': typeof VerificacionFormularioIdRoute
@@ -158,6 +171,7 @@ export interface FileRoutesByFullPath {
   '/contribuyentes/': typeof AppContribuyentesIndexRoute
   '/formularios/': typeof AppFormulariosIndexRoute
   '/notificaciones/': typeof AppNotificacionesIndexRoute
+  '/tipos-tramite/': typeof AppTiposTramiteIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -177,6 +191,7 @@ export interface FileRoutesByTo {
   '/contribuyentes': typeof AppContribuyentesIndexRoute
   '/formularios': typeof AppFormulariosIndexRoute
   '/notificaciones': typeof AppNotificacionesIndexRoute
+  '/tipos-tramite': typeof AppTiposTramiteIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -190,6 +205,7 @@ export interface FileRoutesById {
   '/_app/notificaciones': typeof AppNotificacionesRouteWithChildren
   '/_app/perfil': typeof AppPerfilRoute
   '/_app/reportes': typeof AppReportesRoute
+  '/_app/tipos-tramite': typeof AppTiposTramiteRouteWithChildren
   '/_app/usuarios': typeof AppUsuariosRoute
   '/v/notificacion': typeof VNotificacionRoute
   '/verificacion-formulario/$id': typeof VerificacionFormularioIdRoute
@@ -201,6 +217,7 @@ export interface FileRoutesById {
   '/_app/contribuyentes/': typeof AppContribuyentesIndexRoute
   '/_app/formularios/': typeof AppFormulariosIndexRoute
   '/_app/notificaciones/': typeof AppNotificacionesIndexRoute
+  '/_app/tipos-tramite/': typeof AppTiposTramiteIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -214,6 +231,7 @@ export interface FileRouteTypes {
     | '/notificaciones'
     | '/perfil'
     | '/reportes'
+    | '/tipos-tramite'
     | '/usuarios'
     | '/v/notificacion'
     | '/verificacion-formulario/$id'
@@ -225,6 +243,7 @@ export interface FileRouteTypes {
     | '/contribuyentes/'
     | '/formularios/'
     | '/notificaciones/'
+    | '/tipos-tramite/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -244,6 +263,7 @@ export interface FileRouteTypes {
     | '/contribuyentes'
     | '/formularios'
     | '/notificaciones'
+    | '/tipos-tramite'
   id:
     | '__root__'
     | '/'
@@ -256,6 +276,7 @@ export interface FileRouteTypes {
     | '/_app/notificaciones'
     | '/_app/perfil'
     | '/_app/reportes'
+    | '/_app/tipos-tramite'
     | '/_app/usuarios'
     | '/v/notificacion'
     | '/verificacion-formulario/$id'
@@ -267,6 +288,7 @@ export interface FileRouteTypes {
     | '/_app/contribuyentes/'
     | '/_app/formularios/'
     | '/_app/notificaciones/'
+    | '/_app/tipos-tramite/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -337,6 +359,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppUsuariosRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/tipos-tramite': {
+      id: '/_app/tipos-tramite'
+      path: '/tipos-tramite'
+      fullPath: '/tipos-tramite'
+      preLoaderRoute: typeof AppTiposTramiteRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/reportes': {
       id: '/_app/reportes'
       path: '/reportes'
@@ -378,6 +407,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/contribuyentes'
       preLoaderRoute: typeof AppContribuyentesRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/_app/tipos-tramite/': {
+      id: '/_app/tipos-tramite/'
+      path: '/'
+      fullPath: '/tipos-tramite/'
+      preLoaderRoute: typeof AppTiposTramiteIndexRouteImport
+      parentRoute: typeof AppTiposTramiteRoute
     }
     '/_app/notificaciones/': {
       id: '/_app/notificaciones/'
@@ -471,6 +507,18 @@ const AppNotificacionesRouteChildren: AppNotificacionesRouteChildren = {
 const AppNotificacionesRouteWithChildren =
   AppNotificacionesRoute._addFileChildren(AppNotificacionesRouteChildren)
 
+interface AppTiposTramiteRouteChildren {
+  AppTiposTramiteIndexRoute: typeof AppTiposTramiteIndexRoute
+}
+
+const AppTiposTramiteRouteChildren: AppTiposTramiteRouteChildren = {
+  AppTiposTramiteIndexRoute: AppTiposTramiteIndexRoute,
+}
+
+const AppTiposTramiteRouteWithChildren = AppTiposTramiteRoute._addFileChildren(
+  AppTiposTramiteRouteChildren,
+)
+
 interface AppRouteChildren {
   AppContribuyentesRoute: typeof AppContribuyentesRouteWithChildren
   AppFormulariosRoute: typeof AppFormulariosRouteWithChildren
@@ -478,6 +526,7 @@ interface AppRouteChildren {
   AppNotificacionesRoute: typeof AppNotificacionesRouteWithChildren
   AppPerfilRoute: typeof AppPerfilRoute
   AppReportesRoute: typeof AppReportesRoute
+  AppTiposTramiteRoute: typeof AppTiposTramiteRouteWithChildren
   AppUsuariosRoute: typeof AppUsuariosRoute
 }
 
@@ -488,6 +537,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppNotificacionesRoute: AppNotificacionesRouteWithChildren,
   AppPerfilRoute: AppPerfilRoute,
   AppReportesRoute: AppReportesRoute,
+  AppTiposTramiteRoute: AppTiposTramiteRouteWithChildren,
   AppUsuariosRoute: AppUsuariosRoute,
 }
 

@@ -140,25 +140,27 @@ export type Database = {
           },
         ]
       }
-      }
       tipos_tramite: {
         Row: {
           created_at: string
           created_by: string | null
           id: string
           nombre: string
+          orden: number
         }
         Insert: {
           created_at?: string
           created_by?: string | null
           id?: string
           nombre: string
+          orden: number
         }
         Update: {
           created_at?: string
           created_by?: string | null
           id?: string
           nombre?: string
+          orden?: number
         }
         Relationships: []
       }
