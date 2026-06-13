@@ -4,8 +4,8 @@
 | Campo | Valor |
 |-------|-------|
 | **Cliente** | Gobierno Autónomo Municipal de Riberalta — Jefatura de Recaudaciones |
-| **Versión del documento** | 1.3.1 |
-| **Versión del producto** | 1.0.97 |
+| **Versión del documento** | 1.3.2 |
+| **Versión del producto** | 1.0.98 |
 | **Fecha** | Mayo 2026 |
 | **Estado** | Basado en el código en producción/desarrollo actual |
 
@@ -226,7 +226,7 @@ Unificar en una sola plataforma web responsive (móvil + escritorio) el ciclo: *
 | FORM-18 | Tarjetas en móvil, tabla en escritorio (patrón `DataListCard`) | Must |
 | FORM-19 | En móvil, filtros en una sola fila con desplazamiento horizontal | Should |
 | FORM-20 | Campos de verificación no completados (`pendiente_verificacion` y `superficie` nula): mostrar `—` en detalle, PDF y reportes (no valores por defecto de BD) | Must |
-| FORM-22 | Etapa 2: tabla dinámica de ambientes (ambiente, largo, ancho, superficie calculada, total); `formulario_ambientes`; total en `formularios.superficie`; tabla en PDF, detalle y QR | Must |
+| FORM-22 | Etapa 2: tabla dinámica de ambientes (ambiente, largo, ancho, superficie calculada, total); `formulario_ambientes`; total en `formularios.superficie`; tabla en PDF y QR; detalle con tabla en escritorio y tarjetas apiladas en móvil | Must |
 | FORM-21 | Vista pública `/verificacion-formulario/$id` y QR en PDF del formulario | Must |
 
 ### 6.5 Notificaciones (`/notificaciones`)
@@ -581,7 +581,8 @@ Reportes, Usuarios y Perfil accesibles desde el menú lateral.
 | 1.2.9 | Jun 2026 | Tipo de trámite | Catálogo `tipos_tramite`; campo obligatorio en etapa 1 con alta desde el flujo; detalle, PDF, reportes y QR |
 | 1.3.0 | Jun 2026 | CRUD tipos de trámite | Pantalla `/tipos-tramite` con listado, alta y edición; menú lateral; edición fuera del diálogo de formulario |
 | 1.3.1 | Jun 2026 | Orden tipos de trámite | Campo `orden`; reordenar con flechas; altas al final; combobox y listado por orden |
+| 1.3.2 | Jun 2026 | Detalle ambientes móvil | Medición de ambientes en detalle del formulario: tarjetas apiladas en móvil (sin scroll horizontal) |
 
 ---
 
-*Este PRD refleja el estado del producto según el código fuente del repositorio `sirat` (rama `main`, versión 1.0.97). Ante divergencias entre este documento y el código, prevalece el comportamiento implementado hasta que se actualice el PRD.*
+*Este PRD refleja el estado del producto según el código fuente del repositorio `sirat` (rama `main`, versión 1.0.98). Ante divergencias entre este documento y el código, prevalece el comportamiento implementado hasta que se actualice el PRD.*
