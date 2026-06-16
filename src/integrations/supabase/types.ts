@@ -441,6 +441,33 @@ export type Database = {
         }
         Relationships: []
       }
+      zona_divisiones: {
+        Row: {
+          coordenadas: Json
+          id: string
+          updated_at: string
+          updated_by: string | null
+          zona_lado_a: Database["public"]["Enums"]["zona_tipo"]
+          zona_lado_b: Database["public"]["Enums"]["zona_tipo"]
+        }
+        Insert: {
+          coordenadas: Json
+          id?: string
+          updated_at?: string
+          updated_by?: string | null
+          zona_lado_a: Database["public"]["Enums"]["zona_tipo"]
+          zona_lado_b: Database["public"]["Enums"]["zona_tipo"]
+        }
+        Update: {
+          coordenadas?: Json
+          id?: string
+          updated_at?: string
+          updated_by?: string | null
+          zona_lado_a?: Database["public"]["Enums"]["zona_tipo"]
+          zona_lado_b?: Database["public"]["Enums"]["zona_tipo"]
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

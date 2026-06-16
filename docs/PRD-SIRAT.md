@@ -4,8 +4,8 @@
 | Campo | Valor |
 |-------|-------|
 | **Cliente** | Gobierno Autónomo Municipal de Riberalta — Jefatura de Recaudaciones |
-| **Versión del documento** | 1.3.2 |
-| **Versión del producto** | 1.0.98 |
+| **Versión del documento** | 1.3.5 |
+| **Versión del producto** | 1.0.100 |
 | **Fecha** | Mayo 2026 |
 | **Estado** | Basado en el código en producción/desarrollo actual |
 
@@ -190,7 +190,7 @@ Unificar en una sola plataforma web responsive (móvil + escritorio) el ciclo: *
 | FORM-01 | Vincular contribuyente existente o dar de alta uno nuevo desde el flujo | Must |
 | FORM-23 | Campo **Tipo de trámite** obligatorio en etapa 1: selección desde catálogo o alta de nuevo tipo (operador y admin) | Must |
 | FORM-02 | Campos: razón social, NIT opcional, zona (A–E), dirección, celular, referencia | Must |
-| FORM-03 | Ubicación obligatoria: latitud, longitud, zoom de mapa | Must |
+| FORM-03 | Ubicación obligatoria: latitud, longitud, zoom de mapa; autocompletar **zona** al marcar pin si hay límites configurados | Must |
 | FORM-04 | Resolver coordenadas desde enlace WhatsApp/Google Maps | Should |
 | FORM-05 | Estado inicial: `pendiente_verificacion`; `superficie = null` | Must |
 | FORM-06 | Restricción UNIQUE (`contribuyente_id`, `razon_social`) | Must |
@@ -265,8 +265,21 @@ Unificar en una sola plataforma web responsive (móvil + escritorio) el ciclo: *
 | MAP-05 | Tiles OpenStreetMap (sin API key) | Must |
 | MAP-06 | Filtro inicial vía URL `?filtro=pendientes` o `?filtro=verificados` | Should |
 | MAP-07 | Mensaje contextual en vacío según filtro (p. ej. «Sin actividades pendientes») | Should |
+| MAP-08 | Contornos de zona A–E (líneas) visibles si el admin los configuró; leyenda de colores | Must |
+| MAP-09 | Mapa visible aunque no haya actividades, para consultar límites de zona | Should |
 
-### 6.7 Reportes (`/reportes`)
+### 6.9 Zonas (`/zonas`) — solo admin
+
+| ID | Requisito | Prioridad |
+|----|-----------|-----------|
+| ZON-01 | Dibujar **líneas divisorias** entre dos zonas (polilínea de ≥2 puntos); lado izquierdo/derecho según sentido de la línea | Must |
+| ZON-02 | Guardar, editar y eliminar líneas en Supabase (`zona_divisiones`: `zona_lado_a`, `zona_lado_b`) | Must |
+| ZON-03 | Al marcar pin, autocompletar **Zona** eliminando candidatos según el lado de cada línea | Must |
+| ZON-04 | Operadores ven líneas en formularios y `/mapa`; solo admin edita | Must |
+| ZON-05 | Magnetizar clics a vértices/trazos existentes (evitar huecos en esquinas) | Should |
+| ZON-06 | Etiquetas de zona en el borde oeste del mapa; posición vertical por percentil (A y E más al sur que B/C/D) | Should |
+
+### 6.10 Reportes (`/reportes`)
 
 | ID | Requisito | Prioridad |
 |----|-----------|-----------|
@@ -278,7 +291,7 @@ Unificar en una sola plataforma web responsive (móvil + escritorio) el ciclo: *
 | REP-06 | Exportación de formularios: columna **Estado**; sin columna coordenadas; campos de verificación pendiente exportan `—` | Must |
 | REP-07 | Título de reporte de formularios sin subtítulo «LISTADO DE…» (solo título institucional) | Should |
 
-### 6.8 Usuarios (`/usuarios`) — solo admin
+### 6.11 Usuarios (`/usuarios`) — solo admin
 
 | ID | Requisito | Prioridad |
 |----|-----------|-----------|
@@ -354,6 +367,7 @@ formularios ──1:N── formulario_fotos (máx. 3, trigger DB)
 | `formulario_fotos` | Rutas en Storage |
 | `notificaciones` | Notificación tributaria (`veces_notificado`, `fecha_limite` vigente) |
 | `notificacion_historial` | Historial de fechas límite por renotificación (append-only) |
+| `zona_divisiones` | Línea divisoria entre dos zonas (`zona_lado_a`, `zona_lado_b`, coordenadas); solo admin edita |
 
 ### 8.3 Enumeraciones
 
@@ -480,6 +494,7 @@ sequenceDiagram
 | `/formularios`, `/formularios/$id` | Formularios |
 | `/notificaciones`, `/notificaciones/$id` | Notificaciones |
 | `/mapa` | Mapa |
+| `/zonas` | Límites de zonas (admin) |
 | `/reportes` | Reportes |
 | `/usuarios` | Usuarios (admin) |
 | `/perfil` | Mi cuenta |
@@ -582,7 +597,10 @@ Reportes, Usuarios y Perfil accesibles desde el menú lateral.
 | 1.3.0 | Jun 2026 | CRUD tipos de trámite | Pantalla `/tipos-tramite` con listado, alta y edición; menú lateral; edición fuera del diálogo de formulario |
 | 1.3.1 | Jun 2026 | Orden tipos de trámite | Campo `orden`; reordenar con flechas; altas al final; combobox y listado por orden |
 | 1.3.2 | Jun 2026 | Detalle ambientes móvil | Medición de ambientes en detalle del formulario: tarjetas apiladas en móvil (sin scroll horizontal) |
+| 1.3.3 | Jun 2026 | Límites de zonas | Pantalla admin `/zonas` para dibujar contornos A–E; tabla `zona_limites`; límites visibles en `/mapa` y formularios; autocompletar zona al marcar pin |
+| 1.3.4 | Jun 2026 | Líneas divisorias | Modelo `zona_divisiones`: cada línea separa dos zonas; eliminación de candidatos al marcar pin; editor con magnetizar y lista de líneas |
+| 1.3.5 | Jun 2026 | Etiquetas de zona | Leyendas A–E al oeste del mapa; ajuste vertical de A y E respecto a B/C/D |
 
 ---
 
-*Este PRD refleja el estado del producto según el código fuente del repositorio `sirat` (rama `main`, versión 1.0.98). Ante divergencias entre este documento y el código, prevalece el comportamiento implementado hasta que se actualice el PRD.*
+*Este PRD refleja el estado del producto según el código fuente del repositorio `sirat` (rama `main`, versión 1.0.100). Ante divergencias entre este documento y el código, prevalece el comportamiento implementado hasta que se actualice el PRD.*

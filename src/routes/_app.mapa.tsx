@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { MapPicker, mapMarkerPinSvg } from "@/components/MapPicker";
+import { ZONA_LINE_COLORS, ZONAS_ORDEN } from "@/lib/zona-limites";
 import {
   type FormularioMapaRow,
   formularioRowToMapMarker,
@@ -225,6 +226,12 @@ function Mapa() {
           />
           Pendiente
         </span>
+        {ZONAS_ORDEN.map((z) => (
+          <span key={z} className="inline-flex items-center gap-1.5">
+            <span className="h-0.5 w-5 rounded" style={{ backgroundColor: ZONA_LINE_COLORS[z] }} aria-hidden />
+            Zona {z}
+          </span>
+        ))}
       </div>
 
       <Card className="p-2">
@@ -237,14 +244,10 @@ function Mapa() {
             <div className="flex h-full items-center justify-center p-6 text-center text-sm text-muted-foreground">
               Esta actividad no tiene ubicación registrada en la etapa 1.
             </div>
-          ) : markers.length === 0 ? (
-            <div className="flex h-full items-center justify-center p-6 text-center text-sm text-muted-foreground">
-              {mapaVacioMensaje(modoActividad, estadoFiltro, hayBusqueda)}
-            </div>
           ) : (
             <MapPicker
               readOnly
-              markers={markers}
+              markers={markers.length > 0 ? markers : undefined}
               height="100%"
               openPopupOnLoad={modoActividad && markers.length === 1}
             />
@@ -256,8 +259,13 @@ function Mapa() {
         {modoActividad
           ? markers.length === 1
             ? "1 actividad en el mapa. Toque el pin para abrir «Cómo llegar» en Google Maps."
-            : ""
-          : hayBusqueda
+            : sinUbicacionActividad
+              ? ""
+              : "Sin ubicación para esta actividad."
+          : markers.length === 0
+            ? mapaVacioMensaje(modoActividad, estadoFiltro, hayBusqueda) +
+              " Los límites de zona se muestran si el administrador configuró líneas divisorias."
+            : hayBusqueda
             ? visible === total
               ? `${visible} ${visible === 1 ? "actividad" : "actividades"} con ubicación (coinciden todas con la búsqueda).`
               : `${visible} de ${total} ${total === 1 ? "actividad" : "actividades"} con ubicación coinciden con la búsqueda.`

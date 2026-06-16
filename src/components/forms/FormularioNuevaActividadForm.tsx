@@ -289,6 +289,9 @@ export function FormularioNuevaActividadForm({
               lat={f.latitud}
               lng={f.longitud}
               onChange={(la, ln) => setF({ ...f, latitud: la, longitud: ln })}
+              onZonaDetected={(zona) => {
+                if (zona) setF((prev) => ({ ...prev, zona }));
+              }}
               onLocateError={(msg) => toast.error(msg)}
             />
           </Suspense>

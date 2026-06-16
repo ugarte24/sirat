@@ -12,6 +12,7 @@ import {
   Menu,
   KeyRound,
   Tags,
+  Layers,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,7 @@ const NAV: { to: string; label: string; icon: any; roles: Role[] }[] = [
   { to: "/notificaciones", label: "Notificaciones", icon: Bell, roles: ["admin", "operador"] },
   { to: "/mapa", label: "Mapa", icon: MapIcon, roles: ["admin", "operador"] },
   { to: "/reportes", label: "Reportes", icon: FileBarChart, roles: ["admin", "operador"] },
+  { to: "/zonas", label: "Zonas", icon: Layers, roles: ["admin"] },
   { to: "/usuarios", label: "Usuarios", icon: UserCog, roles: ["admin"] },
   { to: "/perfil", label: "Mi cuenta", icon: KeyRound, roles: ["admin", "operador"] },
 ];

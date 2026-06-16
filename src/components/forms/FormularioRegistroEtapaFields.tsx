@@ -178,7 +178,8 @@ export function FormularioRegistroEtapaFields({
       <Card className="p-5 space-y-3 border-0 shadow-none sm:border sm:shadow-sm">
         <Label>Ubicación geográfica *</Label>
         <p className="text-xs text-muted-foreground">
-          Marque en el mapa, use «Mi ubicación» o pegue el enlace de ubicación (también maps.app.goo.gl).
+          Marque en el mapa, use «Mi ubicación» o pegue el enlace de ubicación (también maps.app.goo.gl). Si hay
+          líneas divisorias configuradas, la zona se completará automáticamente.
         </p>
         <div className="space-y-2">
           <Label htmlFor={`${idPrefix}-ubicacion-pegada`} className="text-xs font-normal text-muted-foreground">
@@ -224,6 +225,9 @@ export function FormularioRegistroEtapaFields({
               mapZoom={f.mapa_zoom}
               centerToCoordsToken={centerMapToken}
               onChange={(la, ln) => setF({ ...f, latitud: la, longitud: ln })}
+              onZonaDetected={(zona) => {
+                if (zona) setF((prev) => ({ ...prev, zona }));
+              }}
               onZoomChange={(z) => setF((prev) => ({ ...prev, mapa_zoom: z }))}
               onLocateError={onLocateError}
             />

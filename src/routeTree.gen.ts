@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as VerificacionIdRouteImport } from './routes/verificacion.$id'
 import { Route as VerificacionFormularioIdRouteImport } from './routes/verificacion-formulario.$id'
 import { Route as VNotificacionRouteImport } from './routes/v.notificacion'
+import { Route as AppZonasRouteImport } from './routes/_app.zonas'
 import { Route as AppUsuariosRouteImport } from './routes/_app.usuarios'
 import { Route as AppTiposTramiteRouteImport } from './routes/_app.tipos-tramite'
 import { Route as AppReportesRouteImport } from './routes/_app.reportes'
@@ -67,6 +68,11 @@ const VNotificacionRoute = VNotificacionRouteImport.update({
   id: '/v/notificacion',
   path: '/v/notificacion',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppZonasRoute = AppZonasRouteImport.update({
+  id: '/zonas',
+  path: '/zonas',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppUsuariosRoute = AppUsuariosRouteImport.update({
   id: '/usuarios',
@@ -161,6 +167,7 @@ export interface FileRoutesByFullPath {
   '/reportes': typeof AppReportesRoute
   '/tipos-tramite': typeof AppTiposTramiteRouteWithChildren
   '/usuarios': typeof AppUsuariosRoute
+  '/zonas': typeof AppZonasRoute
   '/v/notificacion': typeof VNotificacionRoute
   '/verificacion-formulario/$id': typeof VerificacionFormularioIdRoute
   '/verificacion/$id': typeof VerificacionIdRouteWithChildren
@@ -181,6 +188,7 @@ export interface FileRoutesByTo {
   '/perfil': typeof AppPerfilRoute
   '/reportes': typeof AppReportesRoute
   '/usuarios': typeof AppUsuariosRoute
+  '/zonas': typeof AppZonasRoute
   '/v/notificacion': typeof VNotificacionRoute
   '/verificacion-formulario/$id': typeof VerificacionFormularioIdRoute
   '/verificacion/$id': typeof VerificacionIdRouteWithChildren
@@ -207,6 +215,7 @@ export interface FileRoutesById {
   '/_app/reportes': typeof AppReportesRoute
   '/_app/tipos-tramite': typeof AppTiposTramiteRouteWithChildren
   '/_app/usuarios': typeof AppUsuariosRoute
+  '/_app/zonas': typeof AppZonasRoute
   '/v/notificacion': typeof VNotificacionRoute
   '/verificacion-formulario/$id': typeof VerificacionFormularioIdRoute
   '/verificacion/$id': typeof VerificacionIdRouteWithChildren
@@ -233,6 +242,7 @@ export interface FileRouteTypes {
     | '/reportes'
     | '/tipos-tramite'
     | '/usuarios'
+    | '/zonas'
     | '/v/notificacion'
     | '/verificacion-formulario/$id'
     | '/verificacion/$id'
@@ -253,6 +263,7 @@ export interface FileRouteTypes {
     | '/perfil'
     | '/reportes'
     | '/usuarios'
+    | '/zonas'
     | '/v/notificacion'
     | '/verificacion-formulario/$id'
     | '/verificacion/$id'
@@ -278,6 +289,7 @@ export interface FileRouteTypes {
     | '/_app/reportes'
     | '/_app/tipos-tramite'
     | '/_app/usuarios'
+    | '/_app/zonas'
     | '/v/notificacion'
     | '/verificacion-formulario/$id'
     | '/verificacion/$id'
@@ -351,6 +363,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/v/notificacion'
       preLoaderRoute: typeof VNotificacionRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_app/zonas': {
+      id: '/_app/zonas'
+      path: '/zonas'
+      fullPath: '/zonas'
+      preLoaderRoute: typeof AppZonasRouteImport
+      parentRoute: typeof AppRoute
     }
     '/_app/usuarios': {
       id: '/_app/usuarios'
@@ -528,6 +547,7 @@ interface AppRouteChildren {
   AppReportesRoute: typeof AppReportesRoute
   AppTiposTramiteRoute: typeof AppTiposTramiteRouteWithChildren
   AppUsuariosRoute: typeof AppUsuariosRoute
+  AppZonasRoute: typeof AppZonasRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -539,6 +559,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppReportesRoute: AppReportesRoute,
   AppTiposTramiteRoute: AppTiposTramiteRouteWithChildren,
   AppUsuariosRoute: AppUsuariosRoute,
+  AppZonasRoute: AppZonasRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

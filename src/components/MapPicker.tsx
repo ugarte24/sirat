@@ -1,9 +1,18 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Button } from "@/components/ui/button";
 import { MapDirectionsLink } from "@/components/MapDirectionsLink";
 import { LocateFixed } from "lucide-react";
+import {
+  fetchZonaDivisiones,
+  renderZonaDivisionesOnMap,
+  zonaDesdeCoordenadas,
+  type ZonaDivisionRow,
+} from "@/lib/zona-limites";
+import type { Database } from "@/integrations/supabase/types";
+
+type ZonaTipo = Database["public"]["Enums"]["zona_tipo"];
 
 // fix default icon paths
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -48,6 +57,10 @@ interface Props {
   staticPreview?: boolean;
   /** Muestra enlace «Cómo llegar en Google Maps» debajo del mapa (vistas de solo lectura). */
   directionsLink?: boolean;
+  /** Muestra contornos de zona A–E (si están configurados). */
+  showZonaLimites?: boolean;
+  /** Al colocar el pin, devuelve la zona detectada según los límites dibujados. */
+  onZonaDetected?: (zona: ZonaTipo | null) => void;
 }
 
 /** Zoom por defecto al abrir el mapa editable sin valor guardado. */
@@ -143,20 +156,58 @@ export function MapPicker({
   openPopupOnLoad = false,
   staticPreview = false,
   directionsLink = false,
+  showZonaLimites = true,
+  onZonaDetected,
 }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
   /** Marcadores de solo lectura (`markers` prop), actualizables cuando llegan datos asíncronos */
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
+  const zonaLimitesLayerRef = useRef<L.LayerGroup | null>(null);
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
+  const onZonaDetectedRef = useRef(onZonaDetected);
+  onZonaDetectedRef.current = onZonaDetected;
+  const zonaLimitesRef = useRef<ZonaDivisionRow[]>([]);
   const onZoomChangeRef = useRef(onZoomChange);
   onZoomChangeRef.current = onZoomChange;
+  const [zonaLimitesLoaded, setZonaLimitesLoaded] = useState(false);
   const prevCenterTokenRef = useRef(centerToCoordsToken);
   const appliedSavedZoomRef = useRef(false);
   const markersViewSigRef = useRef("");
   const markersPopupOpenedRef = useRef(false);
+
+  const notifyZona = (la: number, ln: number) => {
+    if (!onZonaDetectedRef.current) return;
+    const zona = zonaDesdeCoordenadas(la, ln, zonaLimitesRef.current);
+    onZonaDetectedRef.current(zona);
+  };
+
+  useEffect(() => {
+    if (!showZonaLimites) {
+      zonaLimitesRef.current = [];
+      setZonaLimitesLoaded(true);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const rows = await fetchZonaDivisiones();
+        if (cancelled) return;
+        zonaLimitesRef.current = rows;
+        const layer = zonaLimitesLayerRef.current;
+        if (layer) renderZonaDivisionesOnMap(layer, rows);
+      } catch {
+        if (!cancelled) zonaLimitesRef.current = [];
+      } finally {
+        if (!cancelled) setZonaLimitesLoaded(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [showZonaLimites]);
 
   useEffect(() => {
     const el = ref.current;
@@ -172,7 +223,11 @@ export function MapPicker({
         maxZoom: 19,
       }).addTo(map);
       mapRef.current = map;
+      zonaLimitesLayerRef.current = L.layerGroup().addTo(map);
       markersLayerRef.current = L.layerGroup().addTo(map);
+      if (zonaLimitesRef.current.length) {
+        renderZonaDivisionesOnMap(zonaLimitesLayerRef.current, zonaLimitesRef.current);
+      }
 
       if (lat != null && lng != null) {
         markerRef.current = L.marker([lat, lng]).addTo(map);
@@ -185,6 +240,7 @@ export function MapPicker({
             if (markerRef.current) markerRef.current.setLatLng([la, ln]);
             else markerRef.current = L.marker([la, ln]).addTo(map);
             onChangeRef.current?.(la, ln);
+            notifyZona(la, ln);
           } catch {
             /* clic con mapa en estado inconsistente */
           }
@@ -221,6 +277,7 @@ export function MapPicker({
         }
         markerRef.current = null;
         markersLayerRef.current = null;
+        zonaLimitesLayerRef.current = null;
       };
     }
 
@@ -247,9 +304,16 @@ export function MapPicker({
       }
       markerRef.current = null;
       markersLayerRef.current = null;
+      zonaLimitesLayerRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- init una vez; lat/lng iniciales en el primer render
   }, []);
+
+  useEffect(() => {
+    const layer = zonaLimitesLayerRef.current;
+    if (!layer || !zonaLimitesLoaded || !showZonaLimites) return;
+    renderZonaDivisionesOnMap(layer, zonaLimitesRef.current);
+  }, [zonaLimitesLoaded, showZonaLimites]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -326,11 +390,18 @@ export function MapPicker({
       if (lat != null && lng != null) {
         if (markerRef.current) markerRef.current.setLatLng([lat, lng]);
         else markerRef.current = L.marker([lat, lng]).addTo(map);
+        if (zonaLimitesRef.current.length) notifyZona(lat, lng);
       }
     } catch {
       /* */
     }
   }, [lat, lng]);
+
+  useEffect(() => {
+    if (lat == null || lng == null || !zonaLimitesLoaded) return;
+    if (zonaLimitesRef.current.length) notifyZona(lat, lng);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- solo al cargar límites o coords iniciales
+  }, [lat, lng, zonaLimitesLoaded]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -357,6 +428,7 @@ export function MapPicker({
       else markerRef.current = L.marker([lat, lng]).addTo(map);
       map.setView([lat, lng], UBICACION_MAP_ZOOM);
       onZoomChangeRef.current?.(UBICACION_MAP_ZOOM);
+      notifyZona(lat, lng);
       requestAnimationFrame(() => safeInvalidate(map));
     } catch {
       /* */
@@ -382,6 +454,7 @@ export function MapPicker({
         if (markerRef.current) markerRef.current.setLatLng([la, ln]);
         else markerRef.current = L.marker([la, ln]).addTo(map);
         onChangeRef.current?.(la, ln);
+        notifyZona(la, ln);
         onZoomChangeRef.current?.(z);
         requestAnimationFrame(() => safeInvalidate(map));
       },

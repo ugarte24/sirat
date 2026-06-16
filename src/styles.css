@@ -178,6 +178,10 @@
   border: none !important;
   overflow: visible !important;
 }
+.leaflet-marker-icon.sirat-zona-label {
+  background: transparent !important;
+  border: none !important;
+}
 .sirat-map-marker-wrap svg {
   display: block;
   overflow: visible;
