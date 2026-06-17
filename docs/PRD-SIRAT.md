@@ -4,8 +4,8 @@
 | Campo | Valor |
 |-------|-------|
 | **Cliente** | Gobierno Autónomo Municipal de Riberalta — Jefatura de Recaudaciones |
-| **Versión del documento** | 1.3.7 |
-| **Versión del producto** | 1.0.106 |
+| **Versión del documento** | 1.3.8 |
+| **Versión del producto** | 1.0.108 |
 | **Fecha** | Mayo 2026 |
 | **Estado** | Basado en el código en producción/desarrollo actual |
 
@@ -520,7 +520,7 @@ Reportes, Usuarios y Perfil accesibles desde el menú lateral.
 
 ### 11.3 Documentos impresos
 
-- **Formulario PDF:** encabezado GAM Riberalta, QR de verificación alineado con el título, mapa capturado, fotos, firmas (incl. “Encargado de Ruat”); campos sin verificar muestran `—`.
+- **Formulario PDF:** encabezado GAM Riberalta, QR de verificación alineado con el título, mapa capturado, fotos, firmas (incl. «Operador Ruat»); campos sin verificar muestran `—`.
 - **Notificación PDF:** título “NOTIFICACIÓN”, conceptos marcados, QR de verificación.
 
 ---
@@ -602,7 +602,8 @@ Reportes, Usuarios y Perfil accesibles desde el menú lateral.
 | 1.3.5 | Jun 2026 | Etiquetas de zona | Leyendas A–E al oeste del mapa; ajuste vertical de A y E respecto a B/C/D |
 | 1.3.6 | Jun 2026 | Zona y diálogo formulario | Autocompletar zona al pegar enlace de ubicación; cerrar diálogo al guardar registro (alta y edición); limpiar parámetros URL del diálogo |
 | 1.3.7 | Jun 2026 | PDF en navegador | Botón PDF del formulario y PDF de baja abren en pestaña nueva; descarga explícita solo en vista pública QR |
+| 1.3.8 | Jun 2026 | Firma PDF formulario | Cargo de firma «Encargado de Ruat» renombrado a «Operador Ruat» |
 
 ---
 
-*Este PRD refleja el estado del producto según el código fuente del repositorio `sirat` (rama `main`, versión 1.0.106). Ante divergencias entre este documento y el código, prevalece el comportamiento implementado hasta que se actualice el PRD.*
+*Este PRD refleja el estado del producto según el código fuente del repositorio `sirat` (rama `main`, versión 1.0.108). Ante divergencias entre este documento y el código, prevalece el comportamiento implementado hasta que se actualice el PRD.*

@@ -48,7 +48,7 @@ export const GAM_RIBERALTA_NOMBRE = "GOBIERNO AUTONOMO MUNICIPAL DE RIBERALTA";
 export const JEFATURA_RECAUDACIONES = "JEFATURA DE RECAUDACIONES";
 
 /** Etiqueta de firma en PDF del formulario (tercera columna) */
-export const FORMULARIO_PDF_FIRMA_ENCARGADO_RUAT = "Encargado de Ruat";
+export const FORMULARIO_PDF_FIRMA_ENCARGADO_RUAT = "Operador Ruat";
 
 /** Título en PDF de notificación */
 export const NOTIFICACION_TRIBUTARIA_PDF_TITULO = "NOTIFICACIÓN";
