@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { PdfBlobViewer } from "@/components/PdfBlobViewer";
 import type { NotificacionQrPayload } from "@/lib/notificacion-qr";
 import { notificacionQrPayloadToPdfData } from "@/lib/pdf";
-import { downloadBlob } from "@/lib/download-file";
+import { downloadPdfBlob } from "@/lib/download-file";
 
 type Props = {
   payload: NotificacionQrPayload;
@@ -43,7 +43,7 @@ export function NotificacionVerificacionPdfView({ payload }: Props) {
 
   const download = useCallback(() => {
     if (!blobRef.current) return;
-    downloadBlob(blobRef.current, filename, "pdf");
+    downloadPdfBlob(blobRef.current, filename);
   }, [filename]);
 
   const openPdf = useCallback(() => {

@@ -5,36 +5,66 @@ import * as XLSX from "xlsx-js-style";
 export type DownloadKind = "pdf" | "excel";
 
 const SUCCESS: Record<DownloadKind, string> = {
-  pdf: "PDF descargado correctamente",
+  pdf: "PDF abierto en el navegador",
   excel: "Excel descargado correctamente",
 };
 
-/** Abre el documento en una nueva pestaña (PDF) o descarga directa (Excel). */
-export function downloadBlob(blob: Blob, filename: string, kind: DownloadKind): void {
-  const url = URL.createObjectURL(blob);
+function ensurePdfBlob(blob: Blob): Blob {
+  if (blob.type === "application/pdf") return blob;
+  return new Blob([blob], { type: "application/pdf" });
+}
 
-  if (kind === "pdf") {
-    const opened = window.open(url, "_blank", "noopener,noreferrer");
-    if (!opened) {
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = filename;
-      link.rel = "noopener";
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      toast.message("Si el documento no se abrió, búsquelo en la carpeta de descargas.");
-    }
-  } else {
+/** Abre el PDF en una nueva pestaña (sin atributo download). */
+export function openPdfBlob(blob: Blob, _filename?: string): void {
+  const pdf = ensurePdfBlob(blob);
+  const url = URL.createObjectURL(pdf);
+  const opened = window.open(url, "_blank", "noopener,noreferrer");
+  if (!opened) {
     const link = document.createElement("a");
     link.href = url;
-    link.download = filename;
-    link.rel = "noopener";
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
     document.body.appendChild(link);
     link.click();
     link.remove();
+    toast.message("Permita ventanas emergentes para ver el PDF en el navegador.");
+  } else {
+    toast.success(SUCCESS.pdf);
+  }
+  setTimeout(() => URL.revokeObjectURL(url), 120_000);
+}
+
+/** Descarga el PDF al disco (botones explícitos «Descargar PDF»). */
+export function downloadPdfBlob(blob: Blob, filename: string): void {
+  if (!filename.toLowerCase().endsWith(".pdf")) filename += ".pdf";
+  const pdf = ensurePdfBlob(blob);
+  const url = URL.createObjectURL(pdf);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.rel = "noopener";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 120_000);
+  toast.success("PDF descargado correctamente", { description: filename });
+}
+
+/** Abre el PDF en el navegador o descarga Excel. */
+export function downloadBlob(blob: Blob, filename: string, kind: DownloadKind): void {
+  if (kind === "pdf") {
+    openPdfBlob(blob, filename);
+    return;
   }
 
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.rel = "noopener";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
   setTimeout(() => URL.revokeObjectURL(url), 120_000);
 
   toast.success(SUCCESS[kind], { description: filename });
@@ -63,7 +93,7 @@ export function applySiratPdfPageNumbers(doc: jsPDF): void {
 export function downloadJsPdf(doc: jsPDF, filename: string): void {
   if (!filename.toLowerCase().endsWith(".pdf")) filename += ".pdf";
   applySiratPdfPageNumbers(doc);
-  downloadBlob(doc.output("blob"), filename, "pdf");
+  openPdfBlob(doc.output("blob"), filename);
 }
 
 export function downloadExcelWorkbook(wb: XLSX.WorkBook, filename: string): void {

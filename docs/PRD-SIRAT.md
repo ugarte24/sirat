@@ -4,8 +4,8 @@
 | Campo | Valor |
 |-------|-------|
 | **Cliente** | Gobierno Autónomo Municipal de Riberalta — Jefatura de Recaudaciones |
-| **Versión del documento** | 1.3.6 |
-| **Versión del producto** | 1.0.104 |
+| **Versión del documento** | 1.3.7 |
+| **Versión del producto** | 1.0.106 |
 | **Fecha** | Mayo 2026 |
 | **Estado** | Basado en el código en producción/desarrollo actual |
 
@@ -219,7 +219,7 @@ Unificar en una sola plataforma web responsive (móvil + escritorio) el ciclo: *
 |----|-----------|-----------|
 | FORM-13 | Filtros de lista: Todos / Pendientes / Verificados / Baja / Anulados; sincronizados con URL `?filtro=` | Must |
 | FORM-14 | Búsqueda por razón social o contribuyente | Must |
-| FORM-15 | Detalle `/formularios/$id` con PDF, fotos, mapa; contribuyente y C.I. en filas separadas | Must |
+| FORM-15 | Detalle `/formularios/$id` con PDF (abre en nueva pestaña del navegador, sin descarga forzada), fotos, mapa; contribuyente y C.I. en filas separadas | Must |
 | FORM-16 | PDF con QR de verificación pública; solo si `activo` y `superficie` definida | Must |
 | FORM-17 | Baja: operador y admin en `activo`; observación obligatoria; hasta 2 fotos nuevas (Storage `formulario-baja-fotos`); PDF «BAJA DE ACTIVIDAD ECONÓMICA» guardado en Storage (`formulario-baja-pdf`, sin descarga automática); fecha en PDF = fecha de baja; sin procedente/padrón/bebidas; anulación solo observación | Must |
 | FORM-21 | En detalle `baja`: botones «PDF registro» (verificación, intacto) y «PDF baja» (archivo guardado) | Must |
@@ -601,7 +601,8 @@ Reportes, Usuarios y Perfil accesibles desde el menú lateral.
 | 1.3.4 | Jun 2026 | Líneas divisorias | Modelo `zona_divisiones`: cada línea separa dos zonas; eliminación de candidatos al marcar pin; editor con magnetizar y lista de líneas |
 | 1.3.5 | Jun 2026 | Etiquetas de zona | Leyendas A–E al oeste del mapa; ajuste vertical de A y E respecto a B/C/D |
 | 1.3.6 | Jun 2026 | Zona y diálogo formulario | Autocompletar zona al pegar enlace de ubicación; cerrar diálogo al guardar registro (alta y edición); limpiar parámetros URL del diálogo |
+| 1.3.7 | Jun 2026 | PDF en navegador | Botón PDF del formulario y PDF de baja abren en pestaña nueva; descarga explícita solo en vista pública QR |
 
 ---
 
-*Este PRD refleja el estado del producto según el código fuente del repositorio `sirat` (rama `main`, versión 1.0.104). Ante divergencias entre este documento y el código, prevalece el comportamiento implementado hasta que se actualice el PRD.*
+*Este PRD refleja el estado del producto según el código fuente del repositorio `sirat` (rama `main`, versión 1.0.106). Ante divergencias entre este documento y el código, prevalece el comportamiento implementado hasta que se actualice el PRD.*

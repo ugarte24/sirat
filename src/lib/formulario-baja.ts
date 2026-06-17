@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { toIsoDateLocal } from "@/lib/date";
-import { downloadBlob } from "@/lib/download-file";
+import { openPdfBlob } from "@/lib/download-file";
 import {
   FORMULARIO_BAJA_FOTOS_BUCKET,
   FORMULARIO_BAJA_PDF_BUCKET,
@@ -40,7 +40,7 @@ export async function downloadFormularioBajaPdf(
 ): Promise<void> {
   const { data, error } = await supabase.storage.from(FORMULARIO_BAJA_PDF_BUCKET).download(storagePath);
   if (error || !data) throw new Error(error?.message ?? "No se pudo descargar el PDF de baja.");
-  downloadBlob(data, filename);
+  openPdfBlob(data, filename);
 }
 
 export async function uploadFormularioBajaFotos(
