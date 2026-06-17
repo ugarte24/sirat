@@ -64,6 +64,10 @@ export function FormularioRegistroCreateForm({
     const { data: created, error } = await supabase.from("formularios").insert(row).select("id").single();
     setBusy(false);
     if (error) return toast.error(error.message);
+    if (!created?.id) {
+      toast.error("El registro se guardó pero no se pudo obtener el identificador.");
+      return;
+    }
 
     toast.success("Registro guardado. Queda pendiente de verificación.");
     setF(emptyFormularioNuevo());

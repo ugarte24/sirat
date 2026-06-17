@@ -390,7 +390,6 @@ export function MapPicker({
       if (lat != null && lng != null) {
         if (markerRef.current) markerRef.current.setLatLng([lat, lng]);
         else markerRef.current = L.marker([lat, lng]).addTo(map);
-        if (zonaLimitesRef.current.length) notifyZona(lat, lng);
       }
     } catch {
       /* */
@@ -399,8 +398,8 @@ export function MapPicker({
 
   useEffect(() => {
     if (lat == null || lng == null || !zonaLimitesLoaded) return;
-    if (zonaLimitesRef.current.length) notifyZona(lat, lng);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- solo al cargar límites o coords iniciales
+    notifyZona(lat, lng);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- notifyZona estable vía refs
   }, [lat, lng, zonaLimitesLoaded]);
 
   useEffect(() => {
@@ -420,22 +419,24 @@ export function MapPicker({
   useEffect(() => {
     if (centerToCoordsToken === prevCenterTokenRef.current) return;
     prevCenterTokenRef.current = centerToCoordsToken;
-    if (!centerToCoordsToken) return;
+    if (!centerToCoordsToken || lat == null || lng == null) return;
+
+    notifyZona(lat, lng);
+
     const map = mapRef.current;
-    if (!map || lat == null || lng == null) return;
+    if (!map) return;
     try {
       if (markerRef.current) markerRef.current.setLatLng([lat, lng]);
       else markerRef.current = L.marker([lat, lng]).addTo(map);
       map.setView([lat, lng], UBICACION_MAP_ZOOM);
       onZoomChangeRef.current?.(UBICACION_MAP_ZOOM);
-      notifyZona(lat, lng);
       requestAnimationFrame(() => safeInvalidate(map));
     } catch {
       /* */
     }
     // Solo al incrementar centerToCoordsToken (Usar ubicación), no en cada clic del mapa.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [centerToCoordsToken]);
+  }, [centerToCoordsToken, lat, lng]);
 
   const handleLocate = () => {
     if (readOnly) return;

@@ -4,8 +4,8 @@
 | Campo | Valor |
 |-------|-------|
 | **Cliente** | Gobierno Autónomo Municipal de Riberalta — Jefatura de Recaudaciones |
-| **Versión del documento** | 1.3.5 |
-| **Versión del producto** | 1.0.102 |
+| **Versión del documento** | 1.3.6 |
+| **Versión del producto** | 1.0.104 |
 | **Fecha** | Mayo 2026 |
 | **Estado** | Basado en el código en producción/desarrollo actual |
 
@@ -190,7 +190,7 @@ Unificar en una sola plataforma web responsive (móvil + escritorio) el ciclo: *
 | FORM-01 | Vincular contribuyente existente o dar de alta uno nuevo desde el flujo | Must |
 | FORM-23 | Campo **Tipo de trámite** obligatorio en etapa 1: selección desde catálogo o alta de nuevo tipo (operador y admin) | Must |
 | FORM-02 | Campos: razón social, NIT opcional, zona (A–E), dirección, celular, referencia | Must |
-| FORM-03 | Ubicación obligatoria: latitud, longitud, zoom de mapa; autocompletar **zona** al marcar pin si hay límites configurados | Must |
+| FORM-03 | Ubicación obligatoria: latitud, longitud, zoom de mapa; autocompletar **zona** al marcar pin o al usar enlace de ubicación si hay límites configurados | Must |
 | FORM-04 | Resolver coordenadas desde enlace WhatsApp/Google Maps | Should |
 | FORM-05 | Estado inicial: `pendiente_verificacion`; `superficie = null` | Must |
 | FORM-06 | Restricción UNIQUE (`contribuyente_id`, `razon_social`) | Must |
@@ -204,7 +204,7 @@ Unificar en una sola plataforma web responsive (móvil + escritorio) el ciclo: *
 | FORM-09 | Al menos uno de: `padron` o `bebidas_alcoholicas` | Must |
 | FORM-10 | Hasta 3 fotos (máx. 500 KB c/u, compresión cliente) | Must |
 | FORM-11 | Al completar: `estado = activo`, `verificado_por`, `verificado_at` | Must |
-| FORM-12 | Edición por pestañas Registro / Verificación en diálogo | Must |
+| FORM-12 | Edición por pestañas Registro / Verificación en diálogo; cerrar diálogo tras guardar etapa 1 o verificación | Must |
 
 #### Estados y acciones
 
@@ -600,7 +600,8 @@ Reportes, Usuarios y Perfil accesibles desde el menú lateral.
 | 1.3.3 | Jun 2026 | Límites de zonas | Pantalla admin `/zonas` para dibujar contornos A–E; tabla `zona_limites`; límites visibles en `/mapa` y formularios; autocompletar zona al marcar pin |
 | 1.3.4 | Jun 2026 | Líneas divisorias | Modelo `zona_divisiones`: cada línea separa dos zonas; eliminación de candidatos al marcar pin; editor con magnetizar y lista de líneas |
 | 1.3.5 | Jun 2026 | Etiquetas de zona | Leyendas A–E al oeste del mapa; ajuste vertical de A y E respecto a B/C/D |
+| 1.3.6 | Jun 2026 | Zona y diálogo formulario | Autocompletar zona al pegar enlace de ubicación; cerrar diálogo al guardar registro (alta y edición); limpiar parámetros URL del diálogo |
 
 ---
 
-*Este PRD refleja el estado del producto según el código fuente del repositorio `sirat` (rama `main`, versión 1.0.102). Ante divergencias entre este documento y el código, prevalece el comportamiento implementado hasta que se actualice el PRD.*
+*Este PRD refleja el estado del producto según el código fuente del repositorio `sirat` (rama `main`, versión 1.0.104). Ante divergencias entre este documento y el código, prevalece el comportamiento implementado hasta que se actualice el PRD.*

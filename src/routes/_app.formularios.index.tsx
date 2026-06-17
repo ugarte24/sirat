@@ -303,14 +303,25 @@ function Lista() {
     setDialogMode("edit");
   };
 
-  const closeDialog = () => {
+  const closeDialog = useCallback(() => {
     setDialogMode(null);
     setEditId(null);
     setSubvista("formulario");
     setContribRecien(null);
     setTipoTramiteRecien(null);
     setGestionTab("registro");
-  };
+    setFormKey((k) => k + 1);
+    void navigate({
+      search: (prev) => {
+        const next = { ...(prev as Record<string, unknown>) };
+        delete next.nuevo;
+        delete next.editar;
+        delete next.verificar;
+        return next as FormSearch;
+      },
+      replace: true,
+    });
+  }, [navigate]);
 
   useEffect(() => {
     if (!nuevo) return;

@@ -15,6 +15,7 @@ import type {
 } from "@/lib/sirat-forms";
 import { isLikelyBoliviaBounds } from "@/lib/parse-map-location";
 import { resolveMapLocationFromText } from "@/lib/resolve-map-location-client";
+import { detectZonaEnCoordenadas } from "@/lib/zona-limites";
 
 const MapPicker = lazy(() => import("@/components/MapPicker").then((m) => ({ default: m.MapPicker })));
 
@@ -69,7 +70,14 @@ export function FormularioRegistroEtapaFields({
           toast.error(result.message);
           return;
         }
-        setF({ ...f, latitud: result.lat, longitud: result.lng, mapa_zoom: 17 });
+        const zona = await detectZonaEnCoordenadas(result.lat, result.lng);
+        setF((prev) => ({
+          ...prev,
+          latitud: result.lat,
+          longitud: result.lng,
+          mapa_zoom: 17,
+          ...(zona ? { zona } : {}),
+        }));
         setCenterMapToken((t) => t + 1);
         if (!isLikelyBoliviaBounds(result.lat, result.lng)) {
           toast.warning("Las coordenadas quedan fuera de Bolivia; verifique que sean correctas.");

@@ -166,6 +166,12 @@ export function zonaDesdeCoordenadas(
   return null;
 }
 
+/** Detecta zona en coordenadas usando las líneas divisorias guardadas (caché compartida). */
+export async function detectZonaEnCoordenadas(lat: number, lng: number): Promise<ZonaTipo | null> {
+  const divisiones = await fetchZonaDivisiones();
+  return zonaDesdeCoordenadas(lat, lng, divisiones);
+}
+
 export type ZonaSnapResult = {
   lat: number;
   lng: number;

@@ -257,6 +257,7 @@ export function FormularioGestionForm({
     setBusyRegistro(false);
     if (error) return toast.error(error.message);
     toast.success("Datos de registro actualizados");
+    onSuccess();
   };
 
   const handleAmbientesChange = (rows: FormularioAmbienteRow[]) => {
