@@ -42,6 +42,7 @@ export function ObservacionRequeridaDialog({
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (busy) return;
     const texto = observacion.trim();
     if (!texto) {
       toast.error("Ingrese la observación antes de guardar.");

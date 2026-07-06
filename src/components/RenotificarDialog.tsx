@@ -39,6 +39,7 @@ export function RenotificarDialog({
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (busy) return;
     if (!fecha.trim()) {
       toast.error("Indique la nueva fecha límite");
       return;

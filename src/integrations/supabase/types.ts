@@ -111,6 +111,51 @@ export type Database = {
           },
         ]
       }
+      formulario_visita_verificacion: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          fecha_visita: string
+          formulario_id: string
+          id: string
+          observacion: string | null
+          resultado: Database["public"]["Enums"]["formulario_visita_resultado"]
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          fecha_visita?: string
+          formulario_id: string
+          id?: string
+          observacion?: string | null
+          resultado: Database["public"]["Enums"]["formulario_visita_resultado"]
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          fecha_visita?: string
+          formulario_id?: string
+          id?: string
+          observacion?: string | null
+          resultado?: Database["public"]["Enums"]["formulario_visita_resultado"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "formulario_visita_verificacion_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "formulario_visita_verificacion_formulario_id_fkey"
+            columns: ["formulario_id"]
+            isOneToOne: false
+            referencedRelation: "formularios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       formulario_fotos: {
         Row: {
           created_at: string
@@ -484,6 +529,13 @@ export type Database = {
     Enums: {
       app_role: "admin" | "operador"
       formulario_estado: "activo" | "baja" | "anulado" | "pendiente_verificacion"
+      formulario_visita_resultado:
+        | "cerrada"
+        | "sin_titular"
+        | "acceso_denegado"
+        | "direccion_no_coincide"
+        | "horario_fuera"
+        | "otro"
       notificacion_estado: "pendiente" | "cumplido" | "anulado"
       zona_tipo: "A" | "B" | "C" | "D" | "E"
     }
@@ -615,6 +667,14 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "operador"],
       formulario_estado: ["activo", "baja", "anulado", "pendiente_verificacion"],
+      formulario_visita_resultado: [
+        "cerrada",
+        "sin_titular",
+        "acceso_denegado",
+        "direccion_no_coincide",
+        "horario_fuera",
+        "otro",
+      ],
       notificacion_estado: ["pendiente", "cumplido", "anulado"],
       zona_tipo: ["A", "B", "C", "D", "E"],
     },

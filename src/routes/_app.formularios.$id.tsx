@@ -37,6 +37,8 @@ import {
   type FormularioAmbienteRecord,
 } from "@/lib/formulario-ambientes";
 import { FormularioAmbientesDetalle } from "@/components/FormularioAmbientesDetalle";
+import { FormularioVisitasHistorial } from "@/components/FormularioVisitasHistorial";
+import { fetchFormularioVisitas, type FormularioVisitaRow } from "@/lib/formulario-visita-verificacion";
 import {
   DetailBoolean,
   DetailField,
@@ -60,6 +62,7 @@ function Detalle() {
   const [pdfBajaBusy, setPdfBajaBusy] = useState(false);
   const mapCaptureRef = useRef<HTMLDivElement>(null);
   const [ambientes, setAmbientes] = useState<FormularioAmbienteRecord[]>([]);
+  const [visitas, setVisitas] = useState<FormularioVisitaRow[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -67,6 +70,7 @@ function Detalle() {
       setPhotosLoading(true);
       setPhotos([]);
       setAmbientes([]);
+      setVisitas([]);
       const { data } = await supabase
         .from("formularios")
         .select("*, contribuyente:contribuyentes(nombre_completo,ci), tipo_tramite:tipos_tramite(nombre)")
@@ -78,6 +82,13 @@ function Detalle() {
       try {
         const amb = await fetchFormularioAmbientes(supabase, id);
         if (!cancelled) setAmbientes(amb);
+      } catch {
+        /* tabla puede no existir aún en entornos sin migrar */
+      }
+
+      try {
+        const visitaRows = await fetchFormularioVisitas(supabase, id);
+        if (!cancelled) setVisitas(visitaRows);
       } catch {
         /* tabla puede no existir aún en entornos sin migrar */
       }
@@ -471,6 +482,11 @@ function Detalle() {
             ) : null}
           </DetailGrid>
         </DetailSection>
+        {visitas.length > 0 ? (
+          <DetailSection title="Visitas sin verificar">
+            <FormularioVisitasHistorial visitas={visitas} compact />
+          </DetailSection>
+        ) : null}
       </DetailTemplate>
 
       {(photosLoading || photos.length > 0) && (

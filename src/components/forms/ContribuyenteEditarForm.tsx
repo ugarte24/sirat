@@ -27,21 +27,25 @@ export function ContribuyenteEditarForm({
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (busy) return;
     setBusy(true);
-    const { error } = await supabase
-      .from("contribuyentes")
-      .update(
-        contribuyenteToUpdatePayload({
-          ci: form.ci,
-          nombre_completo: form.nombre_completo,
-          telefono: form.telefono.trim() || null,
-        }),
-      )
-      .eq("id", contribuyenteId);
-    setBusy(false);
-    if (error) return toast.error(error.message);
-    toast.success("Contribuyente actualizado");
-    onSuccess();
+    try {
+      const { error } = await supabase
+        .from("contribuyentes")
+        .update(
+          contribuyenteToUpdatePayload({
+            ci: form.ci,
+            nombre_completo: form.nombre_completo,
+            telefono: form.telefono.trim() || null,
+          }),
+        )
+        .eq("id", contribuyenteId);
+      if (error) return toast.error(error.message);
+      toast.success("Contribuyente actualizado");
+      onSuccess();
+    } finally {
+      setBusy(false);
+    }
   };
 
   const formEl = (

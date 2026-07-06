@@ -255,7 +255,7 @@ function Usuarios() {
 
   const guardarEdicion = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editUserId || soleAdminLock) return;
+    if (!editUserId || soleAdminLock || savingEdit) return;
     setSavingEdit(true);
     try {
       const { data: sess } = await supabase.auth.getSession();
@@ -290,6 +290,7 @@ function Usuarios() {
 
   const crearUsuario = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (creating) return;
     setCreating(true);
     try {
       const { data: sess } = await supabase.auth.getSession();

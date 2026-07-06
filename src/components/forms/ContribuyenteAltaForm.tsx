@@ -24,20 +24,24 @@ export function ContribuyenteAltaForm({
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (busy) return;
     setBusy(true);
-    const { data: u } = await supabase.auth.getUser();
-    const payload = contribuyenteFormToInsert(form, u.user?.id);
-    const { data: created, error } = await supabase
-      .from("contribuyentes")
-      .insert(payload)
-      .select("id,ci,nombre_completo")
-      .single();
-    setBusy(false);
-    if (error) return toast.error(error.message);
-    if (!created) return toast.error("No se obtuvo el contribuyente creado.");
-    toast.success("Contribuyente registrado");
-    setForm({ ci: "", nombre_completo: "", telefono: "" });
-    onSuccess(created);
+    try {
+      const { data: u } = await supabase.auth.getUser();
+      const payload = contribuyenteFormToInsert(form, u.user?.id);
+      const { data: created, error } = await supabase
+        .from("contribuyentes")
+        .insert(payload)
+        .select("id,ci,nombre_completo")
+        .single();
+      if (error) return toast.error(error.message);
+      if (!created) return toast.error("No se obtuvo el contribuyente creado.");
+      toast.success("Contribuyente registrado");
+      setForm({ ci: "", nombre_completo: "", telefono: "" });
+      onSuccess(created);
+    } finally {
+      setBusy(false);
+    }
   };
 
   const formEl = (

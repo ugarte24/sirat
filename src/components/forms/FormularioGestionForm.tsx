@@ -25,7 +25,7 @@ import {
   fetchFormularioAmbientes,
   replaceFormularioAmbientes,
 } from "@/lib/formulario-ambientes";
-import { FORMULARIO_VERIFICACION_NOMBRE } from "@/lib/sirat-brand";
+import { FORMULARIO_VERIFICACION_NOMBRE, FORMULARIO_VISITA_SIN_VERIFICAR_LABEL } from "@/lib/sirat-brand";
 import {
   FORMULARIO_FOTOS_MAX_COUNT,
   formatFileSize,
@@ -40,6 +40,15 @@ import {
   FormularioVerificacionEtapaFields,
   type VerificacionPhotoLocal,
 } from "@/components/forms/FormularioVerificacionEtapaFields";
+import { FormularioVisitaVerificacionDialog } from "@/components/FormularioVisitaVerificacionDialog";
+import { FormularioVisitasHistorial } from "@/components/FormularioVisitasHistorial";
+import {
+  fetchFormularioVisitas,
+  registrarFormularioVisita,
+  type FormularioVisitaResultado,
+  type FormularioVisitaRow,
+} from "@/lib/formulario-visita-verificacion";
+import { useAuth } from "@/lib/auth";
 
 type FormEstado = Database["public"]["Enums"]["formulario_estado"];
 type ExistingPhoto = { id: string; storage_path: string; previewUrl: string };
@@ -75,6 +84,7 @@ export function FormularioGestionForm({
   onContribuyentePreseleccionado,
   onTipoTramitePreseleccionado,
 }: FormularioGestionFormProps) {
+  const { user } = useAuth();
   const { contribs, catalogLoaded, mergeContrib } = useContribuyentesCatalog(catalogRefreshKey);
   const { tiposTramite, catalogLoaded: tiposTramiteLoaded, mergeTipoTramite } =
     useTiposTramiteCatalog(catalogRefreshKey);
@@ -84,6 +94,9 @@ export function FormularioGestionForm({
   const [loading, setLoading] = useState(true);
   const [busyRegistro, setBusyRegistro] = useState(false);
   const [busyVerificacion, setBusyVerificacion] = useState(false);
+  const [busyVisita, setBusyVisita] = useState(false);
+  const [visitaDialogOpen, setVisitaDialogOpen] = useState(false);
+  const [visitas, setVisitas] = useState<FormularioVisitaRow[]>([]);
   const [existingPhotos, setExistingPhotos] = useState<ExistingPhoto[]>([]);
   const [removedPhotoIds, setRemovedPhotoIds] = useState<string[]>([]);
   const [newPhotos, setNewPhotos] = useState<VerificacionPhotoLocal[]>([]);
@@ -121,6 +134,7 @@ export function FormularioGestionForm({
     revokeLocalPhotos(newPhotosRef.current);
     setNewPhotos([]);
     setAmbientes([emptyAmbienteRow()]);
+    setVisitas([]);
 
     void (async () => {
       try {
@@ -172,6 +186,13 @@ export function FormularioGestionForm({
             }),
           );
           setExistingPhotos(withUrls);
+        }
+
+        try {
+          const visitaRows = await fetchFormularioVisitas(supabase, formularioId);
+          setVisitas(visitaRows);
+        } catch {
+          /* tabla puede no existir aún en entornos sin migrar */
         }
       } catch (e) {
         console.error(e);
@@ -245,19 +266,22 @@ export function FormularioGestionForm({
   };
 
   const saveRegistro = async () => {
-    if (!f) return;
+    if (!f || busyRegistro) return;
     const err = validateFormularioRegistro(f);
     if (err) return toast.error(err);
 
     setBusyRegistro(true);
-    const { error } = await supabase
-      .from("formularios")
-      .update(formularioRegistroToUpdate(f))
-      .eq("id", formularioId);
-    setBusyRegistro(false);
-    if (error) return toast.error(error.message);
-    toast.success("Datos de registro actualizados");
-    onSuccess();
+    try {
+      const { error } = await supabase
+        .from("formularios")
+        .update(formularioRegistroToUpdate(f))
+        .eq("id", formularioId);
+      if (error) return toast.error(error.message);
+      toast.success("Datos de registro actualizados");
+      onSuccess();
+    } finally {
+      setBusyRegistro(false);
+    }
   };
 
   const handleAmbientesChange = (rows: FormularioAmbienteRow[]) => {
@@ -267,7 +291,7 @@ export function FormularioGestionForm({
   };
 
   const saveVerificacion = async (completar: boolean) => {
-    if (!f || !estado) return;
+    if (!f || !estado || busyVerificacion) return;
     const err = validateFormularioVerificacion(f, ambientes);
     if (err) return toast.error(err);
 
@@ -294,23 +318,55 @@ export function FormularioGestionForm({
 
       await replaceFormularioAmbientes(supabase, formularioId, ambientesRowsForDb(ambientes));
       await syncPhotos();
-    } catch (e) {
-      setBusyVerificacion(false);
-      return toast.error(e instanceof Error ? e.message : "No se pudo guardar la verificación");
-    }
 
-    if (completar && pendiente) {
-      setEstado("activo");
-      toast.success("Verificación completada");
-    } else {
-      toast.success(
-        pendiente
-          ? "Datos de verificación guardados (sigue pendiente hasta completar)"
-          : `${FORMULARIO_VERIFICACION_NOMBRE} actualizado`,
-      );
+      if (completar && pendiente) {
+        setEstado("activo");
+        toast.success("Verificación completada");
+      } else {
+        toast.success(
+          pendiente
+            ? "Datos de verificación guardados (sigue pendiente hasta completar)"
+            : `${FORMULARIO_VERIFICACION_NOMBRE} actualizado`,
+        );
+      }
+      onSuccess();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "No se pudo guardar la verificación");
+    } finally {
+      setBusyVerificacion(false);
     }
-    setBusyVerificacion(false);
-    onSuccess();
+  };
+
+  const reloadVisitas = async () => {
+    try {
+      const visitaRows = await fetchFormularioVisitas(supabase, formularioId);
+      setVisitas(visitaRows);
+    } catch {
+      /* ignorar si la migración no está aplicada */
+    }
+  };
+
+  const saveVisita = async (payload: {
+    fechaVisita: string;
+    resultado: FormularioVisitaResultado;
+    observacion: string;
+  }) => {
+    if (busyVisita) return;
+    setBusyVisita(true);
+    try {
+      await registrarFormularioVisita({
+        supabase,
+        formularioId,
+        fechaVisita: payload.fechaVisita,
+        resultado: payload.resultado,
+        observacion: payload.observacion,
+        userId: user?.id ?? null,
+      });
+      await reloadVisitas();
+      toast.success("Visita registrada (el formulario sigue pendiente de verificación)");
+    } finally {
+      setBusyVisita(false);
+    }
   };
 
   if (loading || !f || !estado) {
@@ -382,32 +438,49 @@ export function FormularioGestionForm({
           photoBusy={photoBusy}
           maxPhotos={FORMULARIO_FOTOS_MAX_COUNT}
         />
-        <div className="flex flex-col gap-2 sm:flex-row">
+        {visitas.length > 0 ? <FormularioVisitasHistorial visitas={visitas} /> : null}
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           {onCancel ? (
-            <Button type="button" variant="outline" className="h-12 sm:h-11" onClick={onCancel} disabled={busyVerificacion}>
+            <Button type="button" variant="outline" className="h-12 sm:h-11" onClick={onCancel} disabled={busyVerificacion || busyVisita}>
               Cancelar
             </Button>
           ) : null}
           {pendiente ? (
-            <Button
-              type="button"
-              className="flex-1 h-12 sm:h-11 bg-gradient-primary text-base sm:text-sm"
-              disabled={busyVerificacion}
-              onClick={() => void saveVerificacion(true)}
-            >
-              {busyVerificacion ? "Guardando…" : "Completar verificación"}
-            </Button>
+            <>
+              <Button
+                type="button"
+                variant="secondary"
+                className="h-12 sm:h-11"
+                disabled={busyVerificacion || busyVisita}
+                onClick={() => setVisitaDialogOpen(true)}
+              >
+                {FORMULARIO_VISITA_SIN_VERIFICAR_LABEL}
+              </Button>
+              <Button
+                type="button"
+                className="flex-1 h-12 sm:h-11 bg-gradient-primary text-base sm:text-sm"
+                disabled={busyVerificacion || busyVisita}
+                onClick={() => void saveVerificacion(true)}
+              >
+                {busyVerificacion ? "Guardando…" : "Completar verificación"}
+              </Button>
+            </>
           ) : (
             <Button
               type="button"
               className="flex-1 h-12 sm:h-11 bg-gradient-primary text-base sm:text-sm"
-              disabled={busyVerificacion}
+              disabled={busyVerificacion || busyVisita}
               onClick={() => void saveVerificacion(false)}
             >
               {busyVerificacion ? "Guardando…" : "Guardar verificación"}
             </Button>
           )}
         </div>
+        <FormularioVisitaVerificacionDialog
+          open={visitaDialogOpen}
+          onOpenChange={setVisitaDialogOpen}
+          onConfirm={saveVisita}
+        />
       </TabsContent>
     </Tabs>
   );

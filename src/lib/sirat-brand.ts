@@ -33,8 +33,12 @@ export const FORMULARIO_VERIFICACION_TITULO_EDITAR =
 export const FORMULARIO_ETAPA_REGISTRO_TITULO = "Etapa 1 — Registro";
 export const FORMULARIO_ETAPA_VERIFICACION_TITULO = "Etapa 2 — Verificación";
 
+/** Acción cuando el inspector acude al local pero no puede completar la verificación */
+export const FORMULARIO_VISITA_SIN_VERIFICAR_LABEL = "Registrar visita sin verificar";
+
 /** Encabezado de sección y menú (lista de formularios) */
-export const FORMULARIO_VERIFICACION_SECCION = "Formularios de registro y verificación";
+export const FORMULARIO_VERIFICACION_SECCION =
+  "Formulario de registro y verificación a las actividades económicas";
 
 /** Título en PDF impreso */
 export const FORMULARIO_VERIFICACION_PDF_TITULO =

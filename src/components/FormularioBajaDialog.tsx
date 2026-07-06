@@ -87,6 +87,7 @@ export function FormularioBajaDialog({ open, onOpenChange, onConfirm }: Formular
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (busy) return;
     const texto = observacion.trim();
     if (!texto) {
       toast.error("Ingrese la observación antes de guardar.");

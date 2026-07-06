@@ -24,6 +24,7 @@ export function TipoTramiteAltaForm({
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (busy) return;
     if (!form.nombre.trim()) return toast.error("Indique el nombre del tipo de trámite");
     setBusy(true);
     try {

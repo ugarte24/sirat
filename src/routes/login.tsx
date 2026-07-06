@@ -28,6 +28,7 @@ function LoginPage() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (busy) return;
     setBusy(true);
     const em = email.trim();
     try {

@@ -20,6 +20,7 @@ function Perfil() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (busy) return;
     const email = user?.email;
     if (!email) {
       toast.error("No se encontró el correo de la sesión.");

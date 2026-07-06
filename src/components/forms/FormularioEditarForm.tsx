@@ -204,6 +204,7 @@ export function FormularioEditarForm({ formularioId, onSuccess, onCancel }: Form
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (busy) return;
     if (!f) return;
     if (!f.contribuyente_id) return toast.error("Selecciona un contribuyente");
     const ambErr = validateFormularioAmbientes(ambientes);
@@ -231,32 +232,32 @@ export function FormularioEditarForm({ formularioId, onSuccess, onCancel }: Form
       if (error) throw new Error(error.message);
 
       await replaceFormularioAmbientes(supabase, formularioId, ambientesRowsForDb(ambientes));
-    } catch (e) {
-      setBusy(false);
-      return toast.error(e instanceof Error ? e.message : "No se pudo guardar");
-    }
 
-    for (const photoId of removedPhotoIds) {
-      const row = existingPhotos.find((p) => p.id === photoId);
-      if (row) {
-        await supabase.storage.from("formulario-fotos").remove([row.storage_path]);
-        await supabase.from("formulario_fotos").delete().eq("id", photoId);
+      for (const photoId of removedPhotoIds) {
+        const row = existingPhotos.find((p) => p.id === photoId);
+        if (row) {
+          await supabase.storage.from("formulario-fotos").remove([row.storage_path]);
+          await supabase.from("formulario_fotos").delete().eq("id", photoId);
+        }
       }
+
+      const photoSummary = await uploadFormularioFotos(
+        supabase,
+        formularioId,
+        newPhotos.map((p) => p.file),
+      );
+
+      revokeLocalPhotos(newPhotos);
+      setNewPhotos([]);
+      toast.success(`${FORMULARIO_VERIFICACION_NOMBRE} actualizado`);
+      const photoWarn = formularioFotoUploadWarning(photoSummary);
+      if (photoWarn) toast.warning(photoWarn);
+      onSuccess();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "No se pudo guardar");
+    } finally {
+      setBusy(false);
     }
-
-    const photoSummary = await uploadFormularioFotos(
-      supabase,
-      formularioId,
-      newPhotos.map((p) => p.file),
-    );
-
-    revokeLocalPhotos(newPhotos);
-    setNewPhotos([]);
-    setBusy(false);
-    toast.success(`${FORMULARIO_VERIFICACION_NOMBRE} actualizado`);
-    const photoWarn = formularioFotoUploadWarning(photoSummary);
-    if (photoWarn) toast.warning(photoWarn);
-    onSuccess();
   };
 
   if (loading || !f) {

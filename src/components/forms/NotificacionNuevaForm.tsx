@@ -49,6 +49,7 @@ export function NotificacionNuevaForm({
   const [n, setN] = useState<NotificacionNuevaState>(defaultNotificacionNueva());
   const [naHits, setNaHits] = useState<RazonSocialFormHit[]>([]);
   const [naBuscando, setNaBuscando] = useState(false);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     void (async () => {
@@ -75,6 +76,7 @@ export function NotificacionNuevaForm({
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (busy) return;
     if (!n.fecha_limite.trim()) return toast.error("Indique la fecha límite");
     const hasConcepto =
       n.padron_municipal ||
@@ -87,14 +89,20 @@ export function NotificacionNuevaForm({
         `Marque al menos un concepto (${NOTIFICACION_CONCEPTO_OPTS.map((o) => o.label).join(", ")}).`,
       );
     }
-    const { data: u } = await supabase.auth.getUser();
-    const payload = notificacionStateToInsert(n, u.user?.id);
-    const { data, error } = await supabase.from("notificaciones").insert(payload).select().single();
-    if (error) return toast.error(error.message);
-    toast.success("Notificación registrada");
-    setN(defaultNotificacionNueva());
-    setNaHits([]);
-    onSuccess();
+
+    setBusy(true);
+    try {
+      const { data: u } = await supabase.auth.getUser();
+      const payload = notificacionStateToInsert(n, u.user?.id);
+      const { error } = await supabase.from("notificaciones").insert(payload).select().single();
+      if (error) return toast.error(error.message);
+      toast.success("Notificación registrada");
+      setN(defaultNotificacionNueva());
+      setNaHits([]);
+      onSuccess();
+    } finally {
+      setBusy(false);
+    }
   };
 
   const buscarRazonSocialFormularios = async () => {
@@ -269,8 +277,8 @@ export function NotificacionNuevaForm({
           onChange={(patch) => setN((prev) => ({ ...prev, ...patch }))}
         />
       </Card>
-      <Button type="submit" className="w-full h-11 bg-gradient-gold text-gold-foreground">
-        Emitir notificación
+      <Button type="submit" disabled={busy} className="w-full h-11 bg-gradient-gold text-gold-foreground">
+        {busy ? "Registrando…" : "Emitir notificación"}
       </Button>
     </form>
   );

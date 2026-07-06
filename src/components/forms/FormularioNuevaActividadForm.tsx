@@ -154,6 +154,7 @@ export function FormularioNuevaActividadForm({
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (busy) return;
     if (!f.contribuyente_id) return toast.error("Selecciona un contribuyente");
     const sup = Number.parseFloat(f.superficie);
     if (!Number.isFinite(sup) || sup <= 0) {
@@ -170,27 +171,29 @@ export function FormularioNuevaActividadForm({
     ) {
       return toast.error("Marque la ubicación en el mapa o use «Mi ubicación».");
     }
+
     setBusy(true);
-    const { data: u } = await supabase.auth.getUser();
-    const row = formularioStateToInsert(f, u.user?.id);
-    const { data: created, error } = await supabase.from("formularios").insert(row).select().single();
-    if (error) {
+    try {
+      const { data: u } = await supabase.auth.getUser();
+      const row = formularioStateToInsert(f, u.user?.id);
+      const { data: created, error } = await supabase.from("formularios").insert(row).select().single();
+      if (error) return toast.error(error.message);
+
+      const photoSummary = await uploadFormularioFotos(
+        supabase,
+        created.id,
+        photos.map((p) => p.file),
+      );
+      toast.success(`${FORMULARIO_VERIFICACION_NOMBRE} registrado`);
+      const photoWarn = formularioFotoUploadWarning(photoSummary);
+      if (photoWarn) toast.warning(photoWarn);
+      revokePhotos(photos);
+      setPhotos([]);
+      setF(emptyFormularioNuevo());
+      onSuccess();
+    } finally {
       setBusy(false);
-      return toast.error(error.message);
     }
-    const photoSummary = await uploadFormularioFotos(
-      supabase,
-      created.id,
-      photos.map((p) => p.file),
-    );
-    toast.success(`${FORMULARIO_VERIFICACION_NOMBRE} registrado`);
-    const photoWarn = formularioFotoUploadWarning(photoSummary);
-    if (photoWarn) toast.warning(photoWarn);
-    revokePhotos(photos);
-    setPhotos([]);
-    setF(emptyFormularioNuevo());
-    setBusy(false);
-    onSuccess();
   };
 
   return (

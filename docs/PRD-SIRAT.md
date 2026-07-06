@@ -4,8 +4,8 @@
 | Campo | Valor |
 |-------|-------|
 | **Cliente** | Gobierno Autónomo Municipal de Riberalta — Jefatura de Recaudaciones |
-| **Versión del documento** | 1.3.8 |
-| **Versión del producto** | 1.0.108 |
+| **Versión del documento** | 1.4.0 |
+| **Versión del producto** | 1.0.109 |
 | **Fecha** | Mayo 2026 |
 | **Estado** | Basado en el código en producción/desarrollo actual |
 
@@ -205,6 +205,8 @@ Unificar en una sola plataforma web responsive (móvil + escritorio) el ciclo: *
 | FORM-10 | Hasta 3 fotos (máx. 500 KB c/u, compresión cliente) | Must |
 | FORM-11 | Al completar: `estado = activo`, `verificado_por`, `verificado_at` | Must |
 | FORM-12 | Edición por pestañas Registro / Verificación en diálogo; cerrar diálogo tras guardar etapa 1 o verificación | Must |
+| FORM-24 | En `pendiente_verificacion`: botón **Registrar visita sin verificar** (motivo, fecha, observación opcional); tabla `formulario_visita_verificacion`; el formulario **no** pasa a `activo` | Must |
+| FORM-25 | Historial de visitas sin verificar visible en pestaña Verificación (gestión) y en detalle `/formularios/$id` | Must |
 
 #### Estados y acciones
 
@@ -353,6 +355,7 @@ contribuyentes ──1:N── formularios
 contribuyentes ──0:N── notificaciones (contribuyente_id nullable)
 
 formularios ──1:N── formulario_fotos (máx. 3, trigger DB)
+formularios ──1:N── formulario_visita_verificacion (visitas sin completar verificación)
 ```
 
 ### 8.2 Tablas principales
@@ -365,6 +368,7 @@ formularios ──1:N── formulario_fotos (máx. 3, trigger DB)
 | `tipos_tramite` | Catálogo de tipos de trámite (etapa 1 formularios) |
 | `formularios` | Actividad económica georreferenciada |
 | `formulario_fotos` | Rutas en Storage |
+| `formulario_visita_verificacion` | Visitas de campo sin completar etapa 2 (motivo, fecha, observación) |
 | `notificaciones` | Notificación tributaria (`veces_notificado`, `fecha_limite` vigente) |
 | `notificacion_historial` | Historial de fechas límite por renotificación (append-only) |
 | `zona_divisiones` | Línea divisoria entre dos zonas (`zona_lado_a`, `zona_lado_b`, coordenadas); solo admin edita |
@@ -374,6 +378,7 @@ formularios ──1:N── formulario_fotos (máx. 3, trigger DB)
 ```text
 app_role:            admin | operador
 formulario_estado:   activo | baja | anulado | pendiente_verificacion
+formulario_visita_resultado: cerrada | sin_titular | acceso_denegado | direccion_no_coincide | horario_fuera | otro
 notificacion_estado: pendiente | cumplido | anulado
 zona_tipo:           A | B | C | D | E
 ```
@@ -384,6 +389,7 @@ zona_tipo:           A | B | C | D | E
 - `formularios(contribuyente_id, razon_social)` UNIQUE.
 - DELETE `contribuyentes` solo sin formularios ni notificaciones vinculadas.
 - Máximo 3 filas en `formulario_fotos` por `formulario_id` (trigger).
+- `formulario_visita_verificacion`: solo INSERT si el formulario está en `pendiente_verificacion`; motivo `otro` exige observación.
 
 ---
 
@@ -603,7 +609,9 @@ Reportes, Usuarios y Perfil accesibles desde el menú lateral.
 | 1.3.6 | Jun 2026 | Zona y diálogo formulario | Autocompletar zona al pegar enlace de ubicación; cerrar diálogo al guardar registro (alta y edición); limpiar parámetros URL del diálogo |
 | 1.3.7 | Jun 2026 | PDF en navegador | Botón PDF del formulario y PDF de baja abren en pestaña nueva; descarga explícita solo en vista pública QR |
 | 1.3.8 | Jun 2026 | Firma PDF formulario | Cargo de firma «Encargado de Ruat» renombrado a «Operador Ruat» |
+| 1.3.9 | Jul 2026 | Visitas sin verificar | Tabla `formulario_visita_verificacion`; registro de visitas en etapa 2 sin cambiar estado; historial en gestión y detalle; sin fotos |
+| 1.4.0 | Jul 2026 | Producto v1.0.109 | Anti doble envío en formularios y diálogos; título de sección formularios; script duplicados notificaciones |
 
 ---
 
-*Este PRD refleja el estado del producto según el código fuente del repositorio `sirat` (rama `main`, versión 1.0.108). Ante divergencias entre este documento y el código, prevalece el comportamiento implementado hasta que se actualice el PRD.*
+*Este PRD refleja el estado del producto según el código fuente del repositorio `sirat` (rama `main`, versión 1.0.109). Ante divergencias entre este documento y el código, prevalece el comportamiento implementado hasta que se actualice el PRD.*

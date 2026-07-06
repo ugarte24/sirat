@@ -55,23 +55,27 @@ export function FormularioRegistroCreateForm({
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (busy) return;
     const err = validateFormularioRegistro(f);
     if (err) return toast.error(err);
 
     setBusy(true);
-    const { data: u } = await supabase.auth.getUser();
-    const row = formularioRegistroToInsert(f, u.user?.id);
-    const { data: created, error } = await supabase.from("formularios").insert(row).select("id").single();
-    setBusy(false);
-    if (error) return toast.error(error.message);
-    if (!created?.id) {
-      toast.error("El registro se guardó pero no se pudo obtener el identificador.");
-      return;
-    }
+    try {
+      const { data: u } = await supabase.auth.getUser();
+      const row = formularioRegistroToInsert(f, u.user?.id);
+      const { data: created, error } = await supabase.from("formularios").insert(row).select("id").single();
+      if (error) return toast.error(error.message);
+      if (!created?.id) {
+        toast.error("El registro se guardó pero no se pudo obtener el identificador.");
+        return;
+      }
 
-    toast.success("Registro guardado. Queda pendiente de verificación.");
-    setF(emptyFormularioNuevo());
-    onSuccess(created.id);
+      toast.success("Registro guardado. Queda pendiente de verificación.");
+      setF(emptyFormularioNuevo());
+      onSuccess(created.id);
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (

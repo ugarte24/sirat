@@ -27,19 +27,23 @@ export function TipoTramiteEditarForm({
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (busy) return;
     if (!form.nombre.trim()) return toast.error("Indique el nombre del tipo de trámite");
     setBusy(true);
-    const { data: updated, error } = await supabase
-      .from("tipos_tramite")
-      .update(tipoTramiteToUpdatePayload(form))
-      .eq("id", tipoTramiteId)
-      .select("id,nombre")
-      .single();
-    setBusy(false);
-    if (error) return toast.error(error.message);
-    if (!updated) return toast.error("No se obtuvo el tipo de trámite actualizado.");
-    toast.success("Tipo de trámite actualizado");
-    onSuccess(updated);
+    try {
+      const { data: updated, error } = await supabase
+        .from("tipos_tramite")
+        .update(tipoTramiteToUpdatePayload(form))
+        .eq("id", tipoTramiteId)
+        .select("id,nombre")
+        .single();
+      if (error) return toast.error(error.message);
+      if (!updated) return toast.error("No se obtuvo el tipo de trámite actualizado.");
+      toast.success("Tipo de trámite actualizado");
+      onSuccess(updated);
+    } finally {
+      setBusy(false);
+    }
   };
 
   const formEl = (

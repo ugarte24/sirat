@@ -119,6 +119,7 @@ export function NotificacionEditarForm({ notificacionId, onSuccess, onCancel }: 
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (busy) return;
     if (!n) return;
     const hasConcepto =
       n.padron_municipal ||
@@ -133,14 +134,17 @@ export function NotificacionEditarForm({ notificacionId, onSuccess, onCancel }: 
     }
 
     setBusy(true);
-    const { error } = await supabase
-      .from("notificaciones")
-      .update(notificacionStateToUpdate(n))
-      .eq("id", notificacionId);
-    setBusy(false);
-    if (error) return toast.error(error.message);
-    toast.success("Notificación actualizada");
-    onSuccess();
+    try {
+      const { error } = await supabase
+        .from("notificaciones")
+        .update(notificacionStateToUpdate(n))
+        .eq("id", notificacionId);
+      if (error) return toast.error(error.message);
+      toast.success("Notificación actualizada");
+      onSuccess();
+    } finally {
+      setBusy(false);
+    }
   };
 
   if (loading) {
