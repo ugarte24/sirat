@@ -17,6 +17,8 @@ import { MapPicker } from "@/components/MapPicker";
 import { PdfPreviewDialog } from "@/components/PdfPreviewDialog";
 import { PhotoLightboxDialog } from "@/components/PhotoLightboxDialog";
 import { downloadFormularioFoto } from "@/lib/formulario-fotos";
+import { openPdfBlob } from "@/lib/download-file";
+import { prefersPdfInAppPreview } from "@/lib/pdf-present";
 import {
   buildFormularioFotosPdfBlob,
   buildFormularioPdfBlob,
@@ -159,6 +161,14 @@ function Detalle() {
       })),
     );
 
+  const presentPdf = (blob: Blob, filename: string, title: string) => {
+    if (prefersPdfInAppPreview()) {
+      setPdfPreview({ blob, filename, title });
+    } else {
+      openPdfBlob(blob, filename);
+    }
+  };
+
   const pdfFotos = async () => {
     if (photosLoading) {
       toast.info("Espere a que terminen de cargar las fotos.");
@@ -176,7 +186,7 @@ function Detalle() {
         photos: await resolvePhotosForPdf(),
         usuario: profile?.full_name ?? profile?.email ?? undefined,
       });
-      setPdfPreview({ blob, filename, title: "PDF de fotos" });
+      presentPdf(blob, filename, "PDF de fotos");
     } catch (e) {
       console.error(e);
       toast.error(
@@ -269,11 +279,11 @@ function Detalle() {
         usuario: profile?.full_name ?? profile?.email ?? undefined,
         ambientes: ambienteRecordsToPdfRows(ambientes),
       });
-      setPdfPreview({
+      presentPdf(
         blob,
         filename,
-        title: f.estado === "baja" ? "PDF registro" : "Vista previa del PDF",
-      });
+        f.estado === "baja" ? "PDF registro" : "Vista previa del PDF",
+      );
       if (fotosSolicitadas > 0 && fotosIncluidas < fotosSolicitadas) {
         toast.warning(
           `PDF generado, pero solo se incluyeron ${fotosIncluidas} de ${fotosSolicitadas} foto(s).`,
@@ -301,7 +311,7 @@ function Detalle() {
         f.baja_pdf_path,
         formularioBajaPdfFilename(f.razon_social),
       );
-      setPdfPreview({ blob, filename, title: "PDF de baja" });
+      presentPdf(blob, filename, "PDF de baja");
     } catch (e) {
       console.error(e);
       toast.error(e instanceof Error ? e.message : "No se pudo abrir el PDF de baja.");

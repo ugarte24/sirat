@@ -4,8 +4,8 @@
 | Campo | Valor |
 |-------|-------|
 | **Cliente** | Gobierno Autónomo Municipal de Riberalta — Jefatura de Recaudaciones |
-| **Versión del documento** | 1.4.11 |
-| **Versión del producto** | 1.0.115 |
+| **Versión del documento** | 1.4.12 |
+| **Versión del producto** | 1.0.116 |
 | **Fecha** | Mayo 2026 |
 | **Estado** | Basado en el código en producción/desarrollo actual |
 
@@ -221,10 +221,10 @@ Unificar en una sola plataforma web responsive (móvil + escritorio) el ciclo: *
 |----|-----------|-----------|
 | FORM-13 | Filtros de lista: Todos / Pendientes / Verificados / Baja / Anulados; URL `?filtro=`; página en `?page=` (se conserva al volver del detalle) | Must |
 | FORM-14 | Búsqueda por razón social o contribuyente | Must |
-| FORM-15 | Detalle `/formularios/$id` con PDF en visor interno (`PdfPreviewDialog`) y botón Descargar PDF (para compartir p. ej. por WhatsApp); fotos ampliables al tocar (`PhotoLightboxDialog`); mapa; contribuyente y C.I. en filas separadas | Must |
+| FORM-15 | Detalle `/formularios/$id`: en móvil PDF en visor interno (`PdfPreviewDialog`) con Descargar; en escritorio abre en pestaña nueva; fotos ampliables (`PhotoLightboxDialog`); mapa; contribuyente y C.I. en filas separadas | Must |
 | FORM-16 | PDF con QR de verificación pública; solo si `activo` y `superficie` definida | Must |
 | FORM-17 | Baja: operador y admin en `activo`; observación obligatoria; hasta 2 fotos nuevas (Storage `formulario-baja-fotos`); PDF «BAJA DE ACTIVIDAD ECONÓMICA» guardado en Storage (`formulario-baja-pdf`, sin descarga automática); fecha en PDF = fecha de baja; sin procedente/padrón/bebidas; anulación solo observación | Must |
-| FORM-21 | En detalle `baja`: botones «PDF registro» y «PDF baja» abren el mismo visor interno con Descargar PDF | Must |
+| FORM-21 | En detalle `baja`: botones «PDF registro» y «PDF baja» (móvil: visor + Descargar; escritorio: pestaña nueva) | Must |
 | FORM-18 | Tarjetas en móvil, tabla en escritorio (patrón `DataListCard`) | Must |
 | FORM-19 | En móvil, filtros en una sola fila con desplazamiento horizontal | Should |
 | FORM-20 | Campos de verificación no completados (`pendiente_verificacion` y `superficie` nula): mostrar `—` en detalle, PDF y reportes (no valores por defecto de BD) | Must |
@@ -243,7 +243,7 @@ Unificar en una sola plataforma web responsive (móvil + escritorio) el ciclo: *
 | NOT-06 | Estados: `pendiente` → `cumplido` \| `anulado` | Must |
 | NOT-07 | Editar solo en estado `pendiente` | Must |
 | NOT-08 | Anular requiere observación en `observacion_seguimiento` | Must |
-| NOT-09 | PDF institucional + QR con URL `/verificacion/{id}`; en detalle se muestra en visor interno con Descargar PDF | Must |
+| NOT-09 | PDF institucional + QR con URL `/verificacion/{id}`; en detalle: móvil = visor + Descargar, escritorio = pestaña nueva | Must |
 | NOT-10 | Vista pública `/verificacion/$id` sin login (server function + service role) | Must |
 | NOT-11 | Compatibilidad QR antiguo `/v/notificacion?d=` | Should |
 | NOT-12 | Filtros de lista: Todas / Pendientes / Cumplidas / Anuladas; URL `?estado=`; página de listado en URL `?page=` (se conserva al volver del detalle) | Must |
@@ -624,7 +624,8 @@ Reportes, Usuarios y Perfil accesibles desde el menú lateral.
 | 1.4.9 | Jul 2026 | Popup cómo llegar | En mapa estático del detalle, el pin es clicable y muestra «Abrir en Google Maps — cómo llegar» |
 | 1.4.10 | Jul 2026 | CTA cómo llegar | Botón «Cómo llegar en Google Maps» con estilo primario; se quita el texto auxiliar bajo el mapa |
 | 1.4.11 | Jul 2026 | Texto overlay foto | Overlay de compresión: quita «No usa internet»; deja «Puede tardar unos segundos» |
+| 1.4.12 | Jul 2026 | PDF según dispositivo | Móvil: visor in-app + Descargar; escritorio/laptop: abre PDF en pestaña nueva (`prefersPdfInAppPreview`) |
 
 ---
 
-*Este PRD refleja el estado del producto según el código fuente del repositorio `sirat` (rama `main`, versión 1.0.115). Ante divergencias entre este documento y el código, prevalece el comportamiento implementado hasta que se actualice el PRD.*
+*Este PRD refleja el estado del producto según el código fuente del repositorio `sirat` (rama `main`, versión 1.0.116). Ante divergencias entre este documento y el código, prevalece el comportamiento implementado hasta que se actualice el PRD.*

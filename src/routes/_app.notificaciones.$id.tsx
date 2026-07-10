@@ -53,6 +53,8 @@ import { NOTIFICACION_GESTIONES_ADEUDADAS_LABEL } from "@/lib/sirat-brand";
 import { appendObservacionSeguimiento } from "@/lib/sirat-forms";
 import { ObservacionRequeridaDialog } from "@/components/ObservacionRequeridaDialog";
 import { PdfPreviewDialog } from "@/components/PdfPreviewDialog";
+import { openPdfBlob } from "@/lib/download-file";
+import { prefersPdfInAppPreview } from "@/lib/pdf-present";
 import { notifListSearchFromStorage } from "@/lib/notificacion-list-search";
 
 export const Route = createFileRoute("/_app/notificaciones/$id")({ component: Detalle });
@@ -162,7 +164,11 @@ function Detalle() {
         veces_notificado: veces,
         usuario: profile?.full_name ?? profile?.email ?? undefined,
       });
-      setPdfPreview({ blob, filename });
+      if (prefersPdfInAppPreview()) {
+        setPdfPreview({ blob, filename });
+      } else {
+        openPdfBlob(blob, filename);
+      }
     } catch (e) {
       console.error(e);
       toast.error(e instanceof Error ? e.message : "No se pudo generar el PDF.");
