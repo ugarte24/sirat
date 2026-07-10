@@ -39,7 +39,7 @@ function mapaVacioMensaje(
 }
 
 const MAPA_SELECT =
-  "id,latitud,longitud,razon_social,direccion,referencia,estado,mapa_zoom,contribuyente:contribuyentes(nombre_completo)";
+  "id,latitud,longitud,razon_social,direccion,referencia,estado,mapa_zoom,fecha,contribuyente:contribuyentes(nombre_completo)";
 
 export const Route = createFileRoute("/_app/mapa")({
   validateSearch: (raw: Record<string, unknown>): MapaSearch => ({
@@ -247,9 +247,11 @@ function Mapa() {
           ) : (
             <MapPicker
               readOnly
+              showLocateButton
               markers={markers.length > 0 ? markers : undefined}
               height="100%"
               openPopupOnLoad={modoActividad && markers.length === 1}
+              onLocateError={(msg) => toast.error(msg)}
             />
           )}
         </div>

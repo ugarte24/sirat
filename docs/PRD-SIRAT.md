@@ -4,8 +4,8 @@
 | Campo | Valor |
 |-------|-------|
 | **Cliente** | Gobierno Autónomo Municipal de Riberalta — Jefatura de Recaudaciones |
-| **Versión del documento** | 1.4.1 |
-| **Versión del producto** | 1.0.110 |
+| **Versión del documento** | 1.4.10 |
+| **Versión del producto** | 1.0.112 |
 | **Fecha** | Mayo 2026 |
 | **Estado** | Basado en el código en producción/desarrollo actual |
 
@@ -161,7 +161,7 @@ Unificar en una sola plataforma web responsive (móvil + escritorio) el ciclo: *
 |----|-----------|-----------|
 | CONT-01 | Alta con C.I. (única), nombre completo, teléfono opcional | Must |
 | CONT-02 | Normalizar textos a MAYÚSCULAS (`es-BO`) al guardar | Must |
-| CONT-03 | Lista paginada (20/página), orden por fecha de creación descendente | Must |
+| CONT-03 | Lista paginada (20/página), orden por fecha de creación descendente; página en URL `?page=` (se conserva al volver del detalle) | Must |
 | CONT-04 | Búsqueda por nombre o C.I. (debounce 400 ms) | Must |
 | CONT-05 | Alta en diálogo modal; edición en diálogo desde menú ⋮ o botón lápiz (no al abrir detalle) | Must |
 | CONT-06 | Detalle en `/contribuyentes/$id` **solo lectura** (`DetailTemplate`): C.I., nombre, celular, fecha de registro, formularios vinculados, conteo de notificaciones | Must |
@@ -202,7 +202,7 @@ Unificar en una sola plataforma web responsive (móvil + escritorio) el ciclo: *
 | FORM-07 | Superficie > 0 m² | Must |
 | FORM-08 | Campo `procedente` (sí/no) obligatorio | Must |
 | FORM-09 | Al menos uno de: `padron` o `bebidas_alcoholicas` | Must |
-| FORM-10 | Hasta 3 fotos (máx. 500 KB c/u, compresión cliente) | Must |
+| FORM-10 | Hasta 3 fotos (máx. 500 KB c/u, compresión cliente); mientras comprime: overlay con spinner y mensaje «Optimizando foto en el dispositivo… / No usa internet» | Must |
 | FORM-11 | Al completar: `estado = activo`, `verificado_por`, `verificado_at` | Must |
 | FORM-12 | Edición por pestañas Registro / Verificación en diálogo; cerrar diálogo tras guardar etapa 1 o verificación | Must |
 | FORM-24 | En `pendiente_verificacion`: botón **Registrar visita sin verificar** (motivo, fecha, observación opcional); tabla `formulario_visita_verificacion`; el formulario **no** pasa a `activo` | Must |
@@ -219,12 +219,12 @@ Unificar en una sola plataforma web responsive (móvil + escritorio) el ciclo: *
 
 | ID | Requisito | Prioridad |
 |----|-----------|-----------|
-| FORM-13 | Filtros de lista: Todos / Pendientes / Verificados / Baja / Anulados; sincronizados con URL `?filtro=` | Must |
+| FORM-13 | Filtros de lista: Todos / Pendientes / Verificados / Baja / Anulados; URL `?filtro=`; página en `?page=` (se conserva al volver del detalle) | Must |
 | FORM-14 | Búsqueda por razón social o contribuyente | Must |
-| FORM-15 | Detalle `/formularios/$id` con PDF (abre en una sola pestaña nueva del navegador, sin descarga forzada), fotos, mapa; contribuyente y C.I. en filas separadas | Must |
+| FORM-15 | Detalle `/formularios/$id` con PDF en visor interno (`PdfPreviewDialog`) y botón Descargar PDF (para compartir p. ej. por WhatsApp); fotos ampliables al tocar (`PhotoLightboxDialog`); mapa; contribuyente y C.I. en filas separadas | Must |
 | FORM-16 | PDF con QR de verificación pública; solo si `activo` y `superficie` definida | Must |
 | FORM-17 | Baja: operador y admin en `activo`; observación obligatoria; hasta 2 fotos nuevas (Storage `formulario-baja-fotos`); PDF «BAJA DE ACTIVIDAD ECONÓMICA» guardado en Storage (`formulario-baja-pdf`, sin descarga automática); fecha en PDF = fecha de baja; sin procedente/padrón/bebidas; anulación solo observación | Must |
-| FORM-21 | En detalle `baja`: botones «PDF registro» (verificación, intacto) y «PDF baja» (archivo guardado) | Must |
+| FORM-21 | En detalle `baja`: botones «PDF registro» y «PDF baja» abren el mismo visor interno con Descargar PDF | Must |
 | FORM-18 | Tarjetas en móvil, tabla en escritorio (patrón `DataListCard`) | Must |
 | FORM-19 | En móvil, filtros en una sola fila con desplazamiento horizontal | Should |
 | FORM-20 | Campos de verificación no completados (`pendiente_verificacion` y `superficie` nula): mostrar `—` en detalle, PDF y reportes (no valores por defecto de BD) | Must |
@@ -243,15 +243,15 @@ Unificar en una sola plataforma web responsive (móvil + escritorio) el ciclo: *
 | NOT-06 | Estados: `pendiente` → `cumplido` \| `anulado` | Must |
 | NOT-07 | Editar solo en estado `pendiente` | Must |
 | NOT-08 | Anular requiere observación en `observacion_seguimiento` | Must |
-| NOT-09 | PDF institucional + QR con URL `/verificacion/{id}` | Must |
+| NOT-09 | PDF institucional + QR con URL `/verificacion/{id}`; en detalle se muestra en visor interno con Descargar PDF | Must |
 | NOT-10 | Vista pública `/verificacion/$id` sin login (server function + service role) | Must |
 | NOT-11 | Compatibilidad QR antiguo `/v/notificacion?d=` | Should |
-| NOT-12 | Filtros de lista: Todas / Pendientes / Cumplidas / Anuladas; URL `?estado=` | Must |
+| NOT-12 | Filtros de lista: Todas / Pendientes / Cumplidas / Anuladas; URL `?estado=`; página de listado en URL `?page=` (se conserva al volver del detalle) | Must |
 | NOT-13 | Tarjetas en móvil, tabla en escritorio (patrón `DataListCard`) | Must |
 | NOT-14 | **Volver a notificar** solo en estado `pendiente`: registra nueva `fecha_limite`, incrementa `veces_notificado`, mantiene el mismo `id`/QR | Must |
 | NOT-15 | Historial append-only (`notificacion_historial`): cada fecha límite con número, fecha y observación opcional; visible en detalle; edición no cambia fecha (solo renotificar) | Must |
 | NOT-16 | Detalle de notificación alineado a plantilla institucional (secciones Contribuyente / Notificación tributaria / Seguimiento); barra de acciones compacta | Should |
-| NOT-17 | Enlace «Cómo llegar en Google Maps» en mapas de solo lectura (detalle notificación y formulario) | Should |
+| NOT-17 | Enlace «Cómo llegar en Google Maps» en mapas de solo lectura (detalle notificación y formulario); al tocar el pin se abre popup con el mismo enlace | Should |
 | NOT-18 | PDF y vista pública muestran `veces_notificado` (N.º de notificación) además de la fecha límite vigente | Must |
 | NOT-19 | Menú «Más acciones» (operador y admin en `pendiente`): marcar cumplida con confirmación; anular con observación obligatoria | Must |
 | NOT-20 | Reabrir (`cumplido` → `pendiente`): **solo admin** en «Más acciones», con observación obligatoria; el operador conserva PDF, QR, editar y renotificar según estado | Must |
@@ -269,6 +269,8 @@ Unificar en una sola plataforma web responsive (móvil + escritorio) el ciclo: *
 | MAP-07 | Mensaje contextual en vacío según filtro (p. ej. «Sin actividades pendientes») | Should |
 | MAP-08 | Contornos de zona A–E (líneas) visibles si el admin los configuró; leyenda de colores | Must |
 | MAP-09 | Mapa visible aunque no haya actividades, para consultar límites de zona | Should |
+| MAP-10 | Botón «Mi ubicación» en `/mapa`: centra la vista y marca la posición del operador sin alterar pines de actividades | Must |
+| MAP-11 | Popup del pin: razón social, estado, fecha de registro, contribuyente, dirección, referencia y enlace a Google Maps | Must |
 
 ### 6.9 Zonas (`/zonas`) — solo admin
 
@@ -612,7 +614,16 @@ Reportes, Usuarios y Perfil accesibles desde el menú lateral.
 | 1.3.9 | Jul 2026 | Visitas sin verificar | Tabla `formulario_visita_verificacion`; registro de visitas en etapa 2 sin cambiar estado; historial en gestión y detalle; sin fotos |
 | 1.4.0 | Jul 2026 | Producto v1.0.109 | Anti doble envío en formularios y diálogos; título de sección formularios; script duplicados notificaciones |
 | 1.4.1 | Jul 2026 | PDF una sola pestaña | Corrige apertura duplicada del PDF: `openPdfBlob` ya no usa `noopener` en `window.open` (evitaba detectar la pestaña y disparaba un segundo fallback) |
+| 1.4.2 | Jul 2026 | Visor PDF in-app | Botones PDF (formulario, baja, fotos, notificación) abren `PdfPreviewDialog` con vista previa y Descargar PDF para compartir (p. ej. WhatsApp) |
+| 1.4.3 | Jul 2026 | Página lista notificaciones | La paginación del listado se guarda en `?page=` y al volver del detalle se restaura la misma página y filtro |
+| 1.4.4 | Jul 2026 | Página listas con detalle | Mismo patrón en formularios (`?filtro=` + `?page=`) y contribuyentes (`?page=`); helper compartido `list-search` |
+| 1.4.5 | Jul 2026 | Mi ubicación en mapa | Botón «Mi ubicación» en `/mapa` (solo lectura): centra vista y muestra punto azul sin mover pines de actividades |
+| 1.4.6 | Jul 2026 | Fecha en popup mapa | El popup del pin en `/mapa` muestra la fecha de registro de la actividad |
+| 1.4.7 | Jul 2026 | Overlay compresión foto | Mientras se optimiza una foto: bloqueo visual con spinner y aviso de que no usa internet (verificación, edición, baja) |
+| 1.4.8 | Jul 2026 | Lightbox fotos detalle | En detalle del formulario, tocar una foto abre vista ampliada con navegación entre fotos |
+| 1.4.9 | Jul 2026 | Popup cómo llegar | En mapa estático del detalle, el pin es clicable y muestra «Abrir en Google Maps — cómo llegar» |
+| 1.4.10 | Jul 2026 | CTA cómo llegar | Botón «Cómo llegar en Google Maps» con estilo primario; se quita el texto auxiliar bajo el mapa |
 
 ---
 
-*Este PRD refleja el estado del producto según el código fuente del repositorio `sirat` (rama `main`, versión 1.0.110). Ante divergencias entre este documento y el código, prevalece el comportamiento implementado hasta que se actualice el PRD.*
+*Este PRD refleja el estado del producto según el código fuente del repositorio `sirat` (rama `main`, versión 1.0.111). Ante divergencias entre este documento y el código, prevalece el comportamiento implementado hasta que se actualice el PRD.*

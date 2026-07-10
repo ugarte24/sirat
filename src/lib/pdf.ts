@@ -1,7 +1,7 @@
 import jsPDF from "jspdf";
 import QRCode from "qrcode";
 import { formatDateEsBo } from "@/lib/date";
-import { applySiratPdfPageNumbers, downloadBlob, downloadJsPdf } from "@/lib/download-file";
+import { applySiratPdfPageNumbers, downloadBlob } from "@/lib/download-file";
 import {
   drawFormularioAmbientesYInfoSideBySide,
   drawFormularioBajaObservacionSection,
@@ -356,21 +356,27 @@ export async function buildFormularioPdfDoc(d: FormularioData): Promise<{
 
 export async function buildFormularioPdfBlob(
   d: FormularioData,
-): Promise<{ blob: Blob; filename: string }> {
-  const { doc } = await buildFormularioPdfDoc(d);
+): Promise<{
+  blob: Blob;
+  filename: string;
+  fotosIncluidas: number;
+  fotosSolicitadas: number;
+}> {
+  const { doc, fotosIncluidas, fotosSolicitadas } = await buildFormularioPdfDoc(d);
   applySiratPdfPageNumbers(doc);
   return {
     blob: doc.output("blob") as Blob,
     filename: formularioPdfFilename(d.razon_social),
+    fotosIncluidas,
+    fotosSolicitadas,
   };
 }
 
 export async function generateFormularioPDF(
   d: FormularioData,
 ): Promise<{ fotosIncluidas: number; fotosSolicitadas: number }> {
-  const { doc, fotosIncluidas, fotosSolicitadas } = await buildFormularioPdfDoc(d);
-  applySiratPdfPageNumbers(doc);
-  downloadJsPdf(doc, formularioPdfFilename(d.razon_social));
+  const { blob, filename, fotosIncluidas, fotosSolicitadas } = await buildFormularioPdfBlob(d);
+  downloadBlob(blob, filename, "pdf");
   return { fotosIncluidas, fotosSolicitadas };
 }
 
@@ -617,7 +623,9 @@ export interface FormularioFotosPdfOpts {
 }
 
 /** PDF solo con las fotos del formulario (A4, listo para imprimir). */
-export async function generateFormularioFotosPDF(opts: FormularioFotosPdfOpts): Promise<void> {
+export async function buildFormularioFotosPdfBlob(
+  opts: FormularioFotosPdfOpts,
+): Promise<{ blob: Blob; filename: string }> {
   const photos = normalizeFormularioPhotos(opts);
   if (!photos.length) throw new Error("Sin fotos");
 
@@ -627,6 +635,12 @@ export async function generateFormularioFotosPDF(opts: FormularioFotosPdfOpts): 
     usuario: opts.usuario,
     startWithNewPage: false,
   });
+  applySiratPdfPageNumbers(doc);
+  const filename = formularioPdfFilename(opts.razon_social ?? "formulario", "fotos");
+  return { blob: doc.output("blob") as Blob, filename };
+}
 
-  downloadJsPdf(doc, formularioPdfFilename(opts.razon_social ?? "formulario", "fotos"));
+export async function generateFormularioFotosPDF(opts: FormularioFotosPdfOpts): Promise<void> {
+  const { blob, filename } = await buildFormularioFotosPdfBlob(opts);
+  downloadBlob(blob, filename, "pdf");
 }

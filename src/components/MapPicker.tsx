@@ -10,6 +10,7 @@ import {
   zonaDesdeCoordenadas,
   type ZonaDivisionRow,
 } from "@/lib/zona-limites";
+import { googleMapsDirectionsUrl } from "@/lib/mapa-actividades";
 import type { Database } from "@/integrations/supabase/types";
 
 type ZonaTipo = Database["public"]["Enums"]["zona_tipo"];
@@ -61,6 +62,11 @@ interface Props {
   showZonaLimites?: boolean;
   /** Al colocar el pin, devuelve la zona detectada según los límites dibujados. */
   onZonaDetected?: (zona: ZonaTipo | null) => void;
+  /**
+   * Botón «Mi ubicación». Por defecto: visible si el mapa es editable.
+   * En solo lectura centra la vista sin mover pines de actividades.
+   */
+  showLocateButton?: boolean;
 }
 
 /** Zoom por defecto al abrir el mapa editable sin valor guardado. */
@@ -119,6 +125,11 @@ function safeInvalidate(map: L.Map) {
   }
 }
 
+function directionsPopupHtml(lat: number, lng: number): string {
+  const url = googleMapsDirectionsUrl(lat, lng);
+  return `<div class="sirat-map-popup"><p class="sirat-map-popup__link"><a href="${url}" target="_blank" rel="noopener noreferrer">Abrir en Google Maps — cómo llegar</a></p></div>`;
+}
+
 function leafletMapOptions(staticPreview: boolean): L.MapOptions {
   if (!staticPreview) return {};
   return {
@@ -158,10 +169,14 @@ export function MapPicker({
   directionsLink = false,
   showZonaLimites = true,
   onZonaDetected,
+  showLocateButton,
 }: Props) {
+  const locateVisible = showLocateButton ?? (!readOnly && !staticPreview);
   const ref = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
+  /** Marcador temporal de «Mi ubicación» en mapas de solo lectura. */
+  const locateMarkerRef = useRef<L.CircleMarker | null>(null);
   /** Marcadores de solo lectura (`markers` prop), actualizables cuando llegan datos asíncronos */
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
   const zonaLimitesLayerRef = useRef<L.LayerGroup | null>(null);
@@ -230,7 +245,11 @@ export function MapPicker({
       }
 
       if (lat != null && lng != null) {
-        markerRef.current = L.marker([lat, lng]).addTo(map);
+        const mk = L.marker([lat, lng]).addTo(map);
+        if (readOnly) {
+          mk.bindPopup(directionsPopupHtml(lat, lng));
+        }
+        markerRef.current = mk;
       }
 
       if (!readOnly) {
@@ -276,6 +295,7 @@ export function MapPicker({
           mapRef.current = null;
         }
         markerRef.current = null;
+        locateMarkerRef.current = null;
         markersLayerRef.current = null;
         zonaLimitesLayerRef.current = null;
       };
@@ -303,6 +323,7 @@ export function MapPicker({
         mapRef.current = null;
       }
       markerRef.current = null;
+      locateMarkerRef.current = null;
       markersLayerRef.current = null;
       zonaLimitesLayerRef.current = null;
     };
@@ -388,8 +409,14 @@ export function MapPicker({
     }
     try {
       if (lat != null && lng != null) {
-        if (markerRef.current) markerRef.current.setLatLng([lat, lng]);
-        else markerRef.current = L.marker([lat, lng]).addTo(map);
+        if (markerRef.current) {
+          markerRef.current.setLatLng([lat, lng]);
+          if (readOnly) markerRef.current.bindPopup(directionsPopupHtml(lat, lng));
+        } else {
+          const mk = L.marker([lat, lng]).addTo(map);
+          if (readOnly) mk.bindPopup(directionsPopupHtml(lat, lng));
+          markerRef.current = mk;
+        }
       }
     } catch {
       /* */
@@ -439,7 +466,7 @@ export function MapPicker({
   }, [centerToCoordsToken, lat, lng]);
 
   const handleLocate = () => {
-    if (readOnly) return;
+    if (staticPreview) return;
     if (!navigator.geolocation) {
       onLocateError?.("Este dispositivo no permite obtener la ubicación.");
       return;
@@ -452,11 +479,28 @@ export function MapPicker({
         if (!map) return;
         const z = Math.max(map.getZoom(), UBICACION_MAP_ZOOM);
         map.setView([la, ln], z);
-        if (markerRef.current) markerRef.current.setLatLng([la, ln]);
-        else markerRef.current = L.marker([la, ln]).addTo(map);
-        onChangeRef.current?.(la, ln);
-        notifyZona(la, ln);
-        onZoomChangeRef.current?.(z);
+
+        if (readOnly) {
+          if (locateMarkerRef.current) {
+            locateMarkerRef.current.setLatLng([la, ln]);
+          } else {
+            locateMarkerRef.current = L.circleMarker([la, ln], {
+              radius: 8,
+              color: "#1d4ed8",
+              weight: 2,
+              fillColor: "#3b82f6",
+              fillOpacity: 0.9,
+            })
+              .bindPopup("Mi ubicación")
+              .addTo(map);
+          }
+        } else {
+          if (markerRef.current) markerRef.current.setLatLng([la, ln]);
+          else markerRef.current = L.marker([la, ln]).addTo(map);
+          onChangeRef.current?.(la, ln);
+          notifyZona(la, ln);
+          onZoomChangeRef.current?.(z);
+        }
         requestAnimationFrame(() => safeInvalidate(map));
       },
       (err) => {
@@ -480,7 +524,7 @@ export function MapPicker({
       style={{ height }}
     >
       <div ref={ref} className="h-full w-full min-h-[200px]" />
-      {!readOnly && (
+      {locateVisible && (
         <Button
           type="button"
           variant="secondary"

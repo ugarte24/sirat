@@ -44,22 +44,22 @@ import type { ContribuyenteCatalogRow, TipoTramiteCatalogRow } from "@/lib/sirat
 import { formatDateEsBo } from "@/lib/date";
 import { cn } from "@/lib/utils";
 import { REOPEN_VERIFICAR_STORAGE_KEY } from "@/lib/formulario-navigation";
+import { withListPage } from "@/lib/list-search";
+import {
+  parseFormListFiltro,
+  parseFormListPage,
+  saveFormListSearch,
+  type FormListFiltro,
+} from "@/lib/formulario-list-search";
 
-type FormSearch = { nuevo?: boolean; editar?: string; verificar?: string; filtro?: ListFiltro };
-type ListFiltro = "todos" | "pendientes" | "activos" | "baja" | "anulado";
-
-function parseListFiltro(raw: unknown): ListFiltro | undefined {
-  if (
-    raw === "todos" ||
-    raw === "pendientes" ||
-    raw === "activos" ||
-    raw === "baja" ||
-    raw === "anulado"
-  ) {
-    return raw;
-  }
-  return undefined;
-}
+type FormSearch = {
+  nuevo?: boolean;
+  editar?: string;
+  verificar?: string;
+  filtro?: FormListFiltro;
+  page?: number;
+};
+type ListFiltro = FormListFiltro;
 
 type FormRow = Pick<
   Database["public"]["Tables"]["formularios"]["Row"],
@@ -78,7 +78,8 @@ export const Route = createFileRoute("/_app/formularios/")({
     editar: typeof raw.editar === "string" && raw.editar.length > 0 ? raw.editar : undefined,
     verificar:
       typeof raw.verificar === "string" && raw.verificar.length > 0 ? raw.verificar : undefined,
-    filtro: parseListFiltro(raw.filtro),
+    filtro: parseFormListFiltro(raw.filtro),
+    page: parseFormListPage(raw.page),
   }),
   component: Lista,
 });
@@ -161,10 +162,10 @@ function FormEstadoPill({
 
 function Lista() {
   const navigate = useNavigate();
-  const { nuevo, editar, verificar, filtro: filtroSearch } = Route.useSearch();
+  const { nuevo, editar, verificar, filtro: filtroSearch, page: pageSearch } = Route.useSearch();
   const [list, setList] = useState<FormRow[]>([]);
   const [total, setTotal] = useState<number | null>(null);
-  const [page, setPage] = useState(0);
+  const page = Math.max(0, (pageSearch ?? 1) - 1);
   const [qInput, setQInput] = useState("");
   const [qDeb, setQDeb] = useState("");
   const [loading, setLoading] = useState(true);
@@ -180,6 +181,7 @@ function Lista() {
   const dialogModeRef = useRef(dialogMode);
   const editIdRef = useRef(editId);
   const gestionTabRef = useRef(gestionTab);
+  const prevQDebRef = useRef(qDeb);
   dialogModeRef.current = dialogMode;
   editIdRef.current = editId;
   gestionTabRef.current = gestionTab;
@@ -205,8 +207,19 @@ function Lista() {
           const next = { ...(prev as FormSearch) };
           if (key === "todos") delete next.filtro;
           else next.filtro = key;
+          delete next.page;
           return next;
         },
+        replace: true,
+      });
+    },
+    [navigate],
+  );
+
+  const setPage = useCallback(
+    (nextPageIndex: number) => {
+      void navigate({
+        search: (prev) => withListPage(prev as FormSearch, nextPageIndex),
         replace: true,
       });
     },
@@ -219,8 +232,33 @@ function Lista() {
   }, [qInput]);
 
   useEffect(() => {
-    setPage(0);
-  }, [qDeb, activeFiltro]);
+    if (prevQDebRef.current === qDeb) return;
+    prevQDebRef.current = qDeb;
+    if (pageSearch && pageSearch > 1) {
+      void navigate({
+        search: (prev) => {
+          const next = { ...(prev as FormSearch) };
+          delete next.page;
+          return next;
+        },
+        replace: true,
+      });
+    }
+  }, [qDeb, pageSearch, navigate]);
+
+  useEffect(() => {
+    saveFormListSearch({
+      filtro: filtroSearch,
+      page: pageSearch,
+    });
+  }, [filtroSearch, pageSearch]);
+
+  const goToDetalle = useCallback(
+    (id: string) => {
+      void navigate({ to: "/formularios/$id", params: { id } });
+    },
+    [navigate],
+  );
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -528,11 +566,11 @@ function Lista() {
                 role="button"
                 tabIndex={0}
                 className="w-full cursor-pointer px-4 py-3.5 text-left hover:bg-muted/40 active:bg-muted/60"
-                onClick={() => navigate({ to: "/formularios/$id", params: { id: f.id } })}
+                onClick={() => goToDetalle(f.id)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
-                    navigate({ to: "/formularios/$id", params: { id: f.id } });
+                    goToDetalle(f.id);
                   }
                 }}
               >
@@ -586,7 +624,7 @@ function Lista() {
                   <TableRow
                     key={f.id}
                     className="cursor-pointer border-b border-border/60 hover:bg-muted/40"
-                    onClick={() => navigate({ to: "/formularios/$id", params: { id: f.id } })}
+                    onClick={() => goToDetalle(f.id)}
                   >
                     <DataListTd className="whitespace-nowrap text-muted-foreground">
                       {formatDateEsBo(f.fecha)}

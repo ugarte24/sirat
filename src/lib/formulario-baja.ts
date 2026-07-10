@@ -33,14 +33,25 @@ function bajaPdfStoragePath(formularioId: string): string {
   return `${formularioId}/baja.pdf`;
 }
 
+export async function fetchFormularioBajaPdfBlob(
+  supabase: SupabaseClient,
+  storagePath: string,
+  filename: string,
+): Promise<{ blob: Blob; filename: string }> {
+  const { data, error } = await supabase.storage.from(FORMULARIO_BAJA_PDF_BUCKET).download(storagePath);
+  if (error || !data) throw new Error(error?.message ?? "No se pudo descargar el PDF de baja.");
+  const blob =
+    data.type === "application/pdf" ? data : new Blob([data], { type: "application/pdf" });
+  return { blob, filename };
+}
+
 export async function downloadFormularioBajaPdf(
   supabase: SupabaseClient,
   storagePath: string,
   filename: string,
 ): Promise<void> {
-  const { data, error } = await supabase.storage.from(FORMULARIO_BAJA_PDF_BUCKET).download(storagePath);
-  if (error || !data) throw new Error(error?.message ?? "No se pudo descargar el PDF de baja.");
-  openPdfBlob(data, filename);
+  const { blob, filename: name } = await fetchFormularioBajaPdfBlob(supabase, storagePath, filename);
+  openPdfBlob(blob, name);
 }
 
 export async function uploadFormularioBajaFotos(

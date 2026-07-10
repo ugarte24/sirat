@@ -13,6 +13,7 @@ import { FORMULARIO_VERIFICACION_SECCION } from "@/lib/sirat-brand";
 import { formatDateEsBo } from "@/lib/date";
 import type { Database } from "@/integrations/supabase/types";
 import { ArrowLeft, ChevronRight } from "lucide-react";
+import { contribListSearchFromStorage } from "@/lib/contribuyente-list-search";
 
 type FormularioEstado = Database["public"]["Enums"]["formulario_estado"];
 
@@ -144,7 +145,7 @@ function BackLink() {
       className="-ml-2 gap-1.5 px-2 text-muted-foreground hover:text-foreground"
       asChild
     >
-      <Link to="/contribuyentes">
+      <Link to="/contribuyentes" search={contribListSearchFromStorage()}>
         <ArrowLeft className="h-4 w-4 shrink-0" />
         Volver a contribuyentes
       </Link>

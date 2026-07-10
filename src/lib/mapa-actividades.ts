@@ -1,6 +1,7 @@
 import type { Database } from "@/integrations/supabase/types";
 import type { MapMarkerVariant, MapPickerMarker } from "@/components/MapPicker";
 import type { FormularioNuevoState } from "@/lib/sirat-forms";
+import { formatDateEsBo } from "@/lib/date";
 
 type FormularioEstado = Database["public"]["Enums"]["formulario_estado"];
 
@@ -13,6 +14,8 @@ export type FormularioMapaRow = {
   referencia: string;
   estado: FormularioEstado;
   mapa_zoom: number | null;
+  /** Fecha de registro (YYYY-MM-DD). */
+  fecha: string;
   contribuyente: { nombre_completo: string } | null;
 };
 
@@ -84,6 +87,7 @@ export function formularioRowToMapMarker(f: FormularioMapaRow): MapPickerMarker 
   const lines = [
     f.razon_social ? `<strong>${escHtml(String(f.razon_social))}</strong>` : "",
     `<span class="sirat-map-popup__estado">${escHtml(estadoEtiquetaMapa(f.estado))}</span>`,
+    f.fecha ? `Fecha de registro: ${escHtml(formatDateEsBo(f.fecha))}` : "",
     f.contribuyente?.nombre_completo
       ? `Contribuyente: ${escHtml(f.contribuyente.nombre_completo)}`
       : "",

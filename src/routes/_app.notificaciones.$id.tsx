@@ -45,13 +45,15 @@ import { NotificacionQrDialog } from "@/components/NotificacionQrDialog";
 import { MapPicker } from "@/components/MapPicker";
 import { buildNotificacionQrPayload } from "@/lib/notificacion-qr";
 import { toast } from "sonner";
-import { generateNotificacionPDF } from "@/lib/pdf";
+import { buildNotificacionPdfBlob } from "@/lib/pdf";
 import { useAuth } from "@/lib/auth";
 import { notificacionConceptosMarcados } from "@/lib/sirat-forms";
 import { formatDateEsBo } from "@/lib/date";
 import { NOTIFICACION_GESTIONES_ADEUDADAS_LABEL } from "@/lib/sirat-brand";
 import { appendObservacionSeguimiento } from "@/lib/sirat-forms";
 import { ObservacionRequeridaDialog } from "@/components/ObservacionRequeridaDialog";
+import { PdfPreviewDialog } from "@/components/PdfPreviewDialog";
+import { notifListSearchFromStorage } from "@/lib/notificacion-list-search";
 
 export const Route = createFileRoute("/_app/notificaciones/$id")({ component: Detalle });
 
@@ -80,6 +82,8 @@ function Detalle() {
   const [cumplidoOpen, setCumplidoOpen] = useState(false);
   const [reabrirOpen, setReabrirOpen] = useState(false);
   const [estadoBusy, setEstadoBusy] = useState(false);
+  const [pdfBusy, setPdfBusy] = useState(false);
+  const [pdfPreview, setPdfPreview] = useState<{ blob: Blob; filename: string } | null>(null);
 
   const reload = useCallback(async () => {
     const { data } = await supabase
@@ -131,7 +135,7 @@ function Detalle() {
     return (
       <div className="space-y-4 max-w-2xl">
         <Button variant="ghost" size="sm" className="-ml-2 gap-1.5 px-2 text-muted-foreground hover:text-foreground" asChild>
-          <Link to="/notificaciones">
+          <Link to="/notificaciones" search={notifListSearchFromStorage()}>
             <ArrowLeft className="h-4 w-4 shrink-0" />
             Volver a notificaciones
           </Link>
@@ -142,20 +146,29 @@ function Detalle() {
   }
 
   const pdf = async () => {
-    await generateNotificacionPDF({
-      id,
-      fecha: n.created_at.slice(0, 10),
-      contribuyente_nombre: contrib?.nombre_completo ?? "—",
-      contribuyente_ci: contrib?.ci ?? "—",
-      nombre_actividad: n.nombre_actividad,
-      numero_identificacion: n.numero_identificacion,
-      direccion: n.direccion,
-      fecha_limite: n.fecha_limite,
-      conceptos,
-      gestiones_adeudadas: n.gestiones_adeudadas,
-      veces_notificado: veces,
-      usuario: profile?.full_name ?? profile?.email ?? undefined,
-    });
+    setPdfBusy(true);
+    try {
+      const { blob, filename } = await buildNotificacionPdfBlob({
+        id,
+        fecha: n.created_at.slice(0, 10),
+        contribuyente_nombre: contrib?.nombre_completo ?? "—",
+        contribuyente_ci: contrib?.ci ?? "—",
+        nombre_actividad: n.nombre_actividad,
+        numero_identificacion: n.numero_identificacion,
+        direccion: n.direccion,
+        fecha_limite: n.fecha_limite,
+        conceptos,
+        gestiones_adeudadas: n.gestiones_adeudadas,
+        veces_notificado: veces,
+        usuario: profile?.full_name ?? profile?.email ?? undefined,
+      });
+      setPdfPreview({ blob, filename });
+    } catch (e) {
+      console.error(e);
+      toast.error(e instanceof Error ? e.message : "No se pudo generar el PDF.");
+    } finally {
+      setPdfBusy(false);
+    }
   };
 
   const renotificar = async (nuevaFechaLimite: string, observacion: string) => {
@@ -224,7 +237,7 @@ function Detalle() {
   return (
     <div className="space-y-4 max-w-2xl">
       <Button variant="ghost" size="sm" className="-ml-2 gap-1.5 px-2 text-muted-foreground hover:text-foreground" asChild>
-        <Link to="/notificaciones">
+        <Link to="/notificaciones" search={notifListSearchFromStorage()}>
           <ArrowLeft className="h-4 w-4 shrink-0" />
           Volver a notificaciones
         </Link>
@@ -248,6 +261,7 @@ function Detalle() {
         <Button
           type="button"
           size="sm"
+          disabled={pdfBusy}
           onClick={() => void pdf()}
           className="bg-gradient-primary shrink-0"
         >
@@ -359,6 +373,16 @@ function Detalle() {
         confirmLabel="Guardar anulación"
         confirmVariant="destructive"
         onConfirm={anularConObservacion}
+      />
+
+      <PdfPreviewDialog
+        open={pdfPreview != null}
+        onOpenChange={(open) => {
+          if (!open) setPdfPreview(null);
+        }}
+        blob={pdfPreview?.blob ?? null}
+        filename={pdfPreview?.filename ?? "notificacion.pdf"}
+        title="Vista previa del PDF"
       />
 
       <RenotificarDialog

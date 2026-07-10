@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -35,14 +35,17 @@ import type { Database } from "@/integrations/supabase/types";
 import type { ContribuyenteCatalogRow } from "@/lib/sirat-forms";
 import { formatDateEsBo, formatDateTimeEsBo } from "@/lib/date";
 import { cn } from "@/lib/utils";
+import {
+  parseNotifEstadoFiltro,
+  parseNotifPage,
+  saveNotifListSearch,
+  type NotifListSearch,
+} from "@/lib/notificacion-list-search";
+import { withListPage } from "@/lib/list-search";
+
 type NotifEstadoFiltro = "pendiente" | "cumplido" | "anulado";
 
-type NotifSearch = { nueva?: boolean; estado?: NotifEstadoFiltro };
-
-function parseNotifEstado(raw: unknown): NotifEstadoFiltro | undefined {
-  if (raw === "pendiente" || raw === "cumplido" || raw === "anulado") return raw;
-  return undefined;
-}
+type NotifSearch = NotifListSearch & { nueva?: boolean };
 
 type NotifRow = Pick<
   Database["public"]["Tables"]["notificaciones"]["Row"],
@@ -58,7 +61,8 @@ export const Route = createFileRoute("/_app/notificaciones/")({
       raw.nueva === 1 ||
       raw.nueva === "1" ||
       raw.nueva === "true",
-    estado: parseNotifEstado(raw.estado),
+    estado: parseNotifEstadoFiltro(raw.estado),
+    page: parseNotifPage(raw.page),
   }),
   component: Lista,
 });
@@ -130,11 +134,12 @@ function notifTitulo(n: NotifRow): string {
 
 function Lista() {
   const navigate = useNavigate();
-  const { nueva, estado: estadoSearch } = Route.useSearch();
+  const { nueva, estado: estadoSearch, page: pageSearch } = Route.useSearch();
   const activeEstado: NotifEstadoFiltro | "todos" = estadoSearch ?? "todos";
+  /** Índice 0-based para el range de Supabase. */
+  const page = Math.max(0, (pageSearch ?? 1) - 1);
   const [list, setList] = useState<NotifRow[]>([]);
   const [total, setTotal] = useState<number | null>(null);
-  const [page, setPage] = useState(0);
   const [qInput, setQInput] = useState("");
   const [qDeb, setQDeb] = useState("");
   const [loading, setLoading] = useState(true);
@@ -152,8 +157,19 @@ function Lista() {
           const next = { ...(prev as NotifSearch) };
           if (key === "todos") delete next.estado;
           else next.estado = key;
+          delete next.page;
           return next;
         },
+        replace: true,
+      });
+    },
+    [navigate],
+  );
+
+  const setPage = useCallback(
+    (nextPageIndex: number) => {
+      void navigate({
+        search: (prev) => withListPage(prev as NotifSearch, nextPageIndex),
         replace: true,
       });
     },
@@ -165,9 +181,35 @@ function Lista() {
     return () => clearTimeout(t);
   }, [qInput]);
 
+  const prevQDebRef = useRef(qDeb);
   useEffect(() => {
-    setPage(0);
-  }, [qDeb, activeEstado]);
+    if (prevQDebRef.current === qDeb) return;
+    prevQDebRef.current = qDeb;
+    if (pageSearch && pageSearch > 1) {
+      void navigate({
+        search: (prev) => {
+          const next = { ...(prev as NotifSearch) };
+          delete next.page;
+          return next;
+        },
+        replace: true,
+      });
+    }
+  }, [qDeb, pageSearch, navigate]);
+
+  useEffect(() => {
+    saveNotifListSearch({
+      estado: estadoSearch,
+      page: pageSearch,
+    });
+  }, [estadoSearch, pageSearch]);
+
+  const goToDetalle = useCallback(
+    (id: string) => {
+      void navigate({ to: "/notificaciones/$id", params: { id } });
+    },
+    [navigate],
+  );
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -376,11 +418,11 @@ function Lista() {
                 role="button"
                 tabIndex={0}
                 className="w-full cursor-pointer px-4 py-3.5 text-left hover:bg-muted/40 active:bg-muted/60"
-                onClick={() => navigate({ to: "/notificaciones/$id", params: { id: n.id } })}
+                onClick={() => goToDetalle(n.id)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
-                    navigate({ to: "/notificaciones/$id", params: { id: n.id } });
+                    goToDetalle(n.id);
                   }
                 }}
               >
@@ -440,7 +482,7 @@ function Lista() {
                   <TableRow
                     key={n.id}
                     className="cursor-pointer border-b border-border/60 hover:bg-muted/40"
-                    onClick={() => navigate({ to: "/notificaciones/$id", params: { id: n.id } })}
+                    onClick={() => goToDetalle(n.id)}
                   >
                     <DataListTd className="whitespace-nowrap text-muted-foreground">
                       {formatDateTimeEsBo(n.created_at)}

@@ -14,15 +14,18 @@ import { ArrowLeft, Ban, FileDown, MoreHorizontal, Pencil, Printer } from "lucid
 import { toast } from "sonner";
 import { MapDirectionsLink } from "@/components/MapDirectionsLink";
 import { MapPicker } from "@/components/MapPicker";
+import { PdfPreviewDialog } from "@/components/PdfPreviewDialog";
+import { PhotoLightboxDialog } from "@/components/PhotoLightboxDialog";
 import { downloadFormularioFoto } from "@/lib/formulario-fotos";
 import {
+  buildFormularioFotosPdfBlob,
+  buildFormularioPdfBlob,
   formularioBajaPdfFilename,
-  generateFormularioPDF,
-  generateFormularioFotosPDF,
 } from "@/lib/pdf";
 import { useAuth } from "@/lib/auth";
 import { FORMULARIO_VERIFICACION_NOMBRE, FORMULARIO_VERIFICACION_SECCION } from "@/lib/sirat-brand";
 import { formatDateEsBo } from "@/lib/date";
+import { formListSearchFromStorage } from "@/lib/formulario-list-search";
 import {
   appendObservacionCambioEstado,
   formularioVerificacionSinCompletar,
@@ -30,7 +33,7 @@ import {
 } from "@/lib/sirat-forms";
 import { ObservacionRequeridaDialog } from "@/components/ObservacionRequeridaDialog";
 import { FormularioBajaDialog } from "@/components/FormularioBajaDialog";
-import { downloadFormularioBajaPdf, ejecutarFormularioBaja } from "@/lib/formulario-baja";
+import { ejecutarFormularioBaja, fetchFormularioBajaPdfBlob } from "@/lib/formulario-baja";
 import {
   ambienteRecordsToPdfRows,
   fetchFormularioAmbientes,
@@ -60,6 +63,12 @@ function Detalle() {
   const [estadoDialog, setEstadoDialog] = useState<FormularioEstadoAccion | null>(null);
   const [bajaDialogOpen, setBajaDialogOpen] = useState(false);
   const [pdfBajaBusy, setPdfBajaBusy] = useState(false);
+  const [pdfPreview, setPdfPreview] = useState<{
+    blob: Blob;
+    filename: string;
+    title: string;
+  } | null>(null);
+  const [photoLightboxIndex, setPhotoLightboxIndex] = useState<number | null>(null);
   const mapCaptureRef = useRef<HTMLDivElement>(null);
   const [ambientes, setAmbientes] = useState<FormularioAmbienteRecord[]>([]);
   const [visitas, setVisitas] = useState<FormularioVisitaRow[]>([]);
@@ -131,7 +140,7 @@ function Detalle() {
     return (
       <div className="space-y-4 max-w-2xl">
         <Button variant="ghost" size="sm" className="-ml-2 gap-1.5 px-2 text-muted-foreground hover:text-foreground" asChild>
-          <Link to="/formularios">
+          <Link to="/formularios" search={formListSearchFromStorage()}>
             <ArrowLeft className="h-4 w-4 shrink-0" />
             Volver a {FORMULARIO_VERIFICACION_SECCION.toLowerCase()}
           </Link>
@@ -162,11 +171,12 @@ function Detalle() {
     }
     setFotosPdfBusy(true);
     try {
-      await generateFormularioFotosPDF({
+      const { blob, filename } = await buildFormularioFotosPdfBlob({
         razon_social: f.razon_social,
         photos: await resolvePhotosForPdf(),
         usuario: profile?.full_name ?? profile?.email ?? undefined,
       });
+      setPdfPreview({ blob, filename, title: "PDF de fotos" });
     } catch (e) {
       console.error(e);
       toast.error(
@@ -233,7 +243,7 @@ function Detalle() {
     }
     setPdfBusy(true);
     try {
-      const { fotosIncluidas, fotosSolicitadas } = await generateFormularioPDF({
+      const { blob, filename, fotosIncluidas, fotosSolicitadas } = await buildFormularioPdfBlob({
         id: f.id,
         fecha: f.fecha,
         razon_social: f.razon_social,
@@ -259,6 +269,11 @@ function Detalle() {
         usuario: profile?.full_name ?? profile?.email ?? undefined,
         ambientes: ambienteRecordsToPdfRows(ambientes),
       });
+      setPdfPreview({
+        blob,
+        filename,
+        title: f.estado === "baja" ? "PDF registro" : "Vista previa del PDF",
+      });
       if (fotosSolicitadas > 0 && fotosIncluidas < fotosSolicitadas) {
         toast.warning(
           `PDF generado, pero solo se incluyeron ${fotosIncluidas} de ${fotosSolicitadas} foto(s).`,
@@ -281,11 +296,12 @@ function Detalle() {
     }
     setPdfBajaBusy(true);
     try {
-      await downloadFormularioBajaPdf(
+      const { blob, filename } = await fetchFormularioBajaPdfBlob(
         supabase,
         f.baja_pdf_path,
         formularioBajaPdfFilename(f.razon_social),
       );
+      setPdfPreview({ blob, filename, title: "PDF de baja" });
     } catch (e) {
       console.error(e);
       toast.error(e instanceof Error ? e.message : "No se pudo abrir el PDF de baja.");
@@ -300,7 +316,7 @@ function Detalle() {
   return (
     <div className="space-y-4 max-w-2xl">
       <Button variant="ghost" size="sm" className="-ml-2 gap-1.5 px-2 text-muted-foreground hover:text-foreground" asChild>
-        <Link to="/formularios">
+        <Link to="/formularios" search={formListSearchFromStorage()}>
           <ArrowLeft className="h-4 w-4 shrink-0" />
           Volver a {FORMULARIO_VERIFICACION_SECCION.toLowerCase()}
         </Link>
@@ -399,6 +415,15 @@ function Detalle() {
         open={bajaDialogOpen}
         onOpenChange={setBajaDialogOpen}
         onConfirm={aplicarBaja}
+      />
+      <PdfPreviewDialog
+        open={pdfPreview != null}
+        onOpenChange={(open) => {
+          if (!open) setPdfPreview(null);
+        }}
+        blob={pdfPreview?.blob ?? null}
+        filename={pdfPreview?.filename ?? "documento.pdf"}
+        title={pdfPreview?.title}
       />
       <ObservacionRequeridaDialog
         open={estadoDialog === "anulado"}
@@ -511,22 +536,46 @@ function Detalle() {
           ) : (
             <div className="grid grid-cols-2 gap-2">
               {photos.map((p, i) => (
-                <img
+                <button
                   key={i}
-                  src={p.url}
-                  className="rounded-md object-cover h-40 w-full"
-                  alt={`Foto ${i + 1}`}
-                />
+                  type="button"
+                  className="group relative overflow-hidden rounded-md border bg-muted/30 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  onClick={() => setPhotoLightboxIndex(i)}
+                  aria-label={`Ver foto ${i + 1} ampliada`}
+                >
+                  <img
+                    src={p.url}
+                    className="h-40 w-full object-cover transition-opacity group-hover:opacity-90"
+                    alt={`Foto ${i + 1}`}
+                  />
+                </button>
               ))}
             </div>
           )}
         </Card>
       )}
 
+      <PhotoLightboxDialog
+        open={photoLightboxIndex != null && photos.length > 0}
+        onOpenChange={(open) => {
+          if (!open) setPhotoLightboxIndex(null);
+        }}
+        urls={photos.map((p) => p.url)}
+        index={photoLightboxIndex ?? 0}
+        onIndexChange={setPhotoLightboxIndex}
+        title="Foto"
+      />
+
       {f.latitud && (
         <Card className="p-3 space-y-2">
           <div ref={mapCaptureRef}>
-            <MapPicker lat={f.latitud} lng={f.longitud} mapZoom={f.mapa_zoom} readOnly staticPreview />
+            <MapPicker
+              lat={f.latitud}
+              lng={f.longitud}
+              mapZoom={f.mapa_zoom}
+              readOnly
+              staticPreview
+            />
           </div>
           <MapDirectionsLink lat={f.latitud} lng={f.longitud} />
         </Card>

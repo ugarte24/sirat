@@ -168,10 +168,16 @@
 
 /* Leaflet */
 .leaflet-container { width: 100%; height: 100%; z-index: 0; }
-/* Detalle formulario: no capturar toques; el scroll vertical pasa a la página */
+/* Detalle formulario: no capturar toques en el mapa (scroll de página);
+   el pin y el popup sí reciben clic para «Cómo llegar». */
 .sirat-map-static-preview .leaflet-container {
   touch-action: pan-y;
   pointer-events: none;
+}
+.sirat-map-static-preview .leaflet-marker-pane,
+.sirat-map-static-preview .leaflet-popup-pane,
+.sirat-map-static-preview .leaflet-tooltip-pane {
+  pointer-events: auto;
 }
 .leaflet-marker-icon.sirat-map-marker-wrap {
   background: transparent !important;

@@ -1,5 +1,5 @@
 ﻿import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -33,8 +33,13 @@ import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 import { formatDateEsBo } from "@/lib/date";
 import { cn } from "@/lib/utils";
+import { withListPage } from "@/lib/list-search";
+import {
+  parseContribListPage,
+  saveContribListSearch,
+} from "@/lib/contribuyente-list-search";
 
-type ContribSearch = { nuevo?: boolean };
+type ContribSearch = { nuevo?: boolean; page?: number };
 
 type ContribRow = Pick<Tables<"contribuyentes">, "id" | "ci" | "nombre_completo" | "telefono" | "created_at">;
 
@@ -49,6 +54,7 @@ export const Route = createFileRoute("/_app/contribuyentes/")({
       raw.nuevo === 1 ||
       raw.nuevo === "1" ||
       raw.nuevo === "true",
+    page: parseContribListPage(raw.page),
   }),
   component: ListaContribuyentes,
 });
@@ -121,10 +127,10 @@ function countByContribuyente(rows: { contribuyente_id: string }[] | null): Map<
 
 function ListaContribuyentes() {
   const navigate = useNavigate();
-  const { nuevo } = Route.useSearch();
+  const { nuevo, page: pageSearch } = Route.useSearch();
   const [list, setList] = useState<ContribListItem[]>([]);
   const [total, setTotal] = useState<number | null>(null);
-  const [page, setPage] = useState(0);
+  const page = Math.max(0, (pageSearch ?? 1) - 1);
   const [qInput, setQInput] = useState("");
   const [qDeb, setQDeb] = useState("");
   const [loading, setLoading] = useState(true);
@@ -132,15 +138,48 @@ function ListaContribuyentes() {
   const [altaKey, setAltaKey] = useState(0);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<ContribListItem | null>(null);
+  const prevQDebRef = useRef(qDeb);
 
   useEffect(() => {
     const t = setTimeout(() => setQDeb(qInput), 400);
     return () => clearTimeout(t);
   }, [qInput]);
 
+  const setPage = useCallback(
+    (nextPageIndex: number) => {
+      void navigate({
+        search: (prev) => withListPage(prev as ContribSearch, nextPageIndex),
+        replace: true,
+      });
+    },
+    [navigate],
+  );
+
   useEffect(() => {
-    setPage(0);
-  }, [qDeb]);
+    if (prevQDebRef.current === qDeb) return;
+    prevQDebRef.current = qDeb;
+    if (pageSearch && pageSearch > 1) {
+      void navigate({
+        search: (prev) => {
+          const next = { ...(prev as ContribSearch) };
+          delete next.page;
+          return next;
+        },
+        replace: true,
+      });
+    }
+  }, [qDeb, pageSearch, navigate]);
+
+  useEffect(() => {
+    saveContribListSearch({ page: pageSearch });
+  }, [pageSearch]);
+
+  const goToDetalle = useCallback(
+    (id: string) => {
+      void navigate({ to: "/contribuyentes/$id", params: { id } });
+    },
+    [navigate],
+  );
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -304,11 +343,11 @@ function ListaContribuyentes() {
                 role="button"
                 tabIndex={0}
                 className="w-full cursor-pointer px-4 py-3.5 text-left hover:bg-muted/40 active:bg-muted/60"
-                onClick={() => navigate({ to: "/contribuyentes/$id", params: { id: c.id } })}
+                onClick={() => goToDetalle(c.id)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
-                    navigate({ to: "/contribuyentes/$id", params: { id: c.id } });
+                    goToDetalle(c.id);
                   }
                 }}
               >

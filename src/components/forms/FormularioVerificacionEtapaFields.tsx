@@ -12,6 +12,8 @@ import type { Database } from "@/integrations/supabase/types";
 import type { FormularioAmbienteRow, FormularioNuevoState } from "@/lib/sirat-forms";
 import { FormularioAmbientesTable } from "@/components/forms/FormularioAmbientesTable";
 import { FORMULARIO_FOTO_MAX_LABEL, FORMULARIO_FOTOS_MAX_COUNT } from "@/lib/formulario-fotos";
+import { PhotoCompressBusy } from "@/components/PhotoCompressBusy";
+import { cn } from "@/lib/utils";
 import {
   formularioStateToMapMarker,
 } from "@/lib/mapa-actividades";
@@ -207,59 +209,72 @@ export function FormularioVerificacionEtapaFields({
             <Label>Fotografías (máximo {maxPhotos})</Label>
             <p className="text-xs text-muted-foreground mt-1">
               Máximo {maxPhotos} fotos; si superan {FORMULARIO_FOTO_MAX_LABEL} se comprimen automáticamente.
-              {photoBusy ? " Comprimiendo…" : ""}
             </p>
           </div>
-          <div className="grid grid-cols-3 gap-2 sm:flex sm:gap-2 sm:flex-wrap">
-            {visibleExisting.map((p) => (
-              <div key={p.id} className="relative aspect-square sm:h-24 sm:w-24 rounded-lg overflow-hidden border">
-                <img src={p.previewUrl} alt="" className="h-full w-full object-cover" />
-                {onRemoveExisting ? (
-                  <button
-                    type="button"
-                    onClick={() => onRemoveExisting(p.id)}
-                    className="absolute top-1 right-1 h-6 w-6 sm:h-5 sm:w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center"
-                  >
-                    <X className="h-3.5 w-3.5 sm:h-3 sm:w-3" />
-                  </button>
-                ) : null}
-              </div>
-            ))}
-            {localPhotos.map((p, i) => (
-              <div key={`${p.previewUrl}-${i}`} className="relative aspect-square sm:h-24 sm:w-24 rounded-lg overflow-hidden border">
-                <img src={p.previewUrl} alt="" className="h-full w-full object-cover" />
-                {onRemoveLocal ? (
-                  <button
-                    type="button"
-                    onClick={() => onRemoveLocal(i)}
-                    className="absolute top-1 right-1 h-6 w-6 sm:h-5 sm:w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center"
-                  >
-                    <X className="h-3.5 w-3.5 sm:h-3 sm:w-3" />
-                  </button>
-                ) : null}
-              </div>
-            ))}
-            {canAdd ? (
-              <>
-                <label className="aspect-square sm:h-24 sm:w-24 rounded-lg border-2 border-dashed flex flex-col items-center justify-center text-muted-foreground cursor-pointer hover:bg-muted active:bg-muted/80 shrink-0">
-                  <Camera className="h-6 w-6 sm:h-5 sm:w-5" aria-hidden />
-                  <span className="text-[11px] sm:text-[10px] mt-1 text-center px-0.5 leading-tight">Cámara</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    className="hidden"
-                    onChange={onAddPhotos}
-                  />
-                </label>
-                <label className="aspect-square sm:h-24 sm:w-24 rounded-lg border-2 border-dashed flex flex-col items-center justify-center text-muted-foreground cursor-pointer hover:bg-muted active:bg-muted/80 shrink-0">
-                  <Images className="h-6 w-6 sm:h-5 sm:w-5" aria-hidden />
-                  <span className="text-[11px] sm:text-[10px] mt-1 text-center px-0.5 leading-tight">Galería</span>
-                  <input type="file" accept="image/*" className="hidden" onChange={onAddPhotos} />
-                </label>
-              </>
-            ) : null}
-          </div>
+          <PhotoCompressBusy active={photoBusy}>
+            <div
+              className={cn(
+                "grid grid-cols-3 gap-2 sm:flex sm:gap-2 sm:flex-wrap",
+                photoBusy && "pointer-events-none select-none",
+              )}
+            >
+              {visibleExisting.map((p) => (
+                <div key={p.id} className="relative aspect-square sm:h-24 sm:w-24 rounded-lg overflow-hidden border">
+                  <img src={p.previewUrl} alt="" className="h-full w-full object-cover" />
+                  {onRemoveExisting ? (
+                    <button
+                      type="button"
+                      onClick={() => onRemoveExisting(p.id)}
+                      className="absolute top-1 right-1 h-6 w-6 sm:h-5 sm:w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center"
+                    >
+                      <X className="h-3.5 w-3.5 sm:h-3 sm:w-3" />
+                    </button>
+                  ) : null}
+                </div>
+              ))}
+              {localPhotos.map((p, i) => (
+                <div key={`${p.previewUrl}-${i}`} className="relative aspect-square sm:h-24 sm:w-24 rounded-lg overflow-hidden border">
+                  <img src={p.previewUrl} alt="" className="h-full w-full object-cover" />
+                  {onRemoveLocal ? (
+                    <button
+                      type="button"
+                      onClick={() => onRemoveLocal(i)}
+                      className="absolute top-1 right-1 h-6 w-6 sm:h-5 sm:w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center"
+                    >
+                      <X className="h-3.5 w-3.5 sm:h-3 sm:w-3" />
+                    </button>
+                  ) : null}
+                </div>
+              ))}
+              {canAdd ? (
+                <>
+                  <label className="aspect-square sm:h-24 sm:w-24 rounded-lg border-2 border-dashed flex flex-col items-center justify-center text-muted-foreground cursor-pointer hover:bg-muted active:bg-muted/80 shrink-0">
+                    <Camera className="h-6 w-6 sm:h-5 sm:w-5" aria-hidden />
+                    <span className="text-[11px] sm:text-[10px] mt-1 text-center px-0.5 leading-tight">Cámara</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      className="hidden"
+                      disabled={photoBusy}
+                      onChange={onAddPhotos}
+                    />
+                  </label>
+                  <label className="aspect-square sm:h-24 sm:w-24 rounded-lg border-2 border-dashed flex flex-col items-center justify-center text-muted-foreground cursor-pointer hover:bg-muted active:bg-muted/80 shrink-0">
+                    <Images className="h-6 w-6 sm:h-5 sm:w-5" aria-hidden />
+                    <span className="text-[11px] sm:text-[10px] mt-1 text-center px-0.5 leading-tight">Galería</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      disabled={photoBusy}
+                      onChange={onAddPhotos}
+                    />
+                  </label>
+                </>
+              ) : null}
+            </div>
+          </PhotoCompressBusy>
         </Card>
       ) : null}
     </>

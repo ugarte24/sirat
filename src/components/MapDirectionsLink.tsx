@@ -17,9 +17,11 @@ export function MapDirectionsLink({ lat, lng, className }: Props) {
   return (
     <Button
       type="button"
-      variant="outline"
       size="sm"
-      className={cn("w-full gap-2", className)}
+      className={cn(
+        "w-full gap-2 bg-gradient-primary text-primary-foreground shadow-md hover:opacity-95",
+        className,
+      )}
       asChild
     >
       <a href={url} target="_blank" rel="noopener noreferrer">

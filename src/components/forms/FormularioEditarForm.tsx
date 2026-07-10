@@ -11,6 +11,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ContribuyenteCombobox } from "@/components/ContribuyenteCombobox";
 import { toast } from "sonner";
 import { Camera, Images, X } from "lucide-react";
+import { PhotoCompressBusy } from "@/components/PhotoCompressBusy";
+import { cn } from "@/lib/utils";
 import type {
   ContribuyenteCatalogRow,
   FormularioAmbienteRow,
@@ -415,51 +417,65 @@ export function FormularioEditarForm({ formularioId, onSuccess, onCancel }: Form
         <Label>Fotografías (máximo {FORMULARIO_FOTOS_MAX_COUNT})</Label>
         <p className="text-xs text-muted-foreground">
           Máximo {FORMULARIO_FOTOS_MAX_COUNT} fotos; si superan {FORMULARIO_FOTO_MAX_LABEL} se comprimen automáticamente.
-          {photoBusy ? " Comprimiendo…" : ""}
         </p>
-        <div className="flex gap-2 flex-wrap">
-          {visibleExisting.map((p) => (
-            <div key={p.id} className="relative h-24 w-24 rounded-lg overflow-hidden border">
-              <img src={p.previewUrl} alt="" className="h-full w-full object-cover" />
-              <button
-                type="button"
-                onClick={() => setRemovedPhotoIds((ids) => [...ids, p.id])}
-                className="absolute top-1 right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </div>
-          ))}
-          {newPhotos.map((p, i) => (
-            <div key={`${p.previewUrl}-${i}`} className="relative h-24 w-24 rounded-lg overflow-hidden border">
-              <img src={p.previewUrl} alt="" className="h-full w-full object-cover" />
-              <button
-                type="button"
-                onClick={() => {
-                  URL.revokeObjectURL(p.previewUrl);
-                  setNewPhotos((ph) => ph.filter((_, idx) => idx !== i));
-                }}
-                className="absolute top-1 right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </div>
-          ))}
-          {totalPhotos < FORMULARIO_FOTOS_MAX_COUNT && (
-            <div className="flex gap-2 flex-wrap">
-              <label className="h-24 w-24 rounded-lg border-2 border-dashed flex flex-col items-center justify-center text-muted-foreground cursor-pointer hover:bg-muted shrink-0">
-                <Camera className="h-5 w-5" aria-hidden />
-                <span className="text-[10px] mt-1">Cámara</span>
-                <input type="file" accept="image/*" capture="environment" className="hidden" onChange={addPhoto} />
-              </label>
-              <label className="h-24 w-24 rounded-lg border-2 border-dashed flex flex-col items-center justify-center text-muted-foreground cursor-pointer hover:bg-muted shrink-0">
-                <Images className="h-5 w-5" aria-hidden />
-                <span className="text-[10px] mt-1">Galería</span>
-                <input type="file" accept="image/*" className="hidden" onChange={addPhoto} />
-              </label>
-            </div>
-          )}
-        </div>
+        <PhotoCompressBusy active={photoBusy}>
+          <div className={cn("flex gap-2 flex-wrap", photoBusy && "pointer-events-none select-none")}>
+            {visibleExisting.map((p) => (
+              <div key={p.id} className="relative h-24 w-24 rounded-lg overflow-hidden border">
+                <img src={p.previewUrl} alt="" className="h-full w-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => setRemovedPhotoIds((ids) => [...ids, p.id])}
+                  className="absolute top-1 right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+            {newPhotos.map((p, i) => (
+              <div key={`${p.previewUrl}-${i}`} className="relative h-24 w-24 rounded-lg overflow-hidden border">
+                <img src={p.previewUrl} alt="" className="h-full w-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => {
+                    URL.revokeObjectURL(p.previewUrl);
+                    setNewPhotos((ph) => ph.filter((_, idx) => idx !== i));
+                  }}
+                  className="absolute top-1 right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+            {totalPhotos < FORMULARIO_FOTOS_MAX_COUNT && (
+              <div className="flex gap-2 flex-wrap">
+                <label className="h-24 w-24 rounded-lg border-2 border-dashed flex flex-col items-center justify-center text-muted-foreground cursor-pointer hover:bg-muted shrink-0">
+                  <Camera className="h-5 w-5" aria-hidden />
+                  <span className="text-[10px] mt-1">Cámara</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="hidden"
+                    disabled={photoBusy}
+                    onChange={addPhoto}
+                  />
+                </label>
+                <label className="h-24 w-24 rounded-lg border-2 border-dashed flex flex-col items-center justify-center text-muted-foreground cursor-pointer hover:bg-muted shrink-0">
+                  <Images className="h-5 w-5" aria-hidden />
+                  <span className="text-[10px] mt-1">Galería</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    disabled={photoBusy}
+                    onChange={addPhoto}
+                  />
+                </label>
+              </div>
+            )}
+          </div>
+        </PhotoCompressBusy>
       </Card>
 
       <div className="flex gap-2">
