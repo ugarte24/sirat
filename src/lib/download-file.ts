@@ -18,8 +18,13 @@ function ensurePdfBlob(blob: Blob): Blob {
 export function openPdfBlob(blob: Blob, _filename?: string): void {
   const pdf = ensurePdfBlob(blob);
   const url = URL.createObjectURL(pdf);
-  const opened = window.open(url, "_blank", "noopener,noreferrer");
-  if (!opened) {
+  // No pasar "noopener" en features: con ese flag window.open suele devolver null
+  // aunque la pestaña sí se abrió, y el fallback abriría una segunda.
+  const opened = window.open(url, "_blank");
+  if (opened) {
+    opened.opener = null;
+    toast.success(SUCCESS.pdf);
+  } else {
     const link = document.createElement("a");
     link.href = url;
     link.target = "_blank";
@@ -28,8 +33,6 @@ export function openPdfBlob(blob: Blob, _filename?: string): void {
     link.click();
     link.remove();
     toast.message("Permita ventanas emergentes para ver el PDF en el navegador.");
-  } else {
-    toast.success(SUCCESS.pdf);
   }
   setTimeout(() => URL.revokeObjectURL(url), 120_000);
 }

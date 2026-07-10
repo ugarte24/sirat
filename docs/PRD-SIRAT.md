@@ -4,8 +4,8 @@
 | Campo | Valor |
 |-------|-------|
 | **Cliente** | Gobierno Autónomo Municipal de Riberalta — Jefatura de Recaudaciones |
-| **Versión del documento** | 1.4.0 |
-| **Versión del producto** | 1.0.109 |
+| **Versión del documento** | 1.4.1 |
+| **Versión del producto** | 1.0.110 |
 | **Fecha** | Mayo 2026 |
 | **Estado** | Basado en el código en producción/desarrollo actual |
 
@@ -221,7 +221,7 @@ Unificar en una sola plataforma web responsive (móvil + escritorio) el ciclo: *
 |----|-----------|-----------|
 | FORM-13 | Filtros de lista: Todos / Pendientes / Verificados / Baja / Anulados; sincronizados con URL `?filtro=` | Must |
 | FORM-14 | Búsqueda por razón social o contribuyente | Must |
-| FORM-15 | Detalle `/formularios/$id` con PDF (abre en nueva pestaña del navegador, sin descarga forzada), fotos, mapa; contribuyente y C.I. en filas separadas | Must |
+| FORM-15 | Detalle `/formularios/$id` con PDF (abre en una sola pestaña nueva del navegador, sin descarga forzada), fotos, mapa; contribuyente y C.I. en filas separadas | Must |
 | FORM-16 | PDF con QR de verificación pública; solo si `activo` y `superficie` definida | Must |
 | FORM-17 | Baja: operador y admin en `activo`; observación obligatoria; hasta 2 fotos nuevas (Storage `formulario-baja-fotos`); PDF «BAJA DE ACTIVIDAD ECONÓMICA» guardado en Storage (`formulario-baja-pdf`, sin descarga automática); fecha en PDF = fecha de baja; sin procedente/padrón/bebidas; anulación solo observación | Must |
 | FORM-21 | En detalle `baja`: botones «PDF registro» (verificación, intacto) y «PDF baja» (archivo guardado) | Must |
@@ -611,7 +611,8 @@ Reportes, Usuarios y Perfil accesibles desde el menú lateral.
 | 1.3.8 | Jun 2026 | Firma PDF formulario | Cargo de firma «Encargado de Ruat» renombrado a «Operador Ruat» |
 | 1.3.9 | Jul 2026 | Visitas sin verificar | Tabla `formulario_visita_verificacion`; registro de visitas en etapa 2 sin cambiar estado; historial en gestión y detalle; sin fotos |
 | 1.4.0 | Jul 2026 | Producto v1.0.109 | Anti doble envío en formularios y diálogos; título de sección formularios; script duplicados notificaciones |
+| 1.4.1 | Jul 2026 | PDF una sola pestaña | Corrige apertura duplicada del PDF: `openPdfBlob` ya no usa `noopener` en `window.open` (evitaba detectar la pestaña y disparaba un segundo fallback) |
 
 ---
 
-*Este PRD refleja el estado del producto según el código fuente del repositorio `sirat` (rama `main`, versión 1.0.109). Ante divergencias entre este documento y el código, prevalece el comportamiento implementado hasta que se actualice el PRD.*
+*Este PRD refleja el estado del producto según el código fuente del repositorio `sirat` (rama `main`, versión 1.0.110). Ante divergencias entre este documento y el código, prevalece el comportamiento implementado hasta que se actualice el PRD.*
