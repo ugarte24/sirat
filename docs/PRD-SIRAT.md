@@ -4,8 +4,8 @@
 | Campo | Valor |
 |-------|-------|
 | **Cliente** | Gobierno Autónomo Municipal de Riberalta — Jefatura de Recaudaciones |
-| **Versión del documento** | 1.4.10 |
-| **Versión del producto** | 1.0.114 |
+| **Versión del documento** | 1.4.11 |
+| **Versión del producto** | 1.0.115 |
 | **Fecha** | Mayo 2026 |
 | **Estado** | Basado en el código en producción/desarrollo actual |
 
@@ -202,7 +202,7 @@ Unificar en una sola plataforma web responsive (móvil + escritorio) el ciclo: *
 | FORM-07 | Superficie > 0 m² | Must |
 | FORM-08 | Campo `procedente` (sí/no) obligatorio | Must |
 | FORM-09 | Al menos uno de: `padron` o `bebidas_alcoholicas` | Must |
-| FORM-10 | Hasta 3 fotos (máx. 500 KB c/u, compresión cliente); mientras comprime: overlay con spinner y mensaje «Optimizando foto en el dispositivo… / No usa internet» | Must |
+| FORM-10 | Hasta 3 fotos (máx. 500 KB c/u, compresión cliente); mientras comprime: overlay con spinner y mensaje «Optimizando foto en el dispositivo… / Puede tardar unos segundos» | Must |
 | FORM-11 | Al completar: `estado = activo`, `verificado_por`, `verificado_at` | Must |
 | FORM-12 | Edición por pestañas Registro / Verificación en diálogo; cerrar diálogo tras guardar etapa 1 o verificación | Must |
 | FORM-24 | En `pendiente_verificacion`: botón **Registrar visita sin verificar** (motivo, fecha, observación opcional); tabla `formulario_visita_verificacion`; el formulario **no** pasa a `activo` | Must |
@@ -623,7 +623,8 @@ Reportes, Usuarios y Perfil accesibles desde el menú lateral.
 | 1.4.8 | Jul 2026 | Lightbox fotos detalle | En detalle del formulario, tocar una foto abre vista ampliada con navegación entre fotos |
 | 1.4.9 | Jul 2026 | Popup cómo llegar | En mapa estático del detalle, el pin es clicable y muestra «Abrir en Google Maps — cómo llegar» |
 | 1.4.10 | Jul 2026 | CTA cómo llegar | Botón «Cómo llegar en Google Maps» con estilo primario; se quita el texto auxiliar bajo el mapa |
+| 1.4.11 | Jul 2026 | Texto overlay foto | Overlay de compresión: quita «No usa internet»; deja «Puede tardar unos segundos» |
 
 ---
 
-*Este PRD refleja el estado del producto según el código fuente del repositorio `sirat` (rama `main`, versión 1.0.114). Ante divergencias entre este documento y el código, prevalece el comportamiento implementado hasta que se actualice el PRD.*
+*Este PRD refleja el estado del producto según el código fuente del repositorio `sirat` (rama `main`, versión 1.0.115). Ante divergencias entre este documento y el código, prevalece el comportamiento implementado hasta que se actualice el PRD.*
