@@ -2,6 +2,7 @@ import jsPDF from "jspdf";
 import QRCode from "qrcode";
 import { formatDateEsBo } from "@/lib/date";
 import { applySiratPdfPageNumbers, downloadBlob } from "@/lib/download-file";
+import { formatNombreInspectorPdf } from "@/lib/person-name";
 import {
   drawFormularioAmbientesYInfoSideBySide,
   drawFormularioBajaObservacionSection,
@@ -86,6 +87,8 @@ interface FormularioData {
   imageBlobs?: (Blob | undefined)[];
   /** Nombre del usuario que genera el PDF (barra superior). */
   usuario?: string;
+  /** Nombre del inspector que completó la etapa 2 (bajo «Inspector Tributario»). */
+  inspector_nombre?: string | null;
   /** Contenedor del MapPicker visible (captura idéntica a la vista de registro). */
   mapCaptureElement?: HTMLElement | null;
   /** Filas de medición de ambientes (tabla en PDF si hay datos). */
@@ -244,6 +247,7 @@ export function formularioQrPayloadToPdfData(p: FormularioQrPayload): Formulario
     bebidas_alcoholicas: p.bebidas_alcoholicas,
     observacion: p.observacion === "—" ? null : p.observacion,
     estado: p.estado,
+    inspector_nombre: p.inspector_nombre?.trim() || null,
     ambientes: p.ambientes.length
       ? p.ambientes.map((a) => ({
           orden: a.orden,
@@ -334,7 +338,9 @@ export async function buildFormularioPdfDoc(d: FormularioData): Promise<{
   }
 
   y = ensureSpaceForSignatures(doc, y, d.usuario);
-  y = drawFormularioPdfSignatures(doc, y);
+  y = drawFormularioPdfSignatures(doc, y, {
+    inspectorNombre: formatNombreInspectorPdf(d.inspector_nombre),
+  });
   drawFormularioPdfFooter(doc, y, doc.getCurrentPageInfo().pageNumber);
 
   const photoSources = normalizeFormularioPhotos(d);

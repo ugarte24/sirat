@@ -253,6 +253,15 @@ function Detalle() {
     }
     setPdfBusy(true);
     try {
+      let inspectorNombre: string | null = null;
+      if (f.verificado_por) {
+        const { data: perfil } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", f.verificado_por)
+          .maybeSingle();
+        inspectorNombre = perfil?.full_name?.trim() || null;
+      }
       const { blob, filename, fotosIncluidas, fotosSolicitadas } = await buildFormularioPdfBlob({
         id: f.id,
         fecha: f.fecha,
@@ -277,6 +286,7 @@ function Detalle() {
         estado: f.estado === "baja" ? "activo" : f.estado,
         photos: await resolvePhotosForPdf(),
         usuario: profile?.full_name ?? profile?.email ?? undefined,
+        inspector_nombre: inspectorNombre,
         ambientes: ambienteRecordsToPdfRows(ambientes),
       });
       presentPdf(

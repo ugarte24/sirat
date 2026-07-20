@@ -470,17 +470,23 @@ export function drawFormularioUbicacionSection(
   return yMap + mapH + 6;
 }
 
-const SIGNATURES_HEIGHT = 24;
+const SIGNATURES_HEIGHT = 28;
 
 export function drawFormularioPdfSignatures(
   doc: jsPDF,
   startY: number,
-  labels = [
+  opts?: {
+    labels?: string[];
+    /** Nombre bajo «Inspector Tributario» (etapa 2). */
+    inspectorNombre?: string | null;
+  },
+): number {
+  const labels = opts?.labels ?? [
     FORMULARIO_PDF_FIRMA_ENCARGADO_RUAT,
     "Inspector Tributario",
     "Contribuyente",
-  ],
-): number {
+  ];
+  const inspectorNombre = opts?.inspectorNombre?.trim() || "";
   const w = doc.internal.pageSize.getWidth();
   const sigW = (w - 2 * MARGIN) / labels.length;
   labels.forEach((label, i) => {
@@ -491,6 +497,11 @@ export function drawFormularioPdfSignatures(
     doc.setTextColor(C.text.r, C.text.g, C.text.b);
     doc.setFont("helvetica", "normal").setFontSize(7.5);
     doc.text(label, x + sigW / 2, startY + 19, { align: "center" });
+    if (i === 1 && inspectorNombre) {
+      doc.setFont("helvetica", "bold").setFontSize(6.5);
+      const nameLines = doc.splitTextToSize(inspectorNombre, sigW - 6);
+      doc.text(nameLines, x + sigW / 2, startY + 23.5, { align: "center" });
+    }
   });
   return startY + SIGNATURES_HEIGHT;
 }
@@ -517,8 +528,12 @@ export function drawFormularioPdfFooter(doc: jsPDF, startY: number, pageNumber =
 }
 
 /** Firmas y pie de página 1 del formulario (evita referencias sueltas en pdf.ts). */
-export function finalizeFormularioPdfFirstPage(doc: jsPDF, startY: number): void {
-  const y = drawFormularioPdfSignatures(doc, startY);
+export function finalizeFormularioPdfFirstPage(
+  doc: jsPDF,
+  startY: number,
+  inspectorNombre?: string | null,
+): void {
+  const y = drawFormularioPdfSignatures(doc, startY, { inspectorNombre });
   drawFormularioPdfFooter(doc, y, 1);
 }
 

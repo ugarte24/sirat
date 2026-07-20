@@ -37,6 +37,7 @@ export const getFormularioPublicaFn = createServerFn({ method: "POST" })
           bebidas_alcoholicas,
           observacion,
           estado,
+          verificado_por,
           contribuyente:contribuyentes(nombre_completo, ci),
           tipo_tramite:tipos_tramite(nombre)
         `,
@@ -54,6 +55,16 @@ export const getFormularioPublicaFn = createServerFn({ method: "POST" })
         .select("orden, ambiente, largo, ancho")
         .eq("formulario_id", data.id)
         .order("orden", { ascending: true });
+
+      let inspectorNombre: string | null = null;
+      if (row.verificado_por) {
+        const { data: perfil } = await supabaseAdmin
+          .from("profiles")
+          .select("full_name")
+          .eq("id", row.verificado_por)
+          .maybeSingle();
+        inspectorNombre = perfil?.full_name?.trim() || null;
+      }
 
       const contribRaw = row.contribuyente;
       const contrib = (Array.isArray(contribRaw) ? contribRaw[0] : contribRaw) as
@@ -90,6 +101,7 @@ export const getFormularioPublicaFn = createServerFn({ method: "POST" })
           bebidas_alcoholicas: row.bebidas_alcoholicas,
           observacion: row.observacion,
           estado: row.estado,
+          inspector_nombre: inspectorNombre,
           ambientes:
             ambientes?.map((a) => ({
               orden: a.orden,

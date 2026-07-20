@@ -4,8 +4,8 @@
 | Campo | Valor |
 |-------|-------|
 | **Cliente** | Gobierno Autónomo Municipal de Riberalta — Jefatura de Recaudaciones |
-| **Versión del documento** | 1.4.12 |
-| **Versión del producto** | 1.0.116 |
+| **Versión del documento** | 1.4.13 |
+| **Versión del producto** | 1.0.117 |
 | **Fecha** | Mayo 2026 |
 | **Estado** | Basado en el código en producción/desarrollo actual |
 
@@ -230,6 +230,7 @@ Unificar en una sola plataforma web responsive (móvil + escritorio) el ciclo: *
 | FORM-20 | Campos de verificación no completados (`pendiente_verificacion` y `superficie` nula): mostrar `—` en detalle, PDF y reportes (no valores por defecto de BD) | Must |
 | FORM-22 | Etapa 2: tabla dinámica de ambientes (ambiente, largo, ancho, superficie calculada, total); `formulario_ambientes`; total en `formularios.superficie`; tabla en PDF y QR; detalle con tabla en escritorio y tarjetas apiladas en móvil | Must |
 | FORM-21 | Vista pública `/verificacion-formulario/$id` y QR en PDF del formulario | Must |
+| FORM-23 | PDF del formulario: bajo «Inspector Tributario» el nombre de quien completó la etapa 2 (`verificado_por` → `profiles.full_name`), con segundo nombre abreviado (p. ej. JUAN P. PEREZ GUTIERREZ); también en vista pública QR | Must |
 
 ### 6.5 Notificaciones (`/notificaciones`)
 
@@ -528,7 +529,7 @@ Reportes, Usuarios y Perfil accesibles desde el menú lateral.
 
 ### 11.3 Documentos impresos
 
-- **Formulario PDF:** encabezado GAM Riberalta, QR de verificación alineado con el título, mapa capturado, fotos, firmas (incl. «Operador Ruat»); campos sin verificar muestran `—`.
+- **Formulario PDF:** encabezado GAM Riberalta, QR de verificación alineado con el título, mapa capturado, fotos, firmas (incl. «Operador Ruat»); bajo «Inspector Tributario» el nombre del verificador (segundo nombre abreviado); campos sin verificar muestran `—`.
 - **Notificación PDF:** título “NOTIFICACIÓN”, conceptos marcados, QR de verificación.
 
 ---
@@ -625,7 +626,8 @@ Reportes, Usuarios y Perfil accesibles desde el menú lateral.
 | 1.4.10 | Jul 2026 | CTA cómo llegar | Botón «Cómo llegar en Google Maps» con estilo primario; se quita el texto auxiliar bajo el mapa |
 | 1.4.11 | Jul 2026 | Texto overlay foto | Overlay de compresión: quita «No usa internet»; deja «Puede tardar unos segundos» |
 | 1.4.12 | Jul 2026 | PDF según dispositivo | Móvil: visor in-app + Descargar; escritorio/laptop: abre PDF en pestaña nueva (`prefersPdfInAppPreview`) |
+| 1.4.13 | Jul 2026 | Nombre inspector PDF | Bajo «Inspector Tributario»: nombre de etapa 2 (`verificado_por`) con segundo nombre abreviado; detalle y QR público |
 
 ---
 
-*Este PRD refleja el estado del producto según el código fuente del repositorio `sirat` (rama `main`, versión 1.0.116). Ante divergencias entre este documento y el código, prevalece el comportamiento implementado hasta que se actualice el PRD.*
+*Este PRD refleja el estado del producto según el código fuente del repositorio `sirat` (rama `main`, versión 1.0.117). Ante divergencias entre este documento y el código, prevalece el comportamiento implementado hasta que se actualice el PRD.*

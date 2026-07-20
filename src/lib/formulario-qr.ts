@@ -26,6 +26,8 @@ export type FormularioQrPayload = {
   bebidas_alcoholicas: boolean;
   observacion: string;
   estado: string;
+  /** Nombre del inspector (etapa 2), ya formateado o completo; el PDF abrevia el 2.º nombre. */
+  inspector_nombre?: string;
   ambientes: FormularioQrAmbiente[];
 };
 
@@ -57,6 +59,7 @@ export function buildFormularioQrPayload(input: {
   bebidas_alcoholicas: boolean;
   observacion: string | null;
   estado: string;
+  inspector_nombre?: string | null;
   ambientes?: FormularioQrAmbiente[];
 }): FormularioQrPayload {
   return {
@@ -82,6 +85,7 @@ export function buildFormularioQrPayload(input: {
     bebidas_alcoholicas: input.bebidas_alcoholicas,
     observacion: input.observacion?.trim() || "—",
     estado: input.estado,
+    inspector_nombre: input.inspector_nombre?.trim() || undefined,
     ambientes: input.ambientes ?? [],
   };
 }
