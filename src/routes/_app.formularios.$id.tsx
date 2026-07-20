@@ -25,6 +25,7 @@ import {
   formularioBajaPdfFilename,
 } from "@/lib/pdf";
 import { useAuth } from "@/lib/auth";
+import { getProfileDisplayNameFn } from "@/functions/get-profile-display-name";
 import { FORMULARIO_VERIFICACION_NOMBRE, FORMULARIO_VERIFICACION_SECCION } from "@/lib/sirat-brand";
 import { formatDateEsBo } from "@/lib/date";
 import { formListSearchFromStorage } from "@/lib/formulario-list-search";
@@ -255,12 +256,14 @@ function Detalle() {
     try {
       let inspectorNombre: string | null = null;
       if (f.verificado_por) {
-        const { data: perfil } = await supabase
-          .from("profiles")
-          .select("full_name")
-          .eq("id", f.verificado_por)
-          .maybeSingle();
-        inspectorNombre = perfil?.full_name?.trim() || null;
+        const { data: sess } = await supabase.auth.getSession();
+        const token = sess.session?.access_token;
+        if (token) {
+          const { fullName } = await getProfileDisplayNameFn({
+            data: { accessToken: token, userId: f.verificado_por },
+          });
+          inspectorNombre = fullName;
+        }
       }
       const { blob, filename, fotosIncluidas, fotosSolicitadas } = await buildFormularioPdfBlob({
         id: f.id,
