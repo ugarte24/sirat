@@ -4,8 +4,8 @@
 | Campo | Valor |
 |-------|-------|
 | **Cliente** | Gobierno Autónomo Municipal de Riberalta — Jefatura de Recaudaciones |
-| **Versión del documento** | 1.4.14 |
-| **Versión del producto** | 1.0.118 |
+| **Versión del documento** | 1.4.15 |
+| **Versión del producto** | 1.0.119 |
 | **Fecha** | Mayo 2026 |
 | **Estado** | Basado en el código en producción/desarrollo actual |
 
@@ -219,7 +219,7 @@ Unificar en una sola plataforma web responsive (móvil + escritorio) el ciclo: *
 
 | ID | Requisito | Prioridad |
 |----|-----------|-----------|
-| FORM-13 | Filtros de lista: Todos / Pendientes / Verificados / Baja / Anulados; URL `?filtro=`; página en `?page=` (se conserva al volver del detalle) | Must |
+| FORM-13 | Filtros de lista: Todos / Pendientes / Verificados / Baja / Anulados; URL `?filtro=`; página en `?page=` (se conserva al volver del detalle); columna Fecha con fecha y hora (`created_at`) | Must |
 | FORM-14 | Búsqueda por razón social o contribuyente | Must |
 | FORM-15 | Detalle `/formularios/$id`: en móvil PDF en visor interno (`PdfPreviewDialog`) con Descargar; en escritorio abre en pestaña nueva; fotos ampliables (`PhotoLightboxDialog`); mapa; contribuyente y C.I. en filas separadas | Must |
 | FORM-16 | PDF con QR de verificación pública; solo si `activo` y `superficie` definida | Must |
@@ -628,7 +628,8 @@ Reportes, Usuarios y Perfil accesibles desde el menú lateral.
 | 1.4.12 | Jul 2026 | PDF según dispositivo | Móvil: visor in-app + Descargar; escritorio/laptop: abre PDF en pestaña nueva (`prefersPdfInAppPreview`) |
 | 1.4.13 | Jul 2026 | Nombre inspector PDF | Bajo «Inspector Tributario»: nombre de etapa 2 (`verificado_por`) con segundo nombre abreviado; detalle y QR público |
 | 1.4.14 | Jul 2026 | Inspector PDF operadores | El nombre del inspector en el PDF del detalle también se resuelve para operadores (server fn; RLS de profiles solo self/admin) |
+| 1.4.15 | Jul 2026 | Hora en lista formularios | Columna Fecha del listado de formularios muestra fecha y hora (`created_at`) |
 
 ---
 
-*Este PRD refleja el estado del producto según el código fuente del repositorio `sirat` (rama `main`, versión 1.0.118). Ante divergencias entre este documento y el código, prevalece el comportamiento implementado hasta que se actualice el PRD.*
+*Este PRD refleja el estado del producto según el código fuente del repositorio `sirat` (rama `main`, versión 1.0.119). Ante divergencias entre este documento y el código, prevalece el comportamiento implementado hasta que se actualice el PRD.*

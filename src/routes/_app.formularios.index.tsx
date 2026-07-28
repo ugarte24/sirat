@@ -41,7 +41,7 @@ import {
   FORMULARIO_VERIFICACION_TITULO_NUEVO,
 } from "@/lib/sirat-brand";
 import type { ContribuyenteCatalogRow, TipoTramiteCatalogRow } from "@/lib/sirat-forms";
-import { formatDateEsBo } from "@/lib/date";
+import { formatDateTimeEsBo } from "@/lib/date";
 import { cn } from "@/lib/utils";
 import { REOPEN_VERIFICAR_STORAGE_KEY } from "@/lib/formulario-navigation";
 import { withListPage } from "@/lib/list-search";
@@ -63,7 +63,7 @@ type ListFiltro = FormListFiltro;
 
 type FormRow = Pick<
   Database["public"]["Tables"]["formularios"]["Row"],
-  "id" | "fecha" | "zona" | "estado" | "razon_social" | "contribuyente_id"
+  "id" | "fecha" | "zona" | "estado" | "razon_social" | "contribuyente_id" | "created_at"
 > & {
   contribuyente: { nombre_completo: string; ci: string } | null;
 };
@@ -269,7 +269,7 @@ function Lista() {
     let qb = supabase
       .from("formularios")
       .select(
-        "id, fecha, zona, estado, razon_social, contribuyente_id, contribuyente:contribuyentes(nombre_completo, ci)",
+        "id, fecha, zona, estado, razon_social, contribuyente_id, created_at, contribuyente:contribuyentes(nombre_completo, ci)",
         { count: "exact" },
       )
       .order("created_at", ORDER_CREATED_DESC)
@@ -576,7 +576,7 @@ function Lista() {
               >
                 <div className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1.5">
                   <span className="text-xs text-muted-foreground tabular-nums">
-                    {formatDateEsBo(f.fecha)}
+                    {formatDateTimeEsBo(f.created_at)}
                   </span>
                   <div className="justify-self-end">
                     <FormEstadoPill estado={f.estado} compact />
@@ -627,7 +627,7 @@ function Lista() {
                     onClick={() => goToDetalle(f.id)}
                   >
                     <DataListTd className="whitespace-nowrap text-muted-foreground">
-                      {formatDateEsBo(f.fecha)}
+                      {formatDateTimeEsBo(f.created_at)}
                     </DataListTd>
                     <DataListTd>
                       <div className="font-semibold text-foreground">{f.razon_social}</div>
