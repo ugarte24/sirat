@@ -4,8 +4,8 @@
 | Campo | Valor |
 |-------|-------|
 | **Cliente** | Gobierno Autónomo Municipal de Riberalta — Jefatura de Recaudaciones |
-| **Versión del documento** | 1.4.15 |
-| **Versión del producto** | 1.0.119 |
+| **Versión del documento** | 1.4.16 |
+| **Versión del producto** | 1.0.120 |
 | **Fecha** | Mayo 2026 |
 | **Estado** | Basado en el código en producción/desarrollo actual |
 
@@ -70,6 +70,7 @@ Unificar en una sola plataforma web responsive (móvil + escritorio) el ciclo: *
 | Contribuyentes (CRUD en UI) | ✓ | ✓ |
 | Formularios (registro + verificación) | ✓ | ✓ |
 | Baja / anulación de formulario activo | ✓ (con observación) | ✓ |
+| Reabrir formulario anulado | ✗ | ✓ (con observación) |
 | Notificaciones | ✓ | ✓ |
 | Mapa | ✓ | ✓ |
 | Reportes | ✓ | ✓ |
@@ -215,7 +216,7 @@ Unificar en una sola plataforma web responsive (móvil + escritorio) el ciclo: *
 | `pendiente_verificacion` | Registro sin verificar | → `activo` (verificación) |
 | `activo` | Verificado y vigente | → `baja`, `anulado` (observación obligatoria) |
 | `baja` | Dado de baja | Sin edición |
-| `anulado` | Anulado | Sin edición |
+| `anulado` | Anulado | → `activo` o `pendiente_verificacion` (**solo admin**, observación obligatoria) |
 
 | ID | Requisito | Prioridad |
 |----|-----------|-----------|
@@ -231,6 +232,7 @@ Unificar en una sola plataforma web responsive (móvil + escritorio) el ciclo: *
 | FORM-22 | Etapa 2: tabla dinámica de ambientes (ambiente, largo, ancho, superficie calculada, total); `formulario_ambientes`; total en `formularios.superficie`; tabla en PDF y QR; detalle con tabla en escritorio y tarjetas apiladas en móvil | Must |
 | FORM-21 | Vista pública `/verificacion-formulario/$id` y QR en PDF del formulario | Must |
 | FORM-23 | PDF del formulario: bajo «Inspector Tributario» el nombre de quien completó la etapa 2 (`verificado_por` → `profiles.full_name`), con segundo nombre abreviado (p. ej. JUAN P. PEREZ GUTIERREZ); visible para operador y admin (resolución vía server fn, no bloqueada por RLS de profiles); también en vista pública QR | Must |
+| FORM-26 | En detalle `anulado`: **solo admin** en «Más acciones» puede reabrir (quitar anulación) con observación obligatoria; vuelve a `activo` si ya estaba verificado, o a `pendiente_verificacion` | Must |
 
 ### 6.5 Notificaciones (`/notificaciones`)
 
@@ -542,7 +544,7 @@ Reportes, Usuarios y Perfil accesibles desde el menú lateral.
 4. El mapa muestra actividades con coordenadas según filtros de estado.
 5. Los reportes exportan hasta 1 000 registros con rango de fechas en Excel y PDF.
 6. Usuario con 5 intentos fallidos no puede iniciar sesión hasta intervención del admin.
-7. Solo el admin puede dar de baja o anular un formulario en estado `activo`.
+7. Operador y admin pueden dar de baja o anular un formulario `activo` (con observación). Solo el admin puede reabrir un formulario `anulado`.
 
 ---
 
@@ -629,7 +631,8 @@ Reportes, Usuarios y Perfil accesibles desde el menú lateral.
 | 1.4.13 | Jul 2026 | Nombre inspector PDF | Bajo «Inspector Tributario»: nombre de etapa 2 (`verificado_por`) con segundo nombre abreviado; detalle y QR público |
 | 1.4.14 | Jul 2026 | Inspector PDF operadores | El nombre del inspector en el PDF del detalle también se resuelve para operadores (server fn; RLS de profiles solo self/admin) |
 | 1.4.15 | Jul 2026 | Hora en lista formularios | Columna Fecha del listado de formularios muestra fecha y hora (`created_at`) |
+| 1.4.16 | Ago 2026 | Reabrir formulario anulado | Solo admin: «Más acciones» → Reabrir (quitar anulación) con observación; vuelve a activo o pendiente |
 
 ---
 
-*Este PRD refleja el estado del producto según el código fuente del repositorio `sirat` (rama `main`, versión 1.0.119). Ante divergencias entre este documento y el código, prevalece el comportamiento implementado hasta que se actualice el PRD.*
+*Este PRD refleja el estado del producto según el código fuente del repositorio `sirat` (rama `main`, versión 1.0.120). Ante divergencias entre este documento y el código, prevalece el comportamiento implementado hasta que se actualice el PRD.*

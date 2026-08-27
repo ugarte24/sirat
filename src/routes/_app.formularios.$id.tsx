@@ -10,7 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ArrowLeft, Ban, FileDown, MoreHorizontal, Pencil, Printer } from "lucide-react";
+import { ArrowLeft, Ban, FileDown, MoreHorizontal, Pencil, Printer, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { MapDirectionsLink } from "@/components/MapDirectionsLink";
 import { MapPicker } from "@/components/MapPicker";
@@ -31,6 +31,7 @@ import { formatDateEsBo } from "@/lib/date";
 import { formListSearchFromStorage } from "@/lib/formulario-list-search";
 import {
   appendObservacionCambioEstado,
+  appendObservacionSeguimiento,
   formularioVerificacionSinCompletar,
   type FormularioEstadoAccion,
 } from "@/lib/sirat-forms";
@@ -57,13 +58,15 @@ export const Route = createFileRoute("/_app/formularios/$id")({ component: Detal
 
 function Detalle() {
   const { id } = Route.useParams();
-  const { profile } = useAuth();
+  const { profile, role } = useAuth();
+  const esAdmin = role === "admin";
   const [f, setF] = useState<any>(null);
   const [photos, setPhotos] = useState<{ url: string; storagePath: string; blob?: Blob }[]>([]);
   const [photosLoading, setPhotosLoading] = useState(true);
   const [pdfBusy, setPdfBusy] = useState(false);
   const [fotosPdfBusy, setFotosPdfBusy] = useState(false);
   const [estadoDialog, setEstadoDialog] = useState<FormularioEstadoAccion | null>(null);
+  const [reabrirOpen, setReabrirOpen] = useState(false);
   const [bajaDialogOpen, setBajaDialogOpen] = useState(false);
   const [pdfBajaBusy, setPdfBajaBusy] = useState(false);
   const [pdfPreview, setPdfPreview] = useState<{
@@ -209,6 +212,25 @@ function Detalle() {
     toast.success("Actividad anulada");
   };
 
+  /** Solo admin: anulado → activo (si ya estaba verificado) o pendiente_verificacion. */
+  const aplicarReabrir = async (observacionNueva: string) => {
+    const estadoDestino =
+      f.superficie != null || f.verificado_at ? "activo" : "pendiente_verificacion";
+    const observacion = appendObservacionSeguimiento(f.observacion, "REABIERTO", observacionNueva);
+    const { error } = await supabase
+      .from("formularios")
+      .update({ estado: estadoDestino, observacion })
+      .eq("id", id)
+      .eq("estado", "anulado");
+    if (error) throw new Error(error.message);
+    setF({ ...f, estado: estadoDestino, observacion });
+    toast.success(
+      estadoDestino === "activo"
+        ? "Actividad reabierta como verificada"
+        : "Actividad reabierta como pendiente de verificación",
+    );
+  };
+
   const aplicarBaja = async (observacionNueva: string, fotoFiles: File[]) => {
     const usuario = profile?.full_name ?? profile?.email ?? undefined;
     const result = await ejecutarFormularioBaja(supabase, {
@@ -335,6 +357,8 @@ function Detalle() {
 
   const puedePdfVerificacion =
     (f.estado === "activo" || f.estado === "baja") && f.superficie != null;
+  /** Operador/admin: baja/anular en activo. Solo admin: reabrir anulado. */
+  const showMasAcciones = f.estado === "activo" || (f.estado === "anulado" && esAdmin);
 
   return (
     <div className="space-y-4 max-w-2xl">
@@ -408,7 +432,7 @@ function Detalle() {
             </Link>
           </Button>
         )}
-        {f.estado === "activo" && (
+        {showMasAcciones && (
           <div className="ml-auto shrink-0">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -417,17 +441,27 @@ function Detalle() {
                   <span>Más acciones</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52">
-                <DropdownMenuItem onSelect={() => setBajaDialogOpen(true)}>
-                  Dar de baja
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="text-destructive focus:text-destructive"
-                  onSelect={() => setEstadoDialog("anulado")}
-                >
-                  <Ban className="h-4 w-4 mr-2 shrink-0" aria-hidden />
-                  Anular
-                </DropdownMenuItem>
+              <DropdownMenuContent align="end" className="w-56">
+                {f.estado === "activo" && (
+                  <>
+                    <DropdownMenuItem onSelect={() => setBajaDialogOpen(true)}>
+                      Dar de baja
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="text-destructive focus:text-destructive"
+                      onSelect={() => setEstadoDialog("anulado")}
+                    >
+                      <Ban className="h-4 w-4 mr-2 shrink-0" aria-hidden />
+                      Anular
+                    </DropdownMenuItem>
+                  </>
+                )}
+                {f.estado === "anulado" && esAdmin && (
+                  <DropdownMenuItem onSelect={() => setReabrirOpen(true)}>
+                    <RotateCcw className="h-4 w-4 mr-2 shrink-0" aria-hidden />
+                    Reabrir (quitar anulación)
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -456,6 +490,14 @@ function Detalle() {
         confirmLabel="Guardar anulación"
         confirmVariant="destructive"
         onConfirm={aplicarAnulacion}
+      />
+      <ObservacionRequeridaDialog
+        open={reabrirOpen}
+        onOpenChange={setReabrirOpen}
+        title="Reabrir actividad anulada"
+        description="Registre el motivo. La actividad volverá a activa si ya estaba verificada, o a pendiente de verificación."
+        confirmLabel="Reabrir actividad"
+        onConfirm={aplicarReabrir}
       />
 
       <DetailTemplate>
