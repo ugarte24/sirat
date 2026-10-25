@@ -148,8 +148,8 @@ export function FormularioVerificacionEtapaFields({
           disabled={ambientesDisabled}
         />
         <fieldset className="space-y-2.5 min-w-0">
-          <legend className="text-sm font-medium text-foreground">Procedencia *</legend>
-          <p className="text-xs text-muted-foreground">Debe seleccionar una de las dos opciones.</p>
+          <legend className="text-sm font-medium text-foreground">Procedencia</legend>
+          <p className="text-xs text-muted-foreground">Opcional.</p>
           <RadioGroup
             value={
               f.procedente === null
@@ -173,8 +173,8 @@ export function FormularioVerificacionEtapaFields({
         </fieldset>
 
         <fieldset className="space-y-2.5 min-w-0">
-          <legend className="text-sm font-medium text-foreground">Padrón y bebidas *</legend>
-          <p className="text-xs text-muted-foreground">Debe marcar al menos una de las dos opciones.</p>
+          <legend className="text-sm font-medium text-foreground">Padrón y bebidas</legend>
+          <p className="text-xs text-muted-foreground">Opcional. Puede dejar ambas sin marcar.</p>
           <label className="flex items-center gap-3 rounded-md border px-3 py-2.5 cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-primary/5 transition-colors">
             <Checkbox
               id={`${idPrefix}-padron`}

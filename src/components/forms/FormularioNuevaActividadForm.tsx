@@ -162,9 +162,6 @@ export function FormularioNuevaActividadForm({
     if (!Number.isFinite(sup) || sup <= 0) {
       return toast.error("Indica una superficie válida (m²).");
     }
-    if (!f.padron && !f.bebidas_alcoholicas) {
-      return toast.error("Marque al menos una opción: Padrón o Bebidas alcohólicas.");
-    }
     if (
       f.latitud == null ||
       f.longitud == null ||
@@ -332,8 +329,8 @@ export function FormularioNuevaActividadForm({
         </fieldset>
 
         <fieldset className="space-y-2 min-w-0">
-          <legend className="text-sm font-medium text-foreground">Padrón y bebidas *</legend>
-          <p className="text-xs text-muted-foreground">Debe marcar al menos una de las dos opciones.</p>
+          <legend className="text-sm font-medium text-foreground">Padrón y bebidas</legend>
+          <p className="text-xs text-muted-foreground">Opcional. Puede dejar ambas sin marcar.</p>
           <div className="flex items-center gap-2">
             <Checkbox
               id="form-padron"

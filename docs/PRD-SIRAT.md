@@ -4,8 +4,8 @@
 | Campo | Valor |
 |-------|-------|
 | **Cliente** | Gobierno Autónomo Municipal de Riberalta — Jefatura de Recaudaciones |
-| **Versión del documento** | 1.4.16 |
-| **Versión del producto** | 1.0.120 |
+| **Versión del documento** | 1.4.17 |
+| **Versión del producto** | 1.0.121 |
 | **Fecha** | Mayo 2026 |
 | **Estado** | Basado en el código en producción/desarrollo actual |
 
@@ -201,8 +201,8 @@ Unificar en una sola plataforma web responsive (móvil + escritorio) el ciclo: *
 | ID | Requisito | Prioridad |
 |----|-----------|-----------|
 | FORM-07 | Superficie > 0 m² | Must |
-| FORM-08 | Campo `procedente` (sí/no) obligatorio | Must |
-| FORM-09 | Al menos uno de: `padron` o `bebidas_alcoholicas` | Must |
+| FORM-08 | Campo `procedente` (sí/no) opcional en verificación | Must |
+| FORM-09 | `padron` y `bebidas_alcoholicas` opcionales (puede no marcar ninguno) | Must |
 | FORM-10 | Hasta 3 fotos (máx. 500 KB c/u, compresión cliente); mientras comprime: overlay con spinner y mensaje «Optimizando foto en el dispositivo… / Puede tardar unos segundos» | Must |
 | FORM-11 | Al completar: `estado = activo`, `verificado_por`, `verificado_at` | Must |
 | FORM-12 | Edición por pestañas Registro / Verificación en diálogo; cerrar diálogo tras guardar etapa 1 o verificación | Must |
@@ -632,7 +632,8 @@ Reportes, Usuarios y Perfil accesibles desde el menú lateral.
 | 1.4.14 | Jul 2026 | Inspector PDF operadores | El nombre del inspector en el PDF del detalle también se resuelve para operadores (server fn; RLS de profiles solo self/admin) |
 | 1.4.15 | Jul 2026 | Hora en lista formularios | Columna Fecha del listado de formularios muestra fecha y hora (`created_at`) |
 | 1.4.16 | Ago 2026 | Reabrir formulario anulado | Solo admin: «Más acciones» → Reabrir (quitar anulación) con observación; vuelve a activo o pendiente |
+| 1.4.17 | Oct 2026 | Procedencia y padrón opcionales | En verificación, Procedente/No procedente y Padrón/Bebidas alcohólicas dejan de ser obligatorios |
 
 ---
 
-*Este PRD refleja el estado del producto según el código fuente del repositorio `sirat` (rama `main`, versión 1.0.120). Ante divergencias entre este documento y el código, prevalece el comportamiento implementado hasta que se actualice el PRD.*
+*Este PRD refleja el estado del producto según el código fuente del repositorio `sirat` (rama `main`, versión 1.0.121). Ante divergencias entre este documento y el código, prevalece el comportamiento implementado hasta que se actualice el PRD.*

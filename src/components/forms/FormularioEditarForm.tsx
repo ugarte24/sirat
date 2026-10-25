@@ -211,9 +211,6 @@ export function FormularioEditarForm({ formularioId, onSuccess, onCancel }: Form
     if (!f.contribuyente_id) return toast.error("Selecciona un contribuyente");
     const ambErr = validateFormularioAmbientes(ambientes);
     if (ambErr) return toast.error(ambErr);
-    if (!f.padron && !f.bebidas_alcoholicas) {
-      return toast.error("Marque al menos una opción: Padrón o Bebidas alcohólicas.");
-    }
     if (
       f.latitud == null ||
       f.longitud == null ||
@@ -388,7 +385,7 @@ export function FormularioEditarForm({ formularioId, onSuccess, onCancel }: Form
         </fieldset>
 
         <fieldset className="space-y-2 min-w-0">
-          <legend className="text-sm font-medium text-foreground">Padrón y bebidas *</legend>
+          <legend className="text-sm font-medium text-foreground">Padrón y bebidas</legend>
           <div className="flex items-center gap-2">
             <Checkbox id="edit-form-padron" checked={f.padron} onCheckedChange={(v) => setF({ ...f, padron: !!v })} />
             <Label htmlFor="edit-form-padron" className="cursor-pointer font-normal leading-none">

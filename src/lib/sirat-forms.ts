@@ -309,7 +309,7 @@ export function formularioVerificacionToUpdate(
 ): FormularioVerificacionUpdatePayload {
   const base: FormularioVerificacionUpdatePayload = {
     superficie: Number.parseFloat(f.superficie),
-    procedente: f.procedente as boolean,
+    procedente: f.procedente ?? true,
     padron: f.padron,
     bebidas_alcoholicas: f.bebidas_alcoholicas,
     observacion: formularioTextFieldsForDb(f).observacion,
@@ -349,10 +349,6 @@ export function validateFormularioVerificacion(
 ): string | null {
   const ambErr = validateFormularioAmbientes(ambientes);
   if (ambErr) return ambErr;
-  if (f.procedente === null) return "Seleccione Procedente o No procedente";
-  if (!f.padron && !f.bebidas_alcoholicas) {
-    return "Marque al menos una opción: Padrón o Bebidas alcohólicas";
-  }
   return null;
 }
 
