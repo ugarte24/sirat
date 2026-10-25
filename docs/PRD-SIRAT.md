@@ -4,8 +4,8 @@
 | Campo | Valor |
 |-------|-------|
 | **Cliente** | Gobierno Autónomo Municipal de Riberalta — Jefatura de Recaudaciones |
-| **Versión del documento** | 1.4.17 |
-| **Versión del producto** | 1.0.121 |
+| **Versión del documento** | 1.4.18 |
+| **Versión del producto** | 1.0.122 |
 | **Fecha** | Mayo 2026 |
 | **Estado** | Basado en el código en producción/desarrollo actual |
 
@@ -633,7 +633,8 @@ Reportes, Usuarios y Perfil accesibles desde el menú lateral.
 | 1.4.15 | Jul 2026 | Hora en lista formularios | Columna Fecha del listado de formularios muestra fecha y hora (`created_at`) |
 | 1.4.16 | Ago 2026 | Reabrir formulario anulado | Solo admin: «Más acciones» → Reabrir (quitar anulación) con observación; vuelve a activo o pendiente |
 | 1.4.17 | Oct 2026 | Procedencia y padrón opcionales | En verificación, Procedente/No procedente y Padrón/Bebidas alcohólicas dejan de ser obligatorios |
+| 1.4.18 | Oct 2026 | Parche TanStack Start | Actualiza `@tanstack/react-start` a 1.168.60 (CVE-2026-102989) para desbloquear el deploy en Vercel |
 
 ---
 
-*Este PRD refleja el estado del producto según el código fuente del repositorio `sirat` (rama `main`, versión 1.0.121). Ante divergencias entre este documento y el código, prevalece el comportamiento implementado hasta que se actualice el PRD.*
+*Este PRD refleja el estado del producto según el código fuente del repositorio `sirat` (rama `main`, versión 1.0.122). Ante divergencias entre este documento y el código, prevalece el comportamiento implementado hasta que se actualice el PRD.*

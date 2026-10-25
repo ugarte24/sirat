@@ -9,34 +9,38 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as VerificacionIdRouteImport } from './routes/verificacion.$id'
-import { Route as VerificacionFormularioIdRouteImport } from './routes/verificacion-formulario.$id'
-import { Route as VNotificacionRouteImport } from './routes/v.notificacion'
-import { Route as AppZonasRouteImport } from './routes/_app.zonas'
-import { Route as AppUsuariosRouteImport } from './routes/_app.usuarios'
-import { Route as AppTiposTramiteRouteImport } from './routes/_app.tipos-tramite'
-import { Route as AppReportesRouteImport } from './routes/_app.reportes'
-import { Route as AppPerfilRouteImport } from './routes/_app.perfil'
-import { Route as AppNotificacionesRouteImport } from './routes/_app.notificaciones'
-import { Route as AppMapaRouteImport } from './routes/_app.mapa'
-import { Route as AppFormulariosRouteImport } from './routes/_app.formularios'
+import { Route as AppRouteImport } from './routes/_app'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AppContribuyentesRouteImport } from './routes/_app.contribuyentes'
-import { Route as AppTiposTramiteIndexRouteImport } from './routes/_app.tipos-tramite.index'
-import { Route as AppNotificacionesIndexRouteImport } from './routes/_app.notificaciones.index'
-import { Route as AppFormulariosIndexRouteImport } from './routes/_app.formularios.index'
+import { Route as AppFormulariosRouteImport } from './routes/_app.formularios'
+import { Route as AppMapaRouteImport } from './routes/_app.mapa'
+import { Route as AppNotificacionesRouteImport } from './routes/_app.notificaciones'
+import { Route as AppPerfilRouteImport } from './routes/_app.perfil'
+import { Route as AppReportesRouteImport } from './routes/_app.reportes'
+import { Route as AppTiposTramiteRouteImport } from './routes/_app.tipos-tramite'
+import { Route as AppUsuariosRouteImport } from './routes/_app.usuarios'
+import { Route as AppZonasRouteImport } from './routes/_app.zonas'
+import { Route as VNotificacionRouteImport } from './routes/v.notificacion'
+import { Route as VerificacionFormularioIdRouteImport } from './routes/verificacion-formulario.$id'
+import { Route as VerificacionIdRouteImport } from './routes/verificacion.$id'
 import { Route as AppContribuyentesIndexRouteImport } from './routes/_app.contribuyentes.index'
-import { Route as VerificacionIdPdfRouteImport } from './routes/verificacion.$id.pdf'
-import { Route as AppNotificacionesIdRouteImport } from './routes/_app.notificaciones.$id'
-import { Route as AppFormulariosIdRouteImport } from './routes/_app.formularios.$id'
 import { Route as AppContribuyentesIdRouteImport } from './routes/_app.contribuyentes.$id'
+import { Route as AppFormulariosIndexRouteImport } from './routes/_app.formularios.index'
+import { Route as AppFormulariosIdRouteImport } from './routes/_app.formularios.$id'
+import { Route as AppNotificacionesIndexRouteImport } from './routes/_app.notificaciones.index'
+import { Route as AppNotificacionesIdRouteImport } from './routes/_app.notificaciones.$id'
+import { Route as AppTiposTramiteIndexRouteImport } from './routes/_app.tipos-tramite.index'
+import { Route as VerificacionIdPdfRouteImport } from './routes/verificacion.$id.pdf'
 
-const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
-  id: '/sitemap.xml',
-  path: '/sitemap.xml',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -44,18 +48,59 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppRoute = AppRouteImport.update({
-  id: '/_app',
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
+const AppContribuyentesRoute = AppContribuyentesRouteImport.update({
+  id: '/contribuyentes',
+  path: '/contribuyentes',
+  getParentRoute: () => AppRoute,
 } as any)
-const VerificacionIdRoute = VerificacionIdRouteImport.update({
-  id: '/verificacion/$id',
-  path: '/verificacion/$id',
+const AppFormulariosRoute = AppFormulariosRouteImport.update({
+  id: '/formularios',
+  path: '/formularios',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMapaRoute = AppMapaRouteImport.update({
+  id: '/mapa',
+  path: '/mapa',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppNotificacionesRoute = AppNotificacionesRouteImport.update({
+  id: '/notificaciones',
+  path: '/notificaciones',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPerfilRoute = AppPerfilRouteImport.update({
+  id: '/perfil',
+  path: '/perfil',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppReportesRoute = AppReportesRouteImport.update({
+  id: '/reportes',
+  path: '/reportes',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTiposTramiteRoute = AppTiposTramiteRouteImport.update({
+  id: '/tipos-tramite',
+  path: '/tipos-tramite',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppUsuariosRoute = AppUsuariosRouteImport.update({
+  id: '/usuarios',
+  path: '/usuarios',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppZonasRoute = AppZonasRouteImport.update({
+  id: '/zonas',
+  path: '/zonas',
+  getParentRoute: () => AppRoute,
+} as any)
+const VNotificacionRoute = VNotificacionRouteImport.update({
+  id: '/v/notificacion',
+  path: '/v/notificacion',
   getParentRoute: () => rootRouteImport,
 } as any)
 const VerificacionFormularioIdRoute =
@@ -64,95 +109,50 @@ const VerificacionFormularioIdRoute =
     path: '/verificacion-formulario/$id',
     getParentRoute: () => rootRouteImport,
   } as any)
-const VNotificacionRoute = VNotificacionRouteImport.update({
-  id: '/v/notificacion',
-  path: '/v/notificacion',
+const VerificacionIdRoute = VerificacionIdRouteImport.update({
+  id: '/verificacion/$id',
+  path: '/verificacion/$id',
   getParentRoute: () => rootRouteImport,
-} as any)
-const AppZonasRoute = AppZonasRouteImport.update({
-  id: '/zonas',
-  path: '/zonas',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppUsuariosRoute = AppUsuariosRouteImport.update({
-  id: '/usuarios',
-  path: '/usuarios',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppTiposTramiteRoute = AppTiposTramiteRouteImport.update({
-  id: '/tipos-tramite',
-  path: '/tipos-tramite',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppReportesRoute = AppReportesRouteImport.update({
-  id: '/reportes',
-  path: '/reportes',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppPerfilRoute = AppPerfilRouteImport.update({
-  id: '/perfil',
-  path: '/perfil',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppNotificacionesRoute = AppNotificacionesRouteImport.update({
-  id: '/notificaciones',
-  path: '/notificaciones',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppMapaRoute = AppMapaRouteImport.update({
-  id: '/mapa',
-  path: '/mapa',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppFormulariosRoute = AppFormulariosRouteImport.update({
-  id: '/formularios',
-  path: '/formularios',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppContribuyentesRoute = AppContribuyentesRouteImport.update({
-  id: '/contribuyentes',
-  path: '/contribuyentes',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppTiposTramiteIndexRoute = AppTiposTramiteIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AppTiposTramiteRoute,
-} as any)
-const AppNotificacionesIndexRoute = AppNotificacionesIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AppNotificacionesRoute,
-} as any)
-const AppFormulariosIndexRoute = AppFormulariosIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AppFormulariosRoute,
 } as any)
 const AppContribuyentesIndexRoute = AppContribuyentesIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppContribuyentesRoute,
 } as any)
-const VerificacionIdPdfRoute = VerificacionIdPdfRouteImport.update({
-  id: '/pdf',
-  path: '/pdf',
-  getParentRoute: () => VerificacionIdRoute,
-} as any)
-const AppNotificacionesIdRoute = AppNotificacionesIdRouteImport.update({
+const AppContribuyentesIdRoute = AppContribuyentesIdRouteImport.update({
   id: '/$id',
   path: '/$id',
-  getParentRoute: () => AppNotificacionesRoute,
+  getParentRoute: () => AppContribuyentesRoute,
+} as any)
+const AppFormulariosIndexRoute = AppFormulariosIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppFormulariosRoute,
 } as any)
 const AppFormulariosIdRoute = AppFormulariosIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => AppFormulariosRoute,
 } as any)
-const AppContribuyentesIdRoute = AppContribuyentesIdRouteImport.update({
+const AppNotificacionesIndexRoute = AppNotificacionesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppNotificacionesRoute,
+} as any)
+const AppNotificacionesIdRoute = AppNotificacionesIdRouteImport.update({
   id: '/$id',
   path: '/$id',
-  getParentRoute: () => AppContribuyentesRoute,
+  getParentRoute: () => AppNotificacionesRoute,
+} as any)
+const AppTiposTramiteIndexRoute = AppTiposTramiteIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppTiposTramiteRoute,
+} as any)
+const VerificacionIdPdfRoute = VerificacionIdPdfRouteImport.update({
+  id: '/pdf',
+  path: '/pdf',
+  getParentRoute: () => VerificacionIdRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -315,18 +315,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/sitemap.xml': {
-      id: '/sitemap.xml'
-      path: '/sitemap.xml'
-      fullPath: '/sitemap.xml'
-      preLoaderRoute: typeof SitemapDotxmlRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app': {
@@ -336,81 +329,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/verificacion/$id': {
-      id: '/verificacion/$id'
-      path: '/verificacion/$id'
-      fullPath: '/verificacion/$id'
-      preLoaderRoute: typeof VerificacionIdRouteImport
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/verificacion-formulario/$id': {
-      id: '/verificacion-formulario/$id'
-      path: '/verificacion-formulario/$id'
-      fullPath: '/verificacion-formulario/$id'
-      preLoaderRoute: typeof VerificacionFormularioIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/v/notificacion': {
-      id: '/v/notificacion'
-      path: '/v/notificacion'
-      fullPath: '/v/notificacion'
-      preLoaderRoute: typeof VNotificacionRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_app/zonas': {
-      id: '/_app/zonas'
-      path: '/zonas'
-      fullPath: '/zonas'
-      preLoaderRoute: typeof AppZonasRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/usuarios': {
-      id: '/_app/usuarios'
-      path: '/usuarios'
-      fullPath: '/usuarios'
-      preLoaderRoute: typeof AppUsuariosRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/tipos-tramite': {
-      id: '/_app/tipos-tramite'
-      path: '/tipos-tramite'
-      fullPath: '/tipos-tramite'
-      preLoaderRoute: typeof AppTiposTramiteRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/reportes': {
-      id: '/_app/reportes'
-      path: '/reportes'
-      fullPath: '/reportes'
-      preLoaderRoute: typeof AppReportesRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/perfil': {
-      id: '/_app/perfil'
-      path: '/perfil'
-      fullPath: '/perfil'
-      preLoaderRoute: typeof AppPerfilRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/notificaciones': {
-      id: '/_app/notificaciones'
-      path: '/notificaciones'
-      fullPath: '/notificaciones'
-      preLoaderRoute: typeof AppNotificacionesRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/mapa': {
-      id: '/_app/mapa'
-      path: '/mapa'
-      fullPath: '/mapa'
-      preLoaderRoute: typeof AppMapaRouteImport
+    '/_app/contribuyentes': {
+      id: '/_app/contribuyentes'
+      path: '/contribuyentes'
+      fullPath: '/contribuyentes'
+      preLoaderRoute: typeof AppContribuyentesRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/formularios': {
@@ -420,33 +357,75 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppFormulariosRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/contribuyentes': {
-      id: '/_app/contribuyentes'
-      path: '/contribuyentes'
-      fullPath: '/contribuyentes'
-      preLoaderRoute: typeof AppContribuyentesRouteImport
+    '/_app/mapa': {
+      id: '/_app/mapa'
+      path: '/mapa'
+      fullPath: '/mapa'
+      preLoaderRoute: typeof AppMapaRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/tipos-tramite/': {
-      id: '/_app/tipos-tramite/'
-      path: '/'
-      fullPath: '/tipos-tramite/'
-      preLoaderRoute: typeof AppTiposTramiteIndexRouteImport
-      parentRoute: typeof AppTiposTramiteRoute
+    '/_app/notificaciones': {
+      id: '/_app/notificaciones'
+      path: '/notificaciones'
+      fullPath: '/notificaciones'
+      preLoaderRoute: typeof AppNotificacionesRouteImport
+      parentRoute: typeof AppRoute
     }
-    '/_app/notificaciones/': {
-      id: '/_app/notificaciones/'
-      path: '/'
-      fullPath: '/notificaciones/'
-      preLoaderRoute: typeof AppNotificacionesIndexRouteImport
-      parentRoute: typeof AppNotificacionesRoute
+    '/_app/perfil': {
+      id: '/_app/perfil'
+      path: '/perfil'
+      fullPath: '/perfil'
+      preLoaderRoute: typeof AppPerfilRouteImport
+      parentRoute: typeof AppRoute
     }
-    '/_app/formularios/': {
-      id: '/_app/formularios/'
-      path: '/'
-      fullPath: '/formularios/'
-      preLoaderRoute: typeof AppFormulariosIndexRouteImport
-      parentRoute: typeof AppFormulariosRoute
+    '/_app/reportes': {
+      id: '/_app/reportes'
+      path: '/reportes'
+      fullPath: '/reportes'
+      preLoaderRoute: typeof AppReportesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/tipos-tramite': {
+      id: '/_app/tipos-tramite'
+      path: '/tipos-tramite'
+      fullPath: '/tipos-tramite'
+      preLoaderRoute: typeof AppTiposTramiteRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/usuarios': {
+      id: '/_app/usuarios'
+      path: '/usuarios'
+      fullPath: '/usuarios'
+      preLoaderRoute: typeof AppUsuariosRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/zonas': {
+      id: '/_app/zonas'
+      path: '/zonas'
+      fullPath: '/zonas'
+      preLoaderRoute: typeof AppZonasRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/v/notificacion': {
+      id: '/v/notificacion'
+      path: '/v/notificacion'
+      fullPath: '/v/notificacion'
+      preLoaderRoute: typeof VNotificacionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/verificacion-formulario/$id': {
+      id: '/verificacion-formulario/$id'
+      path: '/verificacion-formulario/$id'
+      fullPath: '/verificacion-formulario/$id'
+      preLoaderRoute: typeof VerificacionFormularioIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/verificacion/$id': {
+      id: '/verificacion/$id'
+      path: '/verificacion/$id'
+      fullPath: '/verificacion/$id'
+      preLoaderRoute: typeof VerificacionIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_app/contribuyentes/': {
       id: '/_app/contribuyentes/'
@@ -455,19 +434,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppContribuyentesIndexRouteImport
       parentRoute: typeof AppContribuyentesRoute
     }
-    '/verificacion/$id/pdf': {
-      id: '/verificacion/$id/pdf'
-      path: '/pdf'
-      fullPath: '/verificacion/$id/pdf'
-      preLoaderRoute: typeof VerificacionIdPdfRouteImport
-      parentRoute: typeof VerificacionIdRoute
-    }
-    '/_app/notificaciones/$id': {
-      id: '/_app/notificaciones/$id'
+    '/_app/contribuyentes/$id': {
+      id: '/_app/contribuyentes/$id'
       path: '/$id'
-      fullPath: '/notificaciones/$id'
-      preLoaderRoute: typeof AppNotificacionesIdRouteImport
-      parentRoute: typeof AppNotificacionesRoute
+      fullPath: '/contribuyentes/$id'
+      preLoaderRoute: typeof AppContribuyentesIdRouteImport
+      parentRoute: typeof AppContribuyentesRoute
+    }
+    '/_app/formularios/': {
+      id: '/_app/formularios/'
+      path: '/'
+      fullPath: '/formularios/'
+      preLoaderRoute: typeof AppFormulariosIndexRouteImport
+      parentRoute: typeof AppFormulariosRoute
     }
     '/_app/formularios/$id': {
       id: '/_app/formularios/$id'
@@ -476,12 +455,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppFormulariosIdRouteImport
       parentRoute: typeof AppFormulariosRoute
     }
-    '/_app/contribuyentes/$id': {
-      id: '/_app/contribuyentes/$id'
+    '/_app/notificaciones/': {
+      id: '/_app/notificaciones/'
+      path: '/'
+      fullPath: '/notificaciones/'
+      preLoaderRoute: typeof AppNotificacionesIndexRouteImport
+      parentRoute: typeof AppNotificacionesRoute
+    }
+    '/_app/notificaciones/$id': {
+      id: '/_app/notificaciones/$id'
       path: '/$id'
-      fullPath: '/contribuyentes/$id'
-      preLoaderRoute: typeof AppContribuyentesIdRouteImport
-      parentRoute: typeof AppContribuyentesRoute
+      fullPath: '/notificaciones/$id'
+      preLoaderRoute: typeof AppNotificacionesIdRouteImport
+      parentRoute: typeof AppNotificacionesRoute
+    }
+    '/_app/tipos-tramite/': {
+      id: '/_app/tipos-tramite/'
+      path: '/'
+      fullPath: '/tipos-tramite/'
+      preLoaderRoute: typeof AppTiposTramiteIndexRouteImport
+      parentRoute: typeof AppTiposTramiteRoute
+    }
+    '/verificacion/$id/pdf': {
+      id: '/verificacion/$id/pdf'
+      path: '/pdf'
+      fullPath: '/verificacion/$id/pdf'
+      preLoaderRoute: typeof VerificacionIdPdfRouteImport
+      parentRoute: typeof VerificacionIdRoute
     }
   }
 }
